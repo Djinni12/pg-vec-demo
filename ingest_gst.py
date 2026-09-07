@@ -9,6 +9,10 @@ import json
 from pathlib import Path
 import re
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 DATABASE_URL = "dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432"
 DATASET_URL = "https://www.kaggle.com/datasets/prasad22/goods-and-service-tax-rates-dataset"
 MODEL_NAME = "all-MiniLM-L6-v2"
