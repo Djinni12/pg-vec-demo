@@ -31,6 +31,12 @@ def main():
     parser.add_argument("--retrieve-limit", type=int, default=20, help="Candidates per retriever for RRF")
     parser.add_argument("--top-k", type=int, default=5, help="Final RRF result count")
     parser.add_argument("--rrf-k", type=int, default=60, help="RRF rank constant")
+    parser.add_argument(
+        "--rerank-vector-before-rrf",
+        action="store_true",
+        help="Rerank vector candidates with CrossEncoder before RRF",
+    )
+    parser.add_argument("--rerank-before-rrf", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--database-url", default=DATABASE_URL)
     args = parser.parse_args()
 
@@ -47,10 +53,25 @@ def main():
 
         model = SentenceTransformer(MODEL_NAME)
         if args.rrf:
+            vector_reranker = None
+            rerank_vector = args.rerank_vector_before_rrf or args.rerank_before_rrf
+            if rerank_vector:
+                from sentence_transformers import CrossEncoder
+
+                vector_reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
             results = hybrid_rrf_search(
-                conn, args.query, args.retrieve_limit, args.top_k, args.rrf_k, vector_model=model
+                conn,
+                args.query,
+                args.retrieve_limit,
+                args.top_k,
+                args.rrf_k,
+                vector_model=model,
+                vector_reranker=vector_reranker,
             )
-            print("\nRRF HYBRID RESULTS\n")
+            title = "RRF HYBRID RESULTS"
+            if rerank_vector:
+                title = "VECTOR-RERANKED RRF HYBRID RESULTS"
+            print(f"\n{title}\n")
             for index, item in enumerate(results, 1):
                 print(f"{index}.", end=" ")
                 print_result(item["row"])

@@ -2,11 +2,11 @@
 
 ## Purpose and implemented scope
 
-The project demonstrates retrieval over the Kaggle GST goods and services dataset. It combines BM25 keyword retrieval and pgvector semantic retrieval with Reciprocal Rank Fusion (RRF). Keyword search uses Timescale `pg_textsearch` BM25 matching first; character-based fuzzy similarity remains available as the no-match keyword fallback. The existing cross-encoder reranker is still used only by the separate semantic demonstration path.
+The project demonstrates retrieval over the Kaggle GST goods and services dataset. It combines BM25 keyword retrieval and pgvector semantic retrieval with Reciprocal Rank Fusion (RRF). Keyword search uses Timescale `pg_textsearch` BM25 matching first; character-based fuzzy similarity remains available as the no-match keyword fallback. The existing cross-encoder reranker can reorder candidates before RRF when requested.
 
 The downloaded snapshot contains `Goods.csv` (1,850 rows) and `Services.csv` (232 rows). The loader retains 1,729 searchable records after skipping omitted, blank-description, and column-number rows. [Dataset inspection and field mapping](gst-dataset.md) describes all source columns, metadata, percentage conversion, and exact codes.
 
-Semantic retrieval and keyword retrieval run independently for the same input query. RRF then merges their ranked lists by stable GST source identity, using only rank positions. There is no answer-generation stage. Explicit classification lookup is a separate mode that does not load models.
+Semantic retrieval and keyword retrieval run independently for the same input query. RRF then merges their ranked lists by stable GST source identity, using only rank positions. With `--rerank-vector-before-rrf`, only the vector list is reordered by CrossEncoder scores before RRF reads the ranks. There is no answer-generation stage. Explicit classification lookup is a separate mode that does not load models.
 
 ## Data flow
 
@@ -78,7 +78,7 @@ The repository defines no vector index. With the minimal schema in the README, t
 
 The document key comes from `(metadata["source_file"], metadata["source_row"])`, which matches the ingestion primary key. If a row appears in both lists, its two rank contributions are summed. If it appears in only one list, its one contribution is kept. Raw BM25 scores and vector distances are not normalized or added. Final results are sorted by RRF score descending and trimmed to Top-K.
 
-The command-line path is `python search_pgvec.py "query text" --rrf`. The manual smoke script `dummy_search_test.py` prints BM25, vector, and fused RRF sections for the same query.
+The command-line path is `python search_pgvec.py "query text" --rrf`. Add `--rerank-vector-before-rrf` to score the vector candidate list with the existing CrossEncoder before fusion. BM25 keeps its original rank order. RRF still uses only the post-rerank vector positions and original BM25 positions; it does not use CrossEncoder scores in the fusion formula. The manual smoke script `dummy_search_test.py` prints BM25, vector, and fused RRF sections for the same query and supports the same rerank option.
 
 ### 4. Retrieve, then rerank
 
@@ -122,7 +122,7 @@ The previous `documents` table is left intact but is no longer read or written. 
 
 ## Current limitations and unfinished components
 
-- **Hybrid result fusion:** RRF is implemented for BM25 and vector result ranks. There is no weighted score combination, score normalization, cross-encoder reranking of fused results, or trigram fallback fusion.
+- **Hybrid result fusion:** RRF is implemented for BM25 and vector result ranks, with optional CrossEncoder reranking of vector results before fusion. There is no weighted score combination, score normalization, cross-encoder reranking after fusion, or trigram fallback fusion.
 - **RAG answer generation:** no generative model, prompt construction, retrieved context assembly, citations, or conversation handling.
 - **Data ingestion:** the loader targets these two CSV formats. There is no scheduled dataset synchronization, chunking, or incremental embedding cache.
 - **Exact lookup:** ranges, exclusions, malformed classifications, and parent/child code inference are not resolved. Multiple source rows can share a code. Rates and conditions are preserved as dataset content.
@@ -132,7 +132,7 @@ The previous `documents` table is left intact but is no longer read or written. 
 - **Robustness:** empty semantic results are handled before reranking, but model and database failures propagate without retries.
 - **Packaging and operations:** no API, UI, application container, CI configuration, lockfile, structured logging, or production deployment configuration is present.
 
-Possible extensions are to rerank the fused candidate pool, add measured retrieval evaluation, and then introduce an answer-generation stage if needed. These are future directions, not implemented behavior.
+Possible extensions are to rerank the fused candidate pool after RRF, add measured retrieval evaluation, and then introduce an answer-generation stage if needed. These are future directions, not implemented behavior.
 
 ## Source map
 

@@ -47,10 +47,35 @@ def reciprocal_rank_fusion(result_lists, k=60, top_k=5):
     ]
 
 
-def hybrid_rrf_search(conn, query, retrieve_limit=20, top_k=5, k=60, vector_model=None):
-    """Retrieve BM25 and vector candidates independently, then fuse by RRF."""
+def rerank_rows(query, rows, reranker):
+    """Return rows ordered by cross-encoder relevance score descending."""
+    if not rows:
+        return []
+    scores = reranker.predict([(query, row[1]) for row in rows])
+    return [
+        row
+        for row, _ in sorted(
+            zip(rows, scores),
+            key=lambda item: float(item[1]),
+            reverse=True,
+        )
+    ]
+
+
+def hybrid_rrf_search(
+    conn,
+    query,
+    retrieve_limit=20,
+    top_k=5,
+    k=60,
+    vector_model=None,
+    vector_reranker=None,
+):
+    """Retrieve BM25 and vector candidates, optionally rerank vector, then fuse."""
     if retrieve_limit < 1:
         raise ValueError("retrieve_limit must be positive")
     bm25_rows = bm25_search(conn, query, retrieve_limit)
     vector_rows = vector_search(conn, query, retrieve_limit, model=vector_model)
+    if vector_reranker is not None:
+        vector_rows = rerank_rows(query, vector_rows, vector_reranker)
     return reciprocal_rank_fusion([bm25_rows, vector_rows], k=k, top_k=top_k)

@@ -6,7 +6,7 @@ import psycopg
 
 from ingest_gst import DATABASE_URL, MODEL_NAME
 from keyword_search import bm25_search
-from rrf import reciprocal_rank_fusion
+from rrf import reciprocal_rank_fusion, rerank_rows
 from search_pgvec import print_result
 from vector_search import vector_search
 
@@ -63,8 +63,20 @@ def run_vector(conn, query, limit):
     return rows
 
 
-def run_rrf(bm25_rows, vector_rows, k, top_k):
-    print_section("RRF FUSED SEARCH")
+def run_rrf(query, bm25_rows, vector_rows, k, top_k, rerank_vector):
+    if rerank_vector:
+        print_section("VECTOR-RERANKED RRF FUSED SEARCH")
+        try:
+            from sentence_transformers import CrossEncoder
+
+            reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+            vector_rows = rerank_rows(query, vector_rows, reranker)
+        except Exception as error:
+            print("Vector reranker failed.")
+            print_error(error)
+            return
+    else:
+        print_section("RRF FUSED SEARCH")
     rows = reciprocal_rank_fusion([bm25_rows, vector_rows], k=k, top_k=top_k)
     if not rows:
         print("No RRF matches found.")
@@ -80,6 +92,8 @@ def main():
     parser.add_argument("query", nargs="?", default="coffee beans")
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--rrf-k", type=int, default=60)
+    parser.add_argument("--rerank-vector-before-rrf", action="store_true")
+    parser.add_argument("--rerank-before-rrf", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--database-url", default=DATABASE_URL)
     args = parser.parse_args()
 
@@ -90,12 +104,13 @@ def main():
 
     print(f"Query: {args.query}")
     print(f"Limit: {args.limit}")
+    rerank_vector = args.rerank_vector_before_rrf or args.rerank_before_rrf
 
     try:
         with psycopg.connect(args.database_url, autocommit=True) as conn:
             bm25_rows = run_bm25(conn, args.query, args.limit)
             vector_rows = run_vector(conn, args.query, args.limit)
-            run_rrf(bm25_rows, vector_rows, args.rrf_k, args.limit)
+            run_rrf(args.query, bm25_rows, vector_rows, args.rrf_k, args.limit, rerank_vector)
     except Exception as error:
         print("Database connection failed.")
         print_error(error)
