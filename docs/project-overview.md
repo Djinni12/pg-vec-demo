@@ -51,7 +51,7 @@ This inventory covers direct dependencies and the infrastructure and model choic
 | `all-MiniLM-L6-v2` | Encodes each description and the semantic query into 384-dimensional dense vectors. |
 | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Scores each retrieved query/description pair before the semantic results are reordered. |
 | Docker and Docker Compose | Run the database as the `hybrid-rag-db` container using a custom image based on `pgvector/pgvector:pg17`, with host port `5432` and a persistent `pgdata17` volume. `Dockerfile.db` builds the pinned `pg_textsearch` release using Make, a C compiler, and PostgreSQL development headers; curl downloads the release archive. |
-| `python-dotenv` | Declared in `requirements.txt`, but not imported or used. `.env.example` is empty. |
+| `python-dotenv` | Loads `.env` so local secrets such as `HF_TOKEN` are available to ingestion and search scripts without hardcoding them. |
 | `pip` and Python `venv` | Used in the documented local installation workflow to install dependencies into an isolated environment. |
 
 The code uses local model inference through Sentence Transformers; it does not call an embedding or generation API. Model files may need downloading when first loaded. No explicit device selection, model revision, dependency version pin, or inference tuning is configured.

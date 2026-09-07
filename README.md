@@ -118,7 +118,13 @@ The named database volume is retained for future runs.
 
 ## Configuration and troubleshooting
 
-By default, ingestion and search connect to `dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432`. These match the local Compose configuration and are development credentials. Changing Compose settings alone does not update the default Python connection string; pass `--database-url`. Although `python-dotenv` is listed as a dependency, it is not used.
+By default, ingestion and search connect to `dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432`. These match the local Compose configuration and are development credentials. Changing Compose settings alone does not update the default Python connection string; pass `--database-url`.
+
+The scripts load `.env` through `python-dotenv`. To authenticate Hugging Face model downloads, set a real read token in `.env` or in your shell:
+
+```bash
+HF_TOKEN="hf_your_read_token_here"
+```
 
 | Symptom | What to check |
 | --- | --- |
@@ -127,6 +133,7 @@ By default, ingestion and search connect to `dbname=hybrid_rag user=postgres pas
 | `similarity` or the trigram operator is unavailable | Enable `pg_trgm` in the database used by the scripts. |
 | BM25 operator/index is unavailable | Build the new database image, confirm `pg_textsearch` is preloaded, and run `schema.sql`. |
 | Model download fails | Check network access or availability of the model files in the local cache. |
+| Hugging Face still says unauthenticated | Confirm `HF_TOKEN` is visible to Python and is not the placeholder from `.env.example`. |
 | Same code appears more than once | Several GST source entries can share a classification; inspect description, rates, and source metadata. Reimports do not duplicate source rows. |
 | CSV decoding or columns fail | Use the original Goods.csv and Services.csv; the loader accepts UTF-8 and Windows-1252 and validates headers. |
 | Fuzzy output is empty | Matching uses a threshold against the entire description; a typo query is not guaranteed to pass it. |
