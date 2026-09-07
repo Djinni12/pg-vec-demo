@@ -1,7 +1,11 @@
 services:
   db:
-    image: pgvector/pgvector:pg16
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    image: hybrid-rag-db:pg17-pg-textsearch-1.4.0
     container_name: hybrid-rag-db
+    command: ["postgres", "-c", "shared_preload_libraries=pg_textsearch"]
     environment:
       POSTGRES_DB: hybrid_rag
       POSTGRES_USER: postgres
@@ -9,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata17:/var/lib/postgresql/data
 
 volumes:
-  pgdata:
+  pgdata17:

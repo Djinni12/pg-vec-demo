@@ -1,6 +1,7 @@
 import psycopg
 from sentence_transformers import SentenceTransformer,CrossEncoder
 from pgvector.psycopg import register_vector
+from keyword_search import keyword_search
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -56,39 +57,15 @@ for code, description, distance, score in reranked[:5]:
         f"rerank_score={score:.4f}"
     )
 
-# for code, description, distance in results:
-#     print(f"{code} | {description} | distance={distance:.4f}")
+# Show a normal keyword match and a misspelling that can use the fallback.
+for keyword_query in ("hypertension", "hypertensoin"):
+    results, method = keyword_search(conn, keyword_query)
+    score_label = "bm25_score" if method == "bm25" else "similarity"
 
-
-
-def fuzzy_search(conn, query, limit=5):
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT
-                code,
-                description,
-                similarity(description, %s) AS score
-            FROM documents
-            WHERE description %% %s
-            ORDER BY score DESC
-            LIMIT %s
-            """,
-            (query, query, limit)
-        )
-
-        return cur.fetchall()
-
-query = "hypertensoin"
-
-results = fuzzy_search(conn, query)
-
-print("\nFUZZY RESULTS\n")
-
-for code, description, score in results:
-    print(
-        f"{code} | {description} | "
-        f"similarity={score:.4f}"
-    )
+    print(f"\nKEYWORD RESULTS ({method}): {keyword_query}\n")
+    for code, description, score in results:
+        print(f"{code} | {description} | {score_label}={score:.4f}")
+    if not results:
+        print("No keyword matches found.")
 
 conn.close()
