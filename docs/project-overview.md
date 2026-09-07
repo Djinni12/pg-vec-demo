@@ -2,11 +2,11 @@
 
 ## Purpose and implemented scope
 
-The project demonstrates retrieval over the Kaggle GST goods and services dataset. It combines a semantic retrieval demonstration with a separate keyword search. Keyword search uses Timescale `pg_textsearch` BM25 matching first and character-based fuzzy similarity only when no BM25 rows match. A second model reranks the semantic candidates to improve their ordering for the query.
+The project demonstrates retrieval over the Kaggle GST goods and services dataset. It combines BM25 keyword retrieval and pgvector semantic retrieval with Reciprocal Rank Fusion (RRF). Keyword search uses Timescale `pg_textsearch` BM25 matching first; character-based fuzzy similarity remains available as the no-match keyword fallback. The existing cross-encoder reranker is still used only by the separate semantic demonstration path.
 
 The downloaded snapshot contains `Goods.csv` (1,850 rows) and `Services.csv` (232 rows). The loader retains 1,729 searchable records after skipping omitted, blank-description, and column-number rows. [Dataset inspection and field mapping](gst-dataset.md) describes all source columns, metadata, percentage conversion, and exact codes.
 
-Semantic retrieval and keyword retrieval run independently for the same input query. The semantic candidates retain the existing cross-encoder reranking stage. There is no RRF, result fusion, or answer-generation stage. Explicit classification lookup is a separate mode that does not load models.
+Semantic retrieval and keyword retrieval run independently for the same input query. RRF then merges their ranked lists by stable GST source identity, using only rank positions. There is no answer-generation stage. Explicit classification lookup is a separate mode that does not load models.
 
 ## Data flow
 
@@ -22,6 +22,9 @@ flowchart TD
     G --> H[Sort scores descending and print up to 5 results]
     D --> J[pg_textsearch BM25 ranking]
     C --> J
+    F --> R[Reciprocal Rank Fusion]
+    J --> R
+    R --> S[Print fused Top-K]
     J --> L{Any matches?}
     L -->|Yes| K[Print BM25 results]
     L -->|No| M[pg_trgm fallback for the same query]
@@ -57,7 +60,7 @@ The code uses local model inference through Sentence Transformers; it does not c
 
 ### 1. Dense embeddings for semantic retrieval
 
-`ingest_gst.py` encodes cleaned descriptions in batches of 32 and stores each vector alongside the GST source record. `test_pgvector.py` delegates to the same loader for compatibility. `search_pgvec.py` encodes the query using the same model, placing queries and descriptions into a comparable vector space.
+`ingest_gst.py` encodes cleaned descriptions in batches of 32 and stores each vector alongside the GST source record. `test_pgvector.py` delegates to the same loader for compatibility. `vector_search.py` encodes the query using the same model, placing queries and descriptions into a comparable vector space.
 
 This permits matching by learned semantic similarity rather than requiring an exact word overlap. A query such as `roasted coffee beans` can be compared to goods descriptions about coffee. This is the intent of the example, not an asserted ranking guarantee.
 
@@ -65,11 +68,19 @@ Each description is whitespace-normalized and passed to the embedding model as o
 
 ### 2. Cosine-distance nearest-neighbor retrieval
 
-The semantic SQL query computes `embedding <=> query_embedding`, orders by this distance in ascending order, and applies `LIMIT 10`. Lower distance means a closer match under the cosine-distance metric.
+The semantic SQL query computes `embedding <=> query_embedding`, orders by this distance in ascending order, and applies the requested limit. Lower distance means a closer match under the cosine-distance metric.
 
 The repository defines no vector index. With the minimal schema in the README, this is an exact search over stored vectors, rather than an approximate nearest-neighbor search. HNSW and IVFFlat are not configured. Any indexes created independently in an existing database are outside what the repository records.
 
-### 3. Retrieve, then rerank
+### 3. Reciprocal Rank Fusion
+
+`rrf.py` provides `hybrid_rrf_search(conn, query, retrieve_limit=20, top_k=5, k=60)`. It calls the existing BM25 retriever and the pgvector retriever independently, assigns rank positions inside each list, and computes `sum(1 / (k + rank))` for each stable GST document key.
+
+The document key comes from `(metadata["source_file"], metadata["source_row"])`, which matches the ingestion primary key. If a row appears in both lists, its two rank contributions are summed. If it appears in only one list, its one contribution is kept. Raw BM25 scores and vector distances are not normalized or added. Final results are sorted by RRF score descending and trimmed to Top-K.
+
+The command-line path is `python search_pgvec.py "query text" --rrf`. The manual smoke script `dummy_search_test.py` prints BM25, vector, and fused RRF sections for the same query.
+
+### 4. Retrieve, then rerank
 
 After fetching candidates, the script builds `(query, description)` pairs and passes them to `reranker.predict(pairs)`. The cross-encoder evaluates each pair jointly and produces a relevance score. The script converts each score to a Python float, sorts descending, and prints the top five candidates.
 
@@ -77,7 +88,7 @@ This is a two-stage retrieval architecture: embeddings select a small candidate 
 
 Each printed semantic result includes its code, description, original vector distance, and reranking score. The final order uses only the reranking score. These model scores are not calibrated probabilities or combined with the vector distance.
 
-### 4. BM25 keyword search with trigram fallback
+### 5. BM25 keyword search with trigram fallback
 
 `keyword_search.py` provides `keyword_search(conn, query, limit=5)`, returning `(rows, method)`. Each row contains code, description, method-specific score, three numeric GST rates, and source metadata.
 
@@ -89,15 +100,15 @@ Only if BM25 returns zero relevant rows does the wrapper call `fuzzy_search` wit
 
 Partial BM25 results are returned without fuzzy top-up. Blank input returns no rows without accessing the database; nonpositive limits raise `ValueError`. Stopword-only input attempts fallback after finding no BM25 matches. Database errors propagate rather than triggering fallback. BM25 scores and trigram similarities are not combined.
 
-The script accepts GST queries such as `coffee` and the misspelling `cofee`, printing the method that supplied the results. The typo query may still return no rows under the default whole-description trigram threshold. Keyword results remain separate from vector retrieval and cross-encoder reranking.
+The script accepts GST queries such as `coffee` and the misspelling `cofee`, printing the method that supplied the results. The typo query may still return no rows under the default whole-description trigram threshold. Keyword results remain separate from cross-encoder reranking. RRF can combine BM25 ranks with vector ranks, without using the trigram fallback list.
 
-### 5. Parameterized SQL and transactions
+### 6. Parameterized SQL and transactions
 
 Both scripts pass values separately from SQL using Psycopg placeholders. This covers inserted data, vector queries, keyword query text, and keyword result limits; values are not interpolated into SQL strings.
 
 The loader validates both files before writing and uses `(source_file, source_row)` for upserts. Stale rows belonging to those source files are removed in the same transaction. Both entry points use connection and cursor context managers; failures roll back uncommitted changes. No automatic retry logic is implemented.
 
-### 6. Containerized persistence
+### 7. Containerized persistence
 
 Docker Compose supplies a reproducible database service configuration and maps `pgdata17` to `/var/lib/postgresql/data`. The new PostgreSQL 17 volume preserves the initialized database and GST rows across ordinary container restarts and `docker compose down`.
 
@@ -111,7 +122,7 @@ The previous `documents` table is left intact but is no longer read or written. 
 
 ## Current limitations and unfinished components
 
-- **Hybrid result fusion:** no weighted score combination, reciprocal rank fusion, shared candidate pool, or deduplication across retrieval methods.
+- **Hybrid result fusion:** RRF is implemented for BM25 and vector result ranks. There is no weighted score combination, score normalization, cross-encoder reranking of fused results, or trigram fallback fusion.
 - **RAG answer generation:** no generative model, prompt construction, retrieved context assembly, citations, or conversation handling.
 - **Data ingestion:** the loader targets these two CSV formats. There is no scheduled dataset synchronization, chunking, or incremental embedding cache.
 - **Exact lookup:** ranges, exclusions, malformed classifications, and parent/child code inference are not resolved. Multiple source rows can share a code. Rates and conditions are preserved as dataset content.
@@ -121,15 +132,18 @@ The previous `documents` table is left intact but is no longer read or written. 
 - **Robustness:** empty semantic results are handled before reranking, but model and database failures propagate without retries.
 - **Packaging and operations:** no API, UI, application container, CI configuration, lockfile, structured logging, or production deployment configuration is present.
 
-Possible extensions are to combine both retrieval methods for the same query, deduplicate and rerank their candidate pool, add measured retrieval evaluation, and then introduce an answer-generation stage if needed. These are future directions, not implemented behavior.
+Possible extensions are to rerank the fused candidate pool, add measured retrieval evaluation, and then introduce an answer-generation stage if needed. These are future directions, not implemented behavior.
 
 ## Source map
 
 - [GST loader](../ingest_gst.py): CSV validation, rate conversion, embeddings, and transactional upserts.
 - [Ingestion tests](../test_ingest_gst.py): parsing and repeat-import checks.
 - [Dataset inspection](gst-dataset.md): source columns, schema mapping, and provenance.
-- [Search demonstration](../search_pgvec.py): query embedding, cosine-distance retrieval, reranking, and keyword demonstrations.
+- [Search demonstration](../search_pgvec.py): query embedding, cosine-distance retrieval, reranking, keyword demonstrations, and optional RRF.
 - [Keyword search](../keyword_search.py): primary BM25 SQL, trigram fallback routing, and exact lookup.
+- [Vector search](../vector_search.py): pgvector semantic retrieval helper.
+- [RRF fusion](../rrf.py): rank-only fusion over BM25 and vector result lists.
+- [RRF tests](../test_rrf.py): rank fusion behavior and deduplication.
 - [Keyword tests](../test_keyword_search.py): routing and PostgreSQL integration checks.
 - [Database schema](../schema.sql): extension initialization and the BM25 index.
 - [Database image](../Dockerfile.db): PostgreSQL 17, pgvector, and Timescale `pg_textsearch`.

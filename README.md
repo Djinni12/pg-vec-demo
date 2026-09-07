@@ -1,10 +1,10 @@
 # Hybrid RAG retrieval proof of concept
 
-This project searches goods and services from the [Kaggle GST rates dataset](https://www.kaggle.com/datasets/prasad22/goods-and-service-tax-rates-dataset). It embeds descriptions, retrieves semantic matches with pgvector, reranks those candidates, and runs a separate BM25 keyword search with trigram fallback. An explicit HSN/SAC code lookup is also available.
+This project searches goods and services from the [Kaggle GST rates dataset](https://www.kaggle.com/datasets/prasad22/goods-and-service-tax-rates-dataset). It embeds descriptions, retrieves semantic matches with pgvector, runs BM25 keyword search with trigram fallback, and can combine the BM25 and vector lists with Reciprocal Rank Fusion (RRF). An explicit HSN/SAC code lookup is also available.
 
 The inspected dataset contains 1,850 goods rows and 232 service rows; ingestion retains 1,729 searchable records. See [dataset inspection and field mapping](docs/gst-dataset.md) for all columns, rate handling, and exact-code limitations.
 
-The current implementation is the retrieval portion of a possible hybrid retrieval-augmented generation (RAG) system. It does **not** yet merge semantic and keyword results, construct a prompt, or use a language model to generate an answer. Results are printed in the terminal.
+The current implementation is the retrieval portion of a possible hybrid retrieval-augmented generation (RAG) system. It does not construct a prompt or use a language model to generate an answer. Results are printed in the terminal.
 
 For the complete explanation of the architecture, tools, techniques, and limitations, see [Project documentation](docs/project-overview.md).
 
@@ -67,6 +67,7 @@ Goods fractional rates are converted to percentages; service percentage values r
 
 ```bash
 python search_pgvec.py "roasted coffee beans"
+python search_pgvec.py "roasted coffee beans" --rrf
 python search_pgvec.py "cofee"
 python search_pgvec.py --exact-code 0901
 ```
@@ -75,8 +76,9 @@ Text queries run two independent paths:
 
 - Semantic search: retrieve up to 10 description embeddings by cosine distance, rerank them with the existing cross-encoder, and print up to five results.
 - Keyword search: retrieve up to five positive BM25 matches over description, classification, and condition/cess. Only if there are no matches, use trigram fuzzy matching over descriptions. Partial BM25 results are not topped up.
+- RRF hybrid search: with `--rrf`, retrieve Top-N BM25 and Top-N vector candidates independently, merge by `(source_file, source_row)`, sum `1 / (60 + rank)` contributions, and print the fused Top-K. RRF uses only rank positions, not BM25 scores or vector distances.
 
-Exact lookup skips the models and returns up to 20 rows containing the explicit code. It does not infer ranges or code hierarchies. Results display classification, description, source filename/row, and GST rates. There is no RRF, score fusion, or answer generation.
+Exact lookup skips the models and returns up to 20 rows containing the explicit code. It does not infer ranges or code hierarchies. Results display classification, description, source filename/row, and GST rates.
 
 Both ingestion and search accept `--database-url` to override the local connection string.
 
@@ -97,7 +99,11 @@ The named database volume is retained for future runs.
 | `test_ingest_gst.py` | CSV/rate/code parsing tests and a transactional PostgreSQL ingestion test. |
 | `search_pgvec.py` | Runs vector retrieval, cross-encoder reranking, and BM25 keyword search with trigram fallback. |
 | `keyword_search.py` | BM25 SQL, trigram fallback routing, and exact code lookup without model-loading side effects. |
+| `vector_search.py` | pgvector semantic retrieval helper reused by the CLI and RRF. |
+| `rrf.py` | Reciprocal Rank Fusion over BM25 and vector result ranks. |
+| `dummy_search_test.py` | Prints BM25, vector, and RRF sections for manual command-line smoke tests. |
 | `test_keyword_search.py` | Routing tests and optional PostgreSQL integration tests. |
+| `test_rrf.py` | Unit tests for rank fusion, single-list results, duplicate merging, and ordering. |
 | `Dockerfile.db` | Adds Timescale `pg_textsearch` 1.4.0 to the PostgreSQL 17/pgvector image. |
 | `schema.sql` | Enables extensions and creates the GST table, BM25 index, and exact-code array index. |
 | `docker-compose.yml` | Configures the PostgreSQL/pgvector container and persistent volume. |
@@ -127,13 +133,13 @@ By default, ingestion and search connect to `dbname=hybrid_rag user=postgres pas
 Run the parsing and keyword routing tests with:
 
 ```bash
-venv/bin/python -m unittest test_ingest_gst test_keyword_search -v
+venv/bin/python -m unittest test_ingest_gst test_keyword_search test_rrf -v
 ```
 
 To also run PostgreSQL integration tests against the initialized PostgreSQL 17 database:
 
 ```bash
-TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest test_ingest_gst test_keyword_search -v
+TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest test_ingest_gst test_keyword_search test_rrf -v
 ```
 
 Integration tests use a temporary table and roll back without changing stored documents. They cover ingestion upserts and stale-row removal, exact codes, BM25 matching and score ordering, stemming, stopwords, limits, typo fallback, and empty results. There is no retrieval-quality evaluation dataset or assertion of model rankings.

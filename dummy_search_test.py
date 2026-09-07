@@ -3,11 +3,12 @@
 import argparse
 
 import psycopg
-from pgvector.psycopg import register_vector
 
 from ingest_gst import DATABASE_URL, MODEL_NAME
 from keyword_search import bm25_search
+from rrf import reciprocal_rank_fusion
 from search_pgvec import print_result
+from vector_search import vector_search
 
 
 def print_section(title):
@@ -28,15 +29,16 @@ def run_bm25(conn, query, limit):
     except Exception as error:
         print("BM25 search failed.")
         print_error(error)
-        return
+        return []
 
     if not rows:
         print("No BM25 matches found.")
-        return
+        return []
 
     for index, row in enumerate(rows, 1):
         print(f"{index}.", end=" ")
         print_result(row, "bm25_score")
+    return rows
 
 
 def run_vector(conn, query, limit):
@@ -44,52 +46,56 @@ def run_vector(conn, query, limit):
     try:
         from sentence_transformers import SentenceTransformer
 
-        register_vector(conn)
         model = SentenceTransformer(MODEL_NAME)
-        query_embedding = model.encode(query)
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT code, description, embedding <=> %s AS distance,
-                       cgst_rate_pct, sgst_utgst_rate_pct, igst_rate_pct, metadata
-                FROM gst_documents
-                ORDER BY embedding <=> %s
-                LIMIT %s
-                """,
-                (query_embedding, query_embedding, limit),
-            )
-            rows = cur.fetchall()
+        rows = vector_search(conn, query, limit, model=model)
     except Exception as error:
         print("Vector search failed.")
         print_error(error)
-        return
+        return []
 
     if not rows:
         print("No vector matches found.")
-        return
+        return []
 
     for index, row in enumerate(rows, 1):
         print(f"{index}.", end=" ")
         print_result(row, "vector_distance")
+    return rows
+
+
+def run_rrf(bm25_rows, vector_rows, k, top_k):
+    print_section("RRF FUSED SEARCH")
+    rows = reciprocal_rank_fusion([bm25_rows, vector_rows], k=k, top_k=top_k)
+    if not rows:
+        print("No RRF matches found.")
+        return
+    for index, item in enumerate(rows, 1):
+        print(f"{index}.", end=" ")
+        print_result(item["row"])
+        print(f"  rrf_score={item['rrf_score']:.6f}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("query", nargs="?", default="coffee beans")
     parser.add_argument("--limit", type=int, default=5)
+    parser.add_argument("--rrf-k", type=int, default=60)
     parser.add_argument("--database-url", default=DATABASE_URL)
     args = parser.parse_args()
 
     if args.limit < 1:
         raise SystemExit("--limit must be positive")
+    if args.rrf_k < 0:
+        raise SystemExit("--rrf-k must be non-negative")
 
     print(f"Query: {args.query}")
     print(f"Limit: {args.limit}")
 
     try:
         with psycopg.connect(args.database_url, autocommit=True) as conn:
-            run_bm25(conn, args.query, args.limit)
-            run_vector(conn, args.query, args.limit)
+            bm25_rows = run_bm25(conn, args.query, args.limit)
+            vector_rows = run_vector(conn, args.query, args.limit)
+            run_rrf(bm25_rows, vector_rows, args.rrf_k, args.limit)
     except Exception as error:
         print("Database connection failed.")
         print_error(error)
