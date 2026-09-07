@@ -1,9 +1,9 @@
 """Run with: venv/bin/python -m unittest test_rrf -v."""
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from rrf import hybrid_rrf_search, reciprocal_rank_fusion
+from rrf import hybrid_rrf_search, reciprocal_rank_fusion, rerank_rows
 
 
 def row(source_file, source_row, code=None):
@@ -72,6 +72,46 @@ class ReciprocalRankFusionTests(unittest.TestCase):
         bm25.assert_called_once_with(conn, "coffee", 7)
         vector.assert_called_once_with(conn, "coffee", 7, model=model)
         self.assertEqual([item["row"] for item in fused], [bm25_row, vector_row])
+
+    def test_rerank_rows_orders_by_cross_encoder_score(self):
+        first = row("Goods.csv", 10, "0101")
+        second = row("Goods.csv", 11, "0102")
+        reranker = Mock()
+        reranker.predict.return_value = [0.1, 0.9]
+
+        reranked = rerank_rows("query", [first, second], reranker)
+
+        reranker.predict.assert_called_once_with([("query", first[1]), ("query", second[1])])
+        self.assertEqual(reranked, [second, first])
+
+    def test_hybrid_search_can_rerank_vector_list_before_rrf(self):
+        conn = object()
+        model = object()
+        bm25_first = row("Goods.csv", 12, "0201")
+        bm25_second = row("Goods.csv", 13, "0202")
+        vector_first = row("Services.csv", 14, "9971")
+        vector_second = row("Services.csv", 15, "9972")
+        reranker = Mock()
+        reranker.predict.return_value = [0.2, 0.8]
+
+        with patch("rrf.bm25_search", return_value=[bm25_first, bm25_second]), patch(
+            "rrf.vector_search", return_value=[vector_first, vector_second]
+        ):
+            fused = hybrid_rrf_search(
+                conn,
+                "query",
+                retrieve_limit=2,
+                top_k=4,
+                k=60,
+                vector_model=model,
+                vector_reranker=reranker,
+            )
+
+        reranker.predict.assert_called_once_with([("query", vector_first[1]), ("query", vector_second[1])])
+        self.assertEqual(
+            [item["row"] for item in fused],
+            [bm25_first, vector_second, bm25_second, vector_first],
+        )
 
 
 if __name__ == "__main__":

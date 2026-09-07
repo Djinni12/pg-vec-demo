@@ -68,6 +68,7 @@ Goods fractional rates are converted to percentages; service percentage values r
 ```bash
 python search_pgvec.py "roasted coffee beans"
 python search_pgvec.py "roasted coffee beans" --rrf
+python search_pgvec.py "roasted coffee beans" --rrf --rerank-vector-before-rrf
 python search_pgvec.py "cofee"
 python search_pgvec.py --exact-code 0901
 ```
@@ -76,7 +77,7 @@ Text queries run two independent paths:
 
 - Semantic search: retrieve up to 10 description embeddings by cosine distance, rerank them with the existing cross-encoder, and print up to five results.
 - Keyword search: retrieve up to five positive BM25 matches over description, classification, and condition/cess. Only if there are no matches, use trigram fuzzy matching over descriptions. Partial BM25 results are not topped up.
-- RRF hybrid search: with `--rrf`, retrieve Top-N BM25 and Top-N vector candidates independently, merge by `(source_file, source_row)`, sum `1 / (60 + rank)` contributions, and print the fused Top-K. RRF uses only rank positions, not BM25 scores or vector distances.
+- RRF hybrid search: with `--rrf`, retrieve Top-N BM25 and Top-N vector candidates independently, merge by `(source_file, source_row)`, sum `1 / (60 + rank)` contributions, and print the fused Top-K. RRF uses only rank positions, not BM25 scores or vector distances. Add `--rerank-vector-before-rrf` to reorder only the vector candidate list with the existing CrossEncoder before rank fusion.
 
 Exact lookup skips the models and returns up to 20 rows containing the explicit code. It does not infer ranges or code hierarchies. Results display classification, description, source filename/row, and GST rates.
 
