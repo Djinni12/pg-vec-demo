@@ -3,10 +3,11 @@
 import argparse
 
 import psycopg
-from pgvector.psycopg import register_vector
 
 from ingest_gst import DATABASE_URL, MODEL_NAME
 from keyword_search import exact_lookup, keyword_search
+from rrf import hybrid_rrf_search
+from vector_search import vector_search
 
 
 def print_result(row, score_label=None):
@@ -26,6 +27,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("query", nargs="?", default="roasted coffee beans")
     parser.add_argument("--exact-code", help="Look up an explicit HSN/SAC code without loading models")
+    parser.add_argument("--rrf", action="store_true", help="Fuse BM25 and vector results with RRF")
+    parser.add_argument("--retrieve-limit", type=int, default=20, help="Candidates per retriever for RRF")
+    parser.add_argument("--top-k", type=int, default=5, help="Final RRF result count")
+    parser.add_argument("--rrf-k", type=int, default=60, help="RRF rank constant")
     parser.add_argument("--database-url", default=DATABASE_URL)
     args = parser.parse_args()
 
@@ -38,24 +43,26 @@ def main():
                 print("No explicit code matches found.")
             return
 
-        from sentence_transformers import SentenceTransformer, CrossEncoder
+        from sentence_transformers import SentenceTransformer
 
-        register_vector(conn)
         model = SentenceTransformer(MODEL_NAME)
-        reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-        query_embedding = model.encode(args.query)
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT code, description, embedding <=> %s AS distance,
-                       cgst_rate_pct, sgst_utgst_rate_pct, igst_rate_pct, metadata
-                FROM gst_documents
-                ORDER BY embedding <=> %s
-                LIMIT 10
-                """,
-                (query_embedding, query_embedding),
+        if args.rrf:
+            results = hybrid_rrf_search(
+                conn, args.query, args.retrieve_limit, args.top_k, args.rrf_k, vector_model=model
             )
-            results = cur.fetchall()
+            print("\nRRF HYBRID RESULTS\n")
+            for index, item in enumerate(results, 1):
+                print(f"{index}.", end=" ")
+                print_result(item["row"])
+                print(f"  rrf_score={item['rrf_score']:.6f}")
+            if not results:
+                print("No fused matches found.")
+            return
+
+        from sentence_transformers import CrossEncoder
+
+        reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+        results = vector_search(conn, args.query, 10, model=model)
 
         print("\nSEMANTIC RESULTS (RERANKED)\n")
         if results:
