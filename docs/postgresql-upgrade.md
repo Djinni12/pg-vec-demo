@@ -30,14 +30,14 @@ Do not mount the old PostgreSQL 16 data directory into PostgreSQL 17. The comman
    docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d hybrid_rag < schema.sql
    ```
 
-   Existing code, description, and embedding rows are preserved. The schema script adds the BM25 extension and index. Do not rerun the sample loader after restoring unless you intend to append duplicate samples.
+   Existing code, description, and embedding rows are preserved. The schema script creates the separate GST table and its indexes. The restored medical demo table is retained but is not used by the GST search. After restoring, download the CSVs as described in the README and run `python ingest_gst.py data/gst` to populate the GST corpus.
 
 4. Verify extensions, data, and keyword retrieval:
 
    ```bash
    docker compose exec db psql -U postgres -d hybrid_rag -c 'SELECT extname, extversion FROM pg_extension;'
-   docker compose exec db psql -U postgres -d hybrid_rag -c 'SELECT count(*) FROM documents;'
-   TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest test_keyword_search -v
+   docker compose exec db psql -U postgres -d hybrid_rag -c 'SELECT count(*) FROM gst_documents;'
+   TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest test_ingest_gst test_keyword_search -v
    python search_pgvec.py
    ```
 

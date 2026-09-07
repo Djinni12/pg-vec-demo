@@ -1,6 +1,8 @@
 # Hybrid RAG retrieval proof of concept
 
-This project explores searching medical-code descriptions using PostgreSQL and local machine-learning models. It embeds 22 sample descriptions, finds descriptions related to a natural-language query, reranks the candidates, and demonstrates a separate BM25 keyword search with a typo-tolerant trigram fallback.
+This project searches goods and services from the [Kaggle GST rates dataset](https://www.kaggle.com/datasets/prasad22/goods-and-service-tax-rates-dataset). It embeds descriptions, retrieves semantic matches with pgvector, reranks those candidates, and runs a separate BM25 keyword search with trigram fallback. An explicit HSN/SAC code lookup is also available.
+
+The inspected dataset contains 1,850 goods rows and 232 service rows; ingestion retains 1,729 searchable records. See [dataset inspection and field mapping](docs/gst-dataset.md) for all columns, rate handling, and exact-code limitations.
 
 The current implementation is the retrieval portion of a possible hybrid retrieval-augmented generation (RAG) system. It does **not** yet merge semantic and keyword results, construct a prompt, or use a language model to generate an answer. Results are printed in the terminal.
 
@@ -33,34 +35,50 @@ Wait until the readiness check reports that the database is accepting connection
 
 ### 3. Initialize the database
 
-Neither Python script creates extensions or tables. For a fresh database, run the following manual setup before running either script:
+Python does not create extensions or tables. Run this setup before ingestion or search, including on an existing project database:
 
 ```bash
 docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d hybrid_rag < schema.sql
 ```
 
-`schema.sql` enables all three extensions, creates the compatible 384-dimensional embedding table if absent, and creates the required BM25 index over `description`. It can also initialize an existing compatible table after migration; no re-embedding is needed. It does not validate or migrate an incompatible table schema, deduplicate rows, or add uniqueness constraints.
+`schema.sql` enables the extensions and creates `gst_documents`, a BM25 index over `search_text`, and an array index for exact codes. Existing medical demo data in `documents` is retained but no longer queried. No table drop or legacy embedding migration is needed.
 
-### 4. Insert sample descriptions
+### 4. Download, inspect, and ingest GST data
+
+Download and extract `Goods.csv` and `Services.csv` from the Kaggle dataset into `data/gst/`. The files downloaded during this implementation are already there locally and ignored by Git. On a new checkout, a public download can be attempted with:
 
 ```bash
-python test_pgvector.py
+curl -fL 'https://www.kaggle.com/api/v1/datasets/download/prasad22/goods-and-service-tax-rates-dataset' -o /tmp/gst-kaggle.zip
+python -m zipfile -e /tmp/gst-kaggle.zip data/gst
 ```
 
-Despite its name, this is a data-loading script, not an automated test. It inserts 22 code/description pairs and their embeddings, commits them, and prints `Inserted test documents.` Running it again inserts the same data again with the schema above.
+If Kaggle requires authentication, download through the dataset page instead.
+
+```bash
+python ingest_gst.py data/gst --dry-run
+python ingest_gst.py data/gst
+```
+
+The dry run validates both files and prints row counts, skipped rows, encoding, and hashes without downloading models or writing to PostgreSQL. The import embeds descriptions and upserts GST records in one transaction. Repeat imports update existing records and remove stale rows from the same source files. `python test_pgvector.py data/gst` is a compatibility alias for the loader.
+
+Goods fractional rates are converted to percentages; service percentage values remain unchanged. Conditional or missing rates retain their source text and have no numeric value. The [dataset guide](docs/gst-dataset.md) explains these decisions.
 
 ### 5. Run the search demonstration
 
 ```bash
-python search_pgvec.py
+python search_pgvec.py "roasted coffee beans"
+python search_pgvec.py "cofee"
+python search_pgvec.py --exact-code 0901
 ```
 
-The script demonstrates semantic retrieval and two keyword queries:
+Text queries run two independent paths:
 
-- Semantic search for `poorly controlled high blood pressure`: retrieve up to 10 candidates by cosine distance, rerank them with a cross-encoder, and print up to five results with both scores.
-- Keyword search for `hypertension` and `hypertensoin`: try Timescale `pg_textsearch` BM25 first. Only when it returns zero rows, run `pg_trgm` fuzzy search for the same query. Print up to five results and label the method (`bm25` or `trigram`) and score (`bm25_score` or `similarity`). Fallback results may also be empty; partial BM25 results are not topped up.
+- Semantic search: retrieve up to 10 description embeddings by cosine distance, rerank them with the existing cross-encoder, and print up to five results.
+- Keyword search: retrieve up to five positive BM25 matches over description, classification, and condition/cess. Only if there are no matches, use trigram fuzzy matching over descriptions. Partial BM25 results are not topped up.
 
-Queries and database connection settings are hardcoded in the scripts. There are no command-line arguments or interactive query prompts.
+Exact lookup skips the models and returns up to 20 rows containing the explicit code. It does not infer ranges or code hierarchies. Results display classification, description, source filename/row, and GST rates. There is no RRF, score fusion, or answer generation.
+
+Both ingestion and search accept `--database-url` to override the local connection string.
 
 ### 6. Stop the database
 
@@ -74,44 +92,49 @@ The named database volume is retained for future runs.
 
 | Path | Purpose |
 | --- | --- |
-| `test_pgvector.py` | Defines sample medical-code descriptions, embeds them, and inserts them into PostgreSQL. |
+| `ingest_gst.py` | Validates GST CSVs, normalizes fields, embeds descriptions, and upserts records. |
+| `test_pgvector.py` | Compatibility entry point for the GST loader. |
+| `test_ingest_gst.py` | CSV/rate/code parsing tests and a transactional PostgreSQL ingestion test. |
 | `search_pgvec.py` | Runs vector retrieval, cross-encoder reranking, and BM25 keyword search with trigram fallback. |
-| `keyword_search.py` | BM25 SQL, trigram SQL, and fallback routing without model-loading side effects. |
+| `keyword_search.py` | BM25 SQL, trigram fallback routing, and exact code lookup without model-loading side effects. |
 | `test_keyword_search.py` | Routing tests and optional PostgreSQL integration tests. |
 | `Dockerfile.db` | Adds Timescale `pg_textsearch` 1.4.0 to the PostgreSQL 17/pgvector image. |
-| `schema.sql` | Enables extensions and creates the documents table and BM25 index. |
+| `schema.sql` | Enables extensions and creates the GST table, BM25 index, and exact-code array index. |
 | `docker-compose.yml` | Configures the PostgreSQL/pgvector container and persistent volume. |
 | `requirements.txt` | Lists direct Python dependencies without version pins. |
 | `.env.example` | Empty placeholder; the scripts do not currently load environment variables. |
 | `docs/project-overview.md` | Detailed architecture and inventory of tools and techniques. |
-| `data/`, `src/` | Currently empty placeholders; executable code and sample data are in the root scripts. |
+| `data/gst/` | Local Kaggle CSVs, ignored by Git. |
+| `src/` | Unused placeholder; code remains in the root scripts. |
+| `docs/gst-dataset.md` | Inspected files, source columns, schema, cleaning, and field mapping. |
 | `hello.txt` | Incidental text file, unused by the retrieval scripts. |
 
 ## Configuration and troubleshooting
 
-Both scripts connect to `dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432`. These match the local Compose configuration and are development credentials. Changing Compose settings alone does not update the scripts. Although `python-dotenv` is listed as a dependency, it is not used.
+By default, ingestion and search connect to `dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432`. These match the local Compose configuration and are development credentials. Changing Compose settings alone does not update the default Python connection string; pass `--database-url`. Although `python-dotenv` is listed as a dependency, it is not used.
 
 | Symptom | What to check |
 | --- | --- |
 | Connection refused | Start the database, confirm readiness, and check whether another service occupies port `5432`. |
-| Vector registration fails or `documents` does not exist | Run the extension and table initialization above in the `hybrid_rag` database. |
+| Vector registration fails or `gst_documents` does not exist | Run the extension and table initialization above in the `hybrid_rag` database. |
 | `similarity` or the trigram operator is unavailable | Enable `pg_trgm` in the database used by the scripts. |
 | BM25 operator/index is unavailable | Build the new database image, confirm `pg_textsearch` is preloaded, and run `schema.sql`. |
 | Model download fails | Check network access or availability of the model files in the local cache. |
-| Repeated results | The loader appends rows each time; it has no deduplication or upsert behavior. |
+| Same code appears more than once | Several GST source entries can share a classification; inspect description, rates, and source metadata. Reimports do not duplicate source rows. |
+| CSV decoding or columns fail | Use the original Goods.csv and Services.csv; the loader accepts UTF-8 and Windows-1252 and validates headers. |
 | Fuzzy output is empty | Matching uses a threshold against the entire description; a typo query is not guaranteed to pass it. |
 
-Run the keyword routing tests with:
+Run the parsing and keyword routing tests with:
 
 ```bash
-venv/bin/python -m unittest test_keyword_search -v
+venv/bin/python -m unittest test_ingest_gst test_keyword_search -v
 ```
 
-To also run PostgreSQL integration tests against the initialized database:
+To also run PostgreSQL integration tests against the initialized PostgreSQL 17 database:
 
 ```bash
-TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest test_keyword_search -v
+TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest test_ingest_gst test_keyword_search -v
 ```
 
-Integration tests use a temporary table and roll back without changing stored documents. They cover BM25 matching and score ordering, stemming, stopwords, limits, typo fallback, and empty results. There is no retrieval-quality evaluation dataset or assertion of model rankings.
+Integration tests use a temporary table and roll back without changing stored documents. They cover ingestion upserts and stale-row removal, exact codes, BM25 matching and score ordering, stemming, stopwords, limits, typo fallback, and empty results. There is no retrieval-quality evaluation dataset or assertion of model rankings.
 # pg-vec-demo
