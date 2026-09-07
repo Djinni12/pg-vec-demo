@@ -2,11 +2,11 @@
 
 ## Purpose and implemented scope
 
-The project demonstrates retrieval over a small set of medical-code descriptions. It explores two ways to find relevant text: semantic similarity, which can connect differently worded phrases, and character-based fuzzy similarity, which can tolerate some spelling differences. A second model reranks the semantic candidates to improve their ordering for the query.
+The project demonstrates retrieval over a small set of medical-code descriptions. It combines a semantic retrieval demonstration with a separate keyword search. Keyword search uses Timescale `pg_textsearch` BM25 matching first and character-based fuzzy similarity only when no BM25 rows match. A second model reranks the semantic candidates to improve their ordering for the query.
 
 The source contains 22 manually embedded code/description pairs covering hypertension, hypotension, diabetes, cardiovascular and respiratory conditions, kidney conditions, and symptoms. There is no external terminology import, document ingestion pipeline, or validation of the descriptions against a medical coding catalogue. The code is a search demonstration; it does not implement clinical decision-making or validate coding correctness.
 
-The repository name describes a hybrid RAG direction. Currently, semantic retrieval and fuzzy retrieval run independently with different demonstration queries. There is no result fusion and no answer-generation stage.
+The repository name describes a hybrid RAG direction. Currently, semantic retrieval and keyword retrieval run independently with different demonstration queries. There is no result fusion and no answer-generation stage.
 
 ## Data flow
 
@@ -19,9 +19,13 @@ flowchart TD
     C --> F
     F --> G[CrossEncoder scores query-description pairs]
     G --> H[Sort scores descending and print up to 5 results]
-    I[Fuzzy query: hypertensoin] --> J[pg_trgm threshold filter and similarity ordering]
+    I[Keyword query] --> J[pg_textsearch BM25 ranking]
     C --> J
-    J --> K[Print up to 5 fuzzy results separately]
+    J --> L{Any matches?}
+    L -->|Yes| K[Print BM25 results]
+    L -->|No| M[pg_trgm fallback for the same query]
+    C --> M
+    M --> N[Print fuzzy results or no matches]
 ```
 
 ## Tools and technologies
@@ -30,16 +34,17 @@ This inventory covers direct dependencies and the infrastructure and model choic
 
 | Tool or component | How this project uses it |
 | --- | --- |
-| Python | Implements sample loading, embedding inference, SQL execution, reranking, and console output in two standalone scripts. |
+| Python | Implements sample loading, embedding inference, SQL execution, reranking, and console output in two standalone scripts and a keyword-search module. |
 | `psycopg[binary]` | PostgreSQL driver; opens connections, executes parameterized SQL, fetches rows, and commits inserted data. The requirement requests its binary distribution option. |
 | `pgvector` Python package | Supplies `pgvector.psycopg.register_vector(conn)` so vector values can be adapted through Psycopg. This package is distinct from the database extension. |
-| PostgreSQL 16 | Stores codes, descriptions, and embeddings and executes both retrieval queries. |
+| PostgreSQL 17 | Stores codes, descriptions, and embeddings and executes semantic, BM25, and fallback queries. |
 | pgvector PostgreSQL extension | Provides the vector column type and the `<=>` cosine-distance operator used for semantic retrieval. |
-| `pg_trgm` PostgreSQL extension | Provides `similarity()` and the `%` threshold operator used for fuzzy matching. It is required by the search SQL but is not enabled by either script. |
+| Timescale `pg_textsearch` 1.4.0 | Supplies the primary BM25 keyword index and `<@>` scoring operator; requires preloading at server startup. |
+| `pg_trgm` PostgreSQL extension | Provides `similarity()` and the `%` threshold operator used only for fallback fuzzy matching. It is required by the search SQL but is not enabled by either script. |
 | `sentence-transformers` | Provides the `SentenceTransformer` and `CrossEncoder` model interfaces. |
 | `all-MiniLM-L6-v2` | Encodes each description and the semantic query into 384-dimensional dense vectors. |
 | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Scores each retrieved query/description pair before the semantic results are reordered. |
-| Docker and Docker Compose | Run the database as the `hybrid-rag-db` container using `pgvector/pgvector:pg16`, with host port `5432` and a persistent `pgdata` volume. |
+| Docker and Docker Compose | Run the database as the `hybrid-rag-db` container using a custom image based on `pgvector/pgvector:pg17`, with host port `5432` and a persistent `pgdata17` volume. `Dockerfile.db` builds the pinned `pg_textsearch` release using Make, a C compiler, and PostgreSQL development headers; curl downloads the release archive. |
 | `python-dotenv` | Declared in `requirements.txt`, but not imported or used. `.env.example` is empty. |
 | `pip` and Python `venv` | Used in the documented local installation workflow to install dependencies into an isolated environment. |
 
@@ -69,27 +74,31 @@ This is a two-stage retrieval architecture: embeddings select a small candidate 
 
 Each printed semantic result includes its code, description, original vector distance, and reranking score. The final order uses only the reranking score. These model scores are not calibrated probabilities or combined with the vector distance.
 
-### 4. Trigram fuzzy matching
+### 4. BM25 keyword search with trigram fallback
 
-`fuzzy_search(conn, query, limit=5)` scores each description with `similarity(description, query)`, filters it with PostgreSQL's `%` operator, sorts by score descending, and limits the results. Trigrams compare character groups, making this a lexical matching technique that can tolerate some spelling variation.
+`keyword_search.py` provides `keyword_search(conn, query, limit=5)`, returning `(rows, method)`. Each row contains a code, description, and method-specific score.
 
-The SQL string contains `description %% %s`: Psycopg uses `%s` for parameter binding, so the literal PostgreSQL `%` operator is escaped as `%%` in that string.
+`schema.sql` creates `documents_description_bm25_idx` using Timescale `pg_textsearch`, with English text processing and BM25 parameters `k1=1.2` and `b=0.75`. BM25 ranks keyword relevance using term frequency, corpus-wide term rarity, and document length. English processing handles stemming and stopwords. Documents can match any query term; there is no phrase or Boolean query interface in this application.
 
-The query is the deliberately misspelled `hypertensoin`. Matching applies to the whole description and uses the database session's configured trigram similarity threshold. The script does not set that threshold or create a trigram index. The limit is a maximum, not a promise that five rows match.
+`bm25_search` uses `description <@> to_bm25query(query, 'documents_description_bm25_idx')`. The explicit index supplies scoring context even for small-table sequential plans. The operator returns negative BM25 scores, so SQL orders ascending and filters to scores below zero. This prevents zero-relevance records from suppressing fallback. Returned scores are negated into positive `bm25_score` values, with higher values representing better matches. Equal-score ordering is unspecified. See the [pinned pg_textsearch documentation](https://github.com/timescale/pg_textsearch/blob/v1.4.0/README.md).
 
-The fuzzy function is called after the semantic demonstration with a different query. Its results do not participate in semantic candidate selection or reranking.
+Only if BM25 returns zero relevant rows does the wrapper call `fuzzy_search` with the same query and limit. That function uses `similarity(description, query)` and the `%` threshold operator, ranking descending. The SQL escapes the literal operator as `%%` for Psycopg. Matching uses the entire description and the session's trigram threshold; no trigram index or threshold change is configured by the application.
+
+Partial BM25 results are returned without fuzzy top-up. Blank input returns no rows without accessing the database; nonpositive limits raise `ValueError`. Stopword-only input attempts fallback after finding no BM25 matches. Database errors propagate rather than triggering fallback. BM25 scores and trigram similarities are not combined.
+
+The script demonstrates `hypertension` and the misspelling `hypertensoin`, printing the method that supplied the results. Keyword results remain separate from vector retrieval and cross-encoder reranking.
 
 ### 5. Parameterized SQL and transactions
 
-Both scripts pass values separately from SQL using Psycopg placeholders. This covers inserted data, vector queries, fuzzy query text, and the fuzzy result limit; values are not interpolated into SQL strings.
+Both scripts pass values separately from SQL using Psycopg placeholders. This covers inserted data, vector queries, keyword query text, and keyword result limits; values are not interpolated into SQL strings.
 
 The loader inserts all samples on one connection and commits after the loop. It does not use an upsert or check for existing codes. Both scripts use cursor context managers and close their connections on the successful execution path. There is no explicit error recovery or connection context manager covering failures.
 
 ### 6. Containerized persistence
 
-Docker Compose supplies a reproducible database service configuration and maps `pgdata` to `/var/lib/postgresql/data`. The named volume preserves the initialized database and sample rows across ordinary container restarts and `docker compose down`.
+Docker Compose supplies a reproducible database service configuration and maps `pgdata17` to `/var/lib/postgresql/data`. The new PostgreSQL 17 volume preserves the initialized database and sample rows across ordinary container restarts and `docker compose down`.
 
-Compose declares database credentials and the database name, but has no schema initialization mount or health check. Database readiness and enabling extensions are manual steps in the README. Python runs on the host and connects through the mapped port; there is no application container.
+Compose declares database credentials and the database name, but has no schema initialization mount or health check. The server command preloads `pg_textsearch`; database readiness and running `schema.sql` are manual steps in the README. The PostgreSQL 16 to 17 transition uses a new volume and a documented logical backup/restore procedure. Python runs on the host and connects through the mapped port; there is no application container.
 
 ## Data model
 
@@ -101,17 +110,17 @@ Both scripts assume a table named `documents` with these fields:
 | `description` | `TEXT` | Human-readable text to embed, display, and fuzzy-match. |
 | `embedding` | `VECTOR(384)` | Dense representation produced by the embedding model. |
 
-The original scripts contain no DDL or migrations. The README supplies a minimal compatible initialization example, rather than claiming a schema or constraints already exist in a running database. Changing the embedding model requires checking the vector dimension and regenerating stored embeddings in a consistent vector space.
+The Python scripts contain no DDL; `schema.sql` creates a compatible table and the required BM25 index. The README explains initialization and links to the database upgrade procedure. Changing the embedding model requires checking the vector dimension and regenerating stored embeddings in a consistent vector space.
 
 ## Current limitations and unfinished components
 
 - **Hybrid result fusion:** no weighted score combination, reciprocal rank fusion, shared candidate pool, or deduplication across retrieval methods.
 - **RAG answer generation:** no generative model, prompt construction, retrieved context assembly, citations, or conversation handling.
 - **Data ingestion:** sample records are hardcoded; `data/` and `src/` are empty. No file parser, terminology sync, chunking, or incremental update path exists.
-- **Repeatable loading:** repeated loader runs append duplicates unless the database has independently added constraints; no schema migration or upsert is provided.
-- **Evaluation:** `test_pgvector.py` seeds data and has no assertions. There are no relevance labels, recall/precision measurements, reranker comparisons, latency benchmarks, or automated tests.
-- **Search configuration:** query strings, candidate count, output count, model names, and credentials are embedded in source. The fuzzy function alone exposes a `limit` argument.
-- **Performance:** no vector or trigram indexes are defined, embeddings are inserted one record at a time, and `search_pgvec.py` loads the embedding model twice. The second instance, `embedding_model`, is unused.
+- **Repeatable loading:** repeated loader runs append duplicates unless the database has independently added constraints; the database upgrade is documented, but no upsert is provided.
+- **Evaluation:** `test_pgvector.py` seeds data and has no assertions. Keyword routing and optional database integration tests live in `test_keyword_search.py`. There are no relevance labels, recall/precision measurements, reranker comparisons, or latency benchmarks.
+- **Search configuration:** query strings, candidate count, output count, model names, and credentials are embedded in source. The keyword, BM25, and fuzzy functions expose a `limit` argument.
+- **Performance:** `schema.sql` defines a BM25 index, but no vector or trigram indexes; embeddings are inserted one record at a time, and `search_pgvec.py` loads the embedding model twice. The second instance, `embedding_model`, is unused.
 - **Robustness:** no explicit handling for an empty semantic candidate set before reranking, failed model loads, failed database operations, or cleanup after exceptions.
 - **Packaging and operations:** no API, UI, CLI parser, application container, CI configuration, lockfile, structured logging, or production deployment configuration is present. `CrossEncoder` is imported but unused in the loader.
 
@@ -120,7 +129,12 @@ Possible extensions are to combine both retrieval methods for the same query, de
 ## Source map
 
 - [Sample loader](../test_pgvector.py): sample dataset, description embeddings, inserts, and commit.
-- [Search demonstration](../search_pgvec.py): query embedding, cosine-distance retrieval, reranking, and fuzzy SQL.
+- [Search demonstration](../search_pgvec.py): query embedding, cosine-distance retrieval, reranking, and keyword demonstrations.
+- [Keyword search](../keyword_search.py): primary BM25 SQL and trigram fallback routing.
+- [Keyword tests](../test_keyword_search.py): routing and PostgreSQL integration checks.
+- [Database schema](../schema.sql): extension initialization and the BM25 index.
+- [Database image](../Dockerfile.db): PostgreSQL 17, pgvector, and Timescale `pg_textsearch`.
+- [Database upgrade](postgresql-upgrade.md): preserve PostgreSQL 16 data when moving to PostgreSQL 17.
 - [Database service](../docker-compose.yml): container image, port, credentials, and persistent storage.
 - [Python dependencies](../requirements.txt): direct package requirements.
 - [Setup and execution](../README.md): local commands, compatible schema initialization, and troubleshooting.
