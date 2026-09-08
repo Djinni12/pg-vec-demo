@@ -1,0 +1,116 @@
+[
+  {
+    "chunk_id": "cgst-form-GST CMP-01-0001",
+    "text": "Composition Levy\nForm GST CMP-01\nApplication for Composition Levy\nPart I - Business Details\n\nGST CMP-01\nApplication for Composition Levy\nPart I - Business Details\n1. Legal Name of the Registered Person:\n2. GSTIN/UIN:\n3. Principal Place of Business:\nPart II - Declaration\n4. I hereby declare that the information given above is true.\nInstructions:\n- Fill all fields in block letters\n- Attach required documents\nVerification:\nI solemnly affirm that the details provided are correct.\nAttachments Required:\n- Proof of business registration\n- Identity proof of authorized signatory",
+    "token_count": 117,
+    "metadata": {
+      "document_type": "form",
+      "form_code": "GST CMP-01",
+      "form_family": "Composition Levy",
+      "form_number": "01",
+      "language": "hi",
+      "rule_references": [],
+      "section_numbers": [],
+      "part_number": null,
+      "part_title": null,
+      "block_type": null,
+      "status": null,
+      "chunk_strategy": "form",
+      "source_pages": [
+        1,
+        2
+      ],
+      "start_page": 1,
+      "end_page": 2
+    }
+  },
+  {
+    "chunk_id": "cgst-form-GST REG-01-0002",
+    "text": "Registration\nForm GST REG-01\nApplication for New Registration\nPart A - Taxpayer Information\n\nGST REG-01\nApplication for New Registration\nPart A - Taxpayer Information\n1. Mobile Number:\n2. Email Address:\n3. State/UT:\nPart B - Business Details\n4. Legal Name of Business:\n5. Trade Name:\n6. Constitution of Business:\nRule 8 of CGST Rules, 2017\nInstructions:\n- Submit within 30 days of becoming liable\n- Upload supporting documents",
+    "token_count": 93,
+    "metadata": {
+      "document_type": "form",
+      "form_code": "GST REG-01",
+      "form_family": "Registration",
+      "form_number": "01",
+      "language": "hi",
+      "rule_references": [
+        {
+          "rule_number": "8",
+          "year": "2017"
+        }
+      ],
+      "section_numbers": [],
+      "part_number": null,
+      "part_title": null,
+      "block_type": null,
+      "status": null,
+      "chunk_strategy": "form",
+      "source_pages": [
+        2,
+        3
+      ],
+      "start_page": 2,
+      "end_page": 3
+    }
+  },
+  {
+    "chunk_id": "cgst-form-GSTR-7-0003",
+    "text": "Return\nForm GSTR-7\nReturn for TDS Deductors\nPart 1 - GSTIN\n\nGSTR-7\nReturn for TDS Deductors\nPart 1 - GSTIN\n1. GSTIN of TDS Deductor:\n2. Legal Name:\nPart 2 - TDS Details\n3. TDS Certificate Details:\n4. Amount Paid:\nVerification:\nThis return is filed electronically under Rule 66.",
+    "token_count": 79,
+    "metadata": {
+      "document_type": "form",
+      "form_code": "GSTR-7",
+      "form_family": "Return",
+      "form_number": "7",
+      "language": "hi",
+      "rule_references": [
+        {
+          "rule_number": "66",
+          "year": "2017"
+        }
+      ],
+      "section_numbers": [],
+      "part_number": null,
+      "part_title": null,
+      "block_type": null,
+      "status": null,
+      "chunk_strategy": "form",
+      "source_pages": [
+        3,
+        4
+      ],
+      "start_page": 3,
+      "end_page": 4
+    }
+  },
+  {
+    "chunk_id": "cgst-form-GST DRC-01-0004",
+    "text": "Demand and Recovery\nForm GST DRC-01\nShow Cause Notice for Demand\nPart I - Details of Proceeding\n\nGST DRC-01\nShow Cause Notice for Demand\nPart I - Details of Proceeding\n1. Reference Number:\n2. Period:\n3. Section violated:\nPart II - Grounds\n4. Reasons for demand:\n5. Amount demanded:\nRule 142 of CGST Rules",
+    "token_count": 74,
+    "metadata": {
+      "document_type": "form",
+      "form_code": "GST DRC-01",
+      "form_family": "Demand and Recovery",
+      "form_number": "01",
+      "language": "hi",
+      "rule_references": [
+        {
+          "rule_number": "142",
+          "year": "2017"
+        }
+      ],
+      "section_numbers": [],
+      "part_number": null,
+      "part_title": null,
+      "block_type": null,
+      "status": null,
+      "chunk_strategy": "form",
+      "source_pages": [
+        4
+      ],
+      "start_page": 4,
+      "end_page": 4
+    }
+  }
+]
