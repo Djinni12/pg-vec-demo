@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from dotenv import load_dotenv
 
-from ingest_act_chunks import EXPECTED_EMBEDDING_DIMENSION, load_embedding_records
-from ingest_gst import DATABASE_URL
+from src.ingestors.ingest_act_chunks import EXPECTED_EMBEDDING_DIMENSION, load_embedding_records
+from src.ingestors.ingest_gst import DATABASE_URL
 
 
 load_dotenv()
