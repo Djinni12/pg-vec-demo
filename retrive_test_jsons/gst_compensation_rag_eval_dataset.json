@@ -1,0 +1,182 @@
+[
+  {
+    "query": "What is 'cess' under the GST (Compensation to States) Act?",
+    "answer": "Cess means the goods and services tax compensation cess levied under section 8 of this Act.",
+    "section_number": "2(1)(c)",
+    "section_title": "Definitions",
+    "page_number": 2,
+    "relevant_text": "\" cess \" means the goods and services tax compensation cess levied under section 8",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "What projected annual growth rate is used to calculate how much revenue a State should have earned during the GST transition period?",
+    "answer": "The projected nominal growth rate of revenue subsumed for a State during the transition period is fixed at fourteen per cent per annum.",
+    "section_number": "3",
+    "section_title": "Projected growth rate",
+    "page_number": 2,
+    "relevant_text": "The projected nominal growth rate of revenue subsumed for a State during the transition period shall be fourteen per cent. per annum.",
+    "query_type": "exact"
+  },
+  {
+    "query": "Which financial year is used as the base year for calculating GST compensation to States?",
+    "answer": "The financial year ending 31st March, 2016 is taken as the base year for calculating the compensation amount payable during the transition period.",
+    "section_number": "4",
+    "section_title": "Base year",
+    "page_number": 2,
+    "relevant_text": "For the purpose of calculating the compensation amount payable in any financial year during the transition period, the financial year ending 31st March, 2016, shall be taken as the base year.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "Would revenue a State earned from taxing petrol or alcohol sales in the base year count toward its 'base year revenue' for compensation purposes?",
+    "answer": "No. The proviso to section 5(1) specifically excludes revenue collected during the base year, net of refunds, from taxes on petroleum crude, high speed diesel, motor spirit (petrol), natural gas, aviation turbine fuel and alcoholic liquor for human consumption, whether levied under State sales tax law, the Central Sales Tax Act, or as a State cess.",
+    "section_number": "5",
+    "section_title": "Base year revenue",
+    "page_number": 2,
+    "relevant_text": "the revenue collected during the base year in a State, net of refunds, under the following taxes shall not be included in the calculation of the base year revenue for that State, namely:- (a) any taxes levied under any Act enacted under the erstwhile entry 54 of List-II... on the sale or purchase of petroleum crude, high speed diesel, motor spirit... natural gas, aviation turbine fuel and alcoholic liquor for human consumption",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Which pre-GST State taxes are counted when computing a State's base year revenue for compensation purposes?",
+    "answer": "Base year revenue includes State-collected revenue (net of refunds) from taxes such as VAT/sales/purchase tax and works contract tax, central sales tax, entry tax/octroi/local body tax, luxury and entertainment taxes, advertisement tax, and excise duty on medicinal and toilet preparations collected and retained by the State.",
+    "section_number": "5",
+    "section_title": "Base year revenue",
+    "page_number": 2,
+    "relevant_text": "the base year revenue for a State shall be the sum of the revenue collected by the State and the local bodies during the base year... with respect to the following taxes... (a) the value added tax, sales tax, purchase tax, tax collected on works contract... (b) the central sales tax... (c) the entry tax, octroi, local body tax... (d) the taxes on luxuries, including taxes on entertainments, amusements, betting and gambling... (e) the taxes on advertisement... (f) the duties of excise on medicinal and toilet preparations",
+    "query_type": "factual"
+  },
+  {
+    "query": "How is a State's 'projected revenue' for a given year during the transition period actually calculated?",
+    "answer": "It is calculated by applying the projected growth rate (14% per annum) over the State's base year revenue, compounding for the number of years since the base year, as illustrated by the formula Projected Revenue = Base Year Revenue × (1 + 14/100)^n.",
+    "section_number": "6",
+    "section_title": "Projected revenue for any year",
+    "page_number": 3,
+    "relevant_text": "The projected revenue for any year in a State shall be calculated by applying the projected growth rate over the base year revenue of that State. Illustration.-If the base year revenue for 2015-16 for a concerned State, calculated as per section 5 is one hundred rupees, then the projected revenue for financial year 2018-19 shall be as follows- Projected Revenue for 2018-19=100 (1+14/100) 3",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "How often is GST compensation released to States, and when is the final amount settled?",
+    "answer": "Compensation is provisionally calculated and released at the end of every two-month period, and is finally calculated for each financial year after receipt of the final revenue figures as audited by the Comptroller and Auditor-General of India.",
+    "section_number": "7",
+    "section_title": "Calculation and release of compensation",
+    "page_number": 3,
+    "relevant_text": "The compensation payable to a State shall be provisionally calculated and released at the end of every two months period, and shall be finally calculated for every financial year after the receipt of final revenue figures, as audited by the Comptroller and Auditor-General of India",
+    "query_type": "procedural"
+  },
+  {
+    "query": "If a State was given more compensation than it was actually due in a financial year, what happens to the excess?",
+    "answer": "The excess amount released is adjusted against the compensation payable to that State in the subsequent financial year.",
+    "section_number": "7",
+    "section_title": "Calculation and release of compensation",
+    "page_number": 3,
+    "relevant_text": "Provided that in case any excess amount has been released as compensation to a State in any financial year during the transition period, as per the audited figures of revenue collected, the excess amount so released shall be adjusted against the compensation amount payable to such State in the subsequent financial year.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Is GST compensation cess charged on supplies made by a business that has opted for the composition scheme?",
+    "answer": "No. The proviso to section 8(1) states that no cess is leviable on supplies made by a taxable person who has opted for composition levy under section 10 of the Central Goods and Services Tax Act.",
+    "section_number": "8",
+    "section_title": "Levy and collection of cess",
+    "page_number": 5,
+    "relevant_text": "Provided that no such cess shall be leviable on supplies made by a taxable person who has decided to opt for composition levy under section 10 of the Central Goods and Services Tax Act.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "How is the value determined for calculating GST compensation cess where the cess is charged based on the value of the supply?",
+    "answer": "Where cess is chargeable with reference to value, the value for both intra-State and inter-State supplies is determined under section 15 of the Central Goods and Services Tax Act — the same valuation rule used for GST itself.",
+    "section_number": "8",
+    "section_title": "Levy and collection of cess",
+    "page_number": 5,
+    "relevant_text": "Provided that where the cess is chargeable on any supply of goods or services or both with reference to their value, for each such supply the value shall be determined under section 15 of the Central Goods and Services Tax Act for all intra-State and inter-State supplies of goods or services or both",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "What must a taxable person making a taxable supply do regarding cess payments and returns?",
+    "answer": "Under section 9(1), they must pay the cess payable in the prescribed manner, furnish returns in the prescribed forms along with their Central Goods and Services Tax Act returns, and apply for refund of cess paid in the prescribed form.",
+    "section_number": "9",
+    "section_title": "Returns, payments and refunds",
+    "page_number": 5,
+    "relevant_text": "Every taxable person, making a taxable supply of goods or services or both, shall- (a) pay the amount of cess as payable under this Act in such manner; (b) furnish such returns in such forms, along with the returns to be filed under the Central Goods and Services Tax Act; and (c) apply for refunds of such cess paid in such form, as may be prescribed.",
+    "query_type": "procedural"
+  },
+  {
+    "query": "Where does the money collected from GST compensation cess actually go, and can it lapse at year end?",
+    "answer": "The proceeds of the cess are credited to a non-lapsable Fund called the Goods and Services Tax Compensation Fund, which forms part of the public account of India, so it does not lapse.",
+    "section_number": "10",
+    "section_title": "Crediting proceeds of cess to Fund",
+    "page_number": 6,
+    "relevant_text": "The proceeds of the cess leviable under section 8 and such other amounts as may be recommended by the Council, shall be credited to a non-lapsable Fund known as the Goods and Services Tax Compensation Fund, which shall form part of the public account of India",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "If money is left over in the GST Compensation Fund at the end of the transition period, how is it split between the Centre and the States?",
+    "answer": "Fifty per cent of the amount remaining unutilised in the Fund at the end of the transition period is transferred to the Consolidated Fund of India as the Centre's share, and the remaining fifty per cent is distributed among the States in proportion to their total revenues from State tax or Union territory GST in the last year of the transition period.",
+    "section_number": "10",
+    "section_title": "Crediting proceeds of cess to Fund",
+    "page_number": 6,
+    "relevant_text": "Fifty per cent. of the amount remaining unutilised in the Fund at the end of the transition period shall be transferred to the Consolidated Fund of India as the share of Centre, and the balance fifty per cent. shall be distributed amongst the States in the ratio of their total revenues from the State tax or the Union territory goods and services tax",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Can input tax credit of GST compensation cess be used to pay off a business's regular CGST or SGST liability?",
+    "answer": "No. Under the proviso to section 11(2), input tax credit in respect of cess on the supply of goods and services can only be utilised toward payment of that same cess, and not toward other taxes.",
+    "section_number": "11",
+    "section_title": "Other provisions relating to cess",
+    "page_number": 6,
+    "relevant_text": "Provided that the input tax credit in respect of cess on supply of goods and services leviable under section 8, shall be utilised only towards payment of said cess on supply of goods and services leviable under the said section.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "By when must the Central Government have made an order to remove a difficulty in implementing this compensation Act?",
+    "answer": "Such an order cannot be made after the expiry of five years from the commencement of the Act (extended from the original three-year limit by the Finance Act, 2020, with effect from 27 March 2020).",
+    "section_number": "14",
+    "section_title": "Power to remove difficulties",
+    "page_number": 7,
+    "relevant_text": "Provided that no order shall be made under this section after the expiry of [five years] from the commencement of this Act.",
+    "query_type": "exact"
+  },
+  {
+    "query": "What is the maximum GST compensation cess rate that can be charged on pan masala?",
+    "answer": "The maximum cess rate on pan masala (tariff item 2106 90 20) is one hundred and thirty-five per cent ad valorem.",
+    "section_number": "8",
+    "section_title": "Schedule (rate schedule under section 8(2))",
+    "page_number": 8,
+    "relevant_text": "Pan Masala. 2106 90 20 One hundred and thirty-five per cent. ad valorem.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "How is the GST compensation cess on cigarettes and other tobacco products structured, and what's the ceiling?",
+    "answer": "For tobacco and manufactured tobacco substitutes (Chapter 24), the cess can be levied up to four thousand one hundred seventy rupees per thousand sticks, or two hundred ninety per cent ad valorem, or a combination of both, but not exceeding four thousand one hundred seventy rupees per thousand sticks plus two hundred ninety per cent ad valorem.",
+    "section_number": "8",
+    "section_title": "Schedule (rate schedule under section 8(2))",
+    "page_number": 8,
+    "relevant_text": "Tobacco and manufactured tobacco substitutes, including tobacco products. 24 Four thousand one hundred and seventy rupees per thousand sticks or two hundred and ninety per cent. ad valorem or a combination thereof, but not exceeding four thousand one hundred and seventy rupees per thousand sticks plus two hundred and ninety per cent. ad valorem.",
+    "query_type": "factual"
+  },
+  {
+    "query": "What is the maximum compensation cess rate applicable to coal under the Schedule?",
+    "answer": "The maximum cess rate on coal, briquettes, ovoids and similar solid fuels manufactured from coal or lignite (whether or not agglomerated, excluding jet and peat) is four hundred rupees per tonne.",
+    "section_number": "8",
+    "section_title": "Schedule (rate schedule under section 8(2))",
+    "page_number": 8,
+    "relevant_text": "Coal, briquettes, ovoids and similar solid fuels manufactured from coal, lignite, whether or not agglomerated, excluding jet, peat (including peat litter), whether or not agglomerated. 2701, 2702 or 2703 Four hundred rupees per tonne.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "A company sells a passenger car designed to carry up to ten people, including the driver. What is the maximum GST compensation cess rate that could apply, and under which Schedule entry?",
+    "answer": "Under Schedule entry 5, motor cars and other motor vehicles principally designed for the transport of persons other than those meant for ten or more persons (including the driver) attract a maximum cess rate of twenty-five per cent ad valorem; since this car seats up to ten including the driver, it falls outside that exclusion and would be assessed under this entry (or the related entry 4A for vehicles carrying up to thirteen persons) at up to twenty-five per cent.",
+    "section_number": "8",
+    "section_title": "Schedule (rate schedule under section 8(2))",
+    "page_number": 8,
+    "relevant_text": "Motor cars and other motor vehicles principally designed for the transport of persons (other than motor vehicles for the transport of ten or more persons, including the driver), including station wagons and racing cars. 8703 [Twenty-five per cent. ad valorem]",
+    "query_type": "scenario"
+  },
+  {
+    "query": "If a supply of goods doesn't fall under any of the specifically listed Schedule items (like pan masala, tobacco, coal, aerated waters or motor vehicles), what is the maximum compensation cess rate that can still apply?",
+    "answer": "Any other supplies not specifically listed in the Schedule are subject to a maximum GST compensation cess rate of fifteen per cent ad valorem, per the catch-all Schedule entry.",
+    "section_number": "8",
+    "section_title": "Schedule (rate schedule under section 8(2))",
+    "page_number": 8,
+    "relevant_text": "Any other supplies. Fifteen per cent. ad valorem.",
+    "query_type": "conceptual"
+  }
+]
