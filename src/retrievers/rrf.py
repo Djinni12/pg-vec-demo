@@ -47,6 +47,35 @@ def reciprocal_rank_fusion(result_lists, k=60, top_k=5):
     ]
 
 
+def reciprocal_rank_fusion_by_key(result_lists, key_fn, k=60, top_k=5):
+    """Fuse ranked result lists by a caller-provided stable key."""
+    if k < 0:
+        raise ValueError("k must be non-negative")
+    if top_k < 1:
+        raise ValueError("top_k must be positive")
+
+    fused = {}
+    for rows in result_lists:
+        seen = set()
+        for rank, row in enumerate(rows, 1):
+            key = key_fn(row)
+            if key in seen:
+                continue
+            seen.add(key)
+            if key not in fused:
+                fused[key] = {"row": row, "score": 0.0}
+            fused[key]["score"] += 1 / (k + rank)
+
+    ordered = sorted(fused.values(), key=lambda item: (-item["score"], key_fn(item["row"])))
+    return [
+        {
+            "row": item["row"],
+            "rrf_score": item["score"],
+        }
+        for item in ordered[:top_k]
+    ]
+
+
 def rerank_rows(query, rows, reranker):
     """Return rows ordered by cross-encoder relevance score descending."""
     if not rows:

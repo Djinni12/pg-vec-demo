@@ -84,6 +84,25 @@ Exact lookup skips the models and returns up to 20 rows containing the explicit 
 
 Both ingestion and search accept `--database-url` to override the local connection string.
 
+### 5a. Run the retrieval inspector web app
+
+The inspector is a local FastAPI + React UI for viewing retrieval results only. It does not call an LLM, create prompts, stream tokens, or store search history.
+
+```bash
+source venv/bin/activate
+python -m pip install -r requirements.txt
+docker compose up -d db
+uvicorn app:app --reload
+```
+
+Open `http://127.0.0.1:8000/` and search with a request body equivalent to:
+
+```json
+{ "query": "How can GST registration be cancelled?", "top_k": 10 }
+```
+
+The `POST /search` endpoint returns final reranked results plus Dense, BM25, and RRF intermediate lists. Timings are measured per request with `time.perf_counter()`. BGE-M3 and the existing cross-encoder reranker are loaded once during FastAPI startup; that model initialization time is reported separately as metadata.
+
 ### 6. Parse CGST Rules
 
 To inspect the Central GST Rules PDF and write rule/sub-rule JSON:

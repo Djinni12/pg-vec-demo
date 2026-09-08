@@ -98,3 +98,41 @@ ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS source_end_page INTEGER;
 
 CREATE INDEX IF NOT EXISTS form_chunks_embedding_hnsw_idx
     ON form_chunks USING hnsw (embedding vector_cosine_ops);
+
+-- Dedicated 2025 GST Goods & Rates table parsed from GST rates2025.pdf
+CREATE TABLE IF NOT EXISTS gst_rates_2025 (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(50) NOT NULL,
+    notification_number VARCHAR(100),
+    notification_date VARCHAR(50),
+    effective_date VARCHAR(50),
+    schedule VARCHAR(150),
+    serial_number VARCHAR(50),
+    hsn_code TEXT,
+    normalized_hsn_codes TEXT[],
+    description TEXT NOT NULL,
+    rate VARCHAR(100) NOT NULL,
+    cgst_rate_pct NUMERIC(6, 3),
+    sgst_utgst_rate_pct NUMERIC(6, 3),
+    igst_rate_pct NUMERIC(6, 3),
+    formatted_rate TEXT NOT NULL,
+    compensation_cess TEXT,
+    condition_number VARCHAR(50),
+    condition_text TEXT,
+    source_page INTEGER NOT NULL,
+    source_file VARCHAR(255) DEFAULT 'GST rates2025.pdf',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS gst_rates_2025_hsn_gin_idx
+    ON gst_rates_2025 USING GIN(normalized_hsn_codes);
+
+CREATE INDEX IF NOT EXISTS gst_rates_2025_desc_trgm_idx
+    ON gst_rates_2025 USING GIN(description gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS gst_rates_2025_category_idx
+    ON gst_rates_2025(category);
+
+CREATE INDEX IF NOT EXISTS gst_rates_2025_page_idx
+    ON gst_rates_2025(source_page);
+

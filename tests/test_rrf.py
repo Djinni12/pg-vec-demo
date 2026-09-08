@@ -3,7 +3,12 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from rrf import hybrid_rrf_search, reciprocal_rank_fusion, rerank_rows
+from src.retrievers.rrf import (
+    hybrid_rrf_search,
+    reciprocal_rank_fusion,
+    reciprocal_rank_fusion_by_key,
+    rerank_rows,
+)
 
 
 def row(source_file, source_row, code=None):
@@ -64,8 +69,8 @@ class ReciprocalRankFusionTests(unittest.TestCase):
         model = object()
         bm25_row = row("Goods.csv", 8, "4401")
         vector_row = row("Services.csv", 9, "9997")
-        with patch("rrf.bm25_search", return_value=[bm25_row]) as bm25, patch(
-            "rrf.vector_search", return_value=[vector_row]
+        with patch("src.retrievers.rrf.bm25_search", return_value=[bm25_row]) as bm25, patch(
+            "src.retrievers.rrf.vector_search", return_value=[vector_row]
         ) as vector:
             fused = hybrid_rrf_search(conn, "coffee", retrieve_limit=7, top_k=2, k=60, vector_model=model)
 
@@ -94,8 +99,8 @@ class ReciprocalRankFusionTests(unittest.TestCase):
         reranker = Mock()
         reranker.predict.return_value = [0.2, 0.8]
 
-        with patch("rrf.bm25_search", return_value=[bm25_first, bm25_second]), patch(
-            "rrf.vector_search", return_value=[vector_first, vector_second]
+        with patch("src.retrievers.rrf.bm25_search", return_value=[bm25_first, bm25_second]), patch(
+            "src.retrievers.rrf.vector_search", return_value=[vector_first, vector_second]
         ):
             fused = hybrid_rrf_search(
                 conn,
@@ -112,6 +117,21 @@ class ReciprocalRankFusionTests(unittest.TestCase):
             [item["row"] for item in fused],
             [bm25_first, vector_second, bm25_second, vector_first],
         )
+
+    def test_reciprocal_rank_fusion_by_key_uses_supplied_key(self):
+        first = {"chunk_id": "shared", "title": "first"}
+        second = {"chunk_id": "shared", "title": "second"}
+        other = {"chunk_id": "other", "title": "other"}
+
+        fused = reciprocal_rank_fusion_by_key(
+            [[first], [other, second]],
+            key_fn=lambda row: row["chunk_id"],
+            k=60,
+            top_k=5,
+        )
+
+        self.assertEqual([item["row"]["chunk_id"] for item in fused], ["shared", "other"])
+        self.assertAlmostEqual(fused[0]["rrf_score"], (1 / 61) + (1 / 62))
 
 
 if __name__ == "__main__":

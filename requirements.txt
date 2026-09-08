@@ -3,3 +3,7 @@ pgvector
 sentence-transformers
 python-dotenv
 PyMuPDF
+fastapi
+uvicorn
+openai
+

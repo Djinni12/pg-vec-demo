@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import Mock
 
-from legal_dense_retriever import rerank_legal_results
+from src.retrievers.legal_dense_retriever import rerank_legal_results
 
 
 class LegalDenseRetrieverTests(unittest.TestCase):

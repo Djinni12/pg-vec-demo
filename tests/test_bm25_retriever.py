@@ -204,13 +204,14 @@ class TestDatabaseIntegration:
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
         
         # Mock fetchall to return empty results for all queries
+        mock_cursor.fetchone.return_value = ('pg_search',)
         mock_cursor.fetchall.return_value = []
         
         retriever = BM25Retriever(conn_params)
         results, stats = retriever.retrieve("GST registration", top_k=10)
         
-        # Verify cursor was used (3 queries: acts, rules, forms)
-        assert mock_cursor.execute.call_count == 3
+        # Verify cursor was used (backend detection + 3 queries: acts, rules, forms)
+        assert mock_cursor.execute.call_count == 4
         
         # Verify stats are populated
         assert 'retrieval_time' in stats
@@ -259,6 +260,7 @@ class TestDatabaseIntegration:
         ]
         
         # Return different results for each query
+        mock_cursor.fetchone.return_value = ('pg_search',)
         mock_cursor.fetchall.side_effect = [act_rows, rule_rows, form_rows]
         
         retriever = BM25Retriever(conn_params)
@@ -267,9 +269,9 @@ class TestDatabaseIntegration:
         # Should have 4 results total (2 acts + 1 rule + 1 form)
         assert len(results) == 4
         
-        # Results should be sorted by bm25_score ascending (more negative = better for pg_textsearch)
+        # Results should be sorted by bm25_score descending (higher = better for pg_search)
         for i in range(len(results) - 1):
-            assert results[i]['bm25_score'] <= results[i+1]['bm25_score']
+            assert results[i]['bm25_score'] >= results[i+1]['bm25_score']
         
         # Ranks should be sequential starting from 1
         for i, result in enumerate(results):
@@ -298,6 +300,7 @@ class TestDatabaseIntegration:
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
         
         # Create many mock results
+        mock_cursor.fetchone.return_value = ('pg_search',)
         many_rows = [(f'id_{i}', 'Act', 'Chap', f'Sec {i}', f'Title {i}', 
                       f'Content {i}', 10.0 - i * 0.1) for i in range(20)]
         
@@ -330,6 +333,7 @@ class TestResultStructure:
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
         
         # Mock single result
+        mock_cursor.fetchone.return_value = ('pg_search',)
         mock_cursor.fetchall.side_effect = [
             [('act_1', 'CGST Act', 'Chapter 1', 'Section 1', 'Registration', 
               'Content about registration', 5.5)],
@@ -351,6 +355,7 @@ class TestResultStructure:
             'title',
             'bm25_score',
             'chunk_id',
+            'content',
             'snippet'
         ]
         
@@ -364,7 +369,64 @@ class TestResultStructure:
         assert isinstance(result['title'], str)
         assert isinstance(result['bm25_score'], float)
         assert isinstance(result['chunk_id'], str)
+        assert isinstance(result['content'], str)
         assert isinstance(result['snippet'], str)
+
+    @patch('psycopg.connect')
+    def test_queries_use_paradedb_row_score_for_each_table(self, mock_connect):
+        """Test that BM25 scores are computed from the matched row, not content only."""
+        conn_params = {
+            'host': 'localhost',
+            'port': 5432,
+            'dbname': 'test_db',
+            'user': 'test_user',
+            'password': 'test_pass'
+        }
+
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect.return_value.__enter__.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = ('pg_search',)
+        mock_cursor.fetchall.return_value = []
+
+        retriever = BM25Retriever(conn_params)
+        retriever.retrieve("registration", top_k=3)
+
+        executed_sql = "\n".join(call.args[0] for call in mock_cursor.execute.call_args_list)
+        assert executed_sql.count("paradedb.score(chunk_id) AS bm25_score") == 3
+        assert "(act_chunks @@@ to_bm25query('content', %s)) AS bm25_score" not in executed_sql
+        assert "(rule_chunks @@@ to_bm25query('content', %s)) AS bm25_score" not in executed_sql
+        assert "(form_chunks @@@ to_bm25query('content', %s)) AS bm25_score" not in executed_sql
+        assert executed_sql.count("ORDER BY bm25_score DESC") == 3
+
+    @patch('psycopg.connect')
+    def test_queries_support_pg_textsearch_legal_indexes(self, mock_connect):
+        """Test that the retriever can query existing pg_textsearch BM25 indexes."""
+        conn_params = {
+            'host': 'localhost',
+            'port': 5432,
+            'dbname': 'test_db',
+            'user': 'test_user',
+            'password': 'test_pass'
+        }
+
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect.return_value.__enter__.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = ('pg_textsearch',)
+        mock_cursor.fetchall.return_value = []
+
+        retriever = BM25Retriever(conn_params)
+        retriever.retrieve("cancel registration", top_k=3)
+
+        executed_sql = "\n".join(call.args[0] for call in mock_cursor.execute.call_args_list)
+        assert "act_chunks_legal_bm25_idx" in executed_sql
+        assert "rule_chunks_legal_bm25_idx" in executed_sql
+        assert "form_chunks_legal_bm25_idx" in executed_sql
+        assert "<@> to_bm25query" in executed_sql
+        assert "paradedb.score" not in executed_sql
 
 
 if __name__ == "__main__":

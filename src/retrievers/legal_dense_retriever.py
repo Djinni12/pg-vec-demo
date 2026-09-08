@@ -208,7 +208,8 @@ def rerank_legal_results(query: str, results: list[dict], reranker=None, model_n
     reranked = []
     for result, score in zip(results, scores):
         updated = dict(result)
-        updated["dense_score"] = result.get("score")
+        if "dense_score" not in updated:
+            updated["dense_score"] = result.get("score")
         updated["rerank_score"] = float(score)
         updated["score"] = float(score)
         reranked.append(updated)
