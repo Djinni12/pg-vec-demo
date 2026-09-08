@@ -1,8 +1,4 @@
-"""Compatibility wrapper for the query-only BGE-M3 vs LaBSE embedding check.
-
-LaBSE corpus search was intentionally removed because the user only wants to embed
-the query with a different model, not the whole dataset.
-"""
+"""Compatibility wrapper for the BGE-M3-only query embedding check."""
 
 from __future__ import annotations
 
