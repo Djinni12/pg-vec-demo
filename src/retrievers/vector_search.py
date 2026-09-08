@@ -1,6 +1,10 @@
 """pgvector semantic retrieval for GST descriptions."""
 
-from ingest_gst import MODEL_NAME
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from src.ingestors.ingest_gst import MODEL_NAME
 
 
 def vector_search(conn, query, limit=10, model=None):

@@ -1,13 +1,17 @@
 """Search GST descriptions through separate semantic and keyword paths."""
 
 import argparse
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(__file__))
 
 import psycopg
 
-from ingest_gst import DATABASE_URL, MODEL_NAME
-from keyword_search import exact_lookup, keyword_search
-from rrf import hybrid_rrf_search
-from vector_search import vector_search
+from src.ingestors.ingest_gst import DATABASE_URL, MODEL_NAME
+from src.retrievers.keyword_search import exact_lookup, keyword_search
+from src.retrievers.rrf import hybrid_rrf_search
+from src.retrievers.vector_search import vector_search
 
 
 def print_result(row, score_label=None):

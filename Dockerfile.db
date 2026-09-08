@@ -1,14 +1,14 @@
 FROM pgvector/pgvector:pg17
 
-ARG PG_TEXTSEARCH_VERSION=1.4.0
+ARG PG_SEARCH_VERSION=0.3.6
 
-# Keep pgvector and add the requested Timescale BM25 extension to PostgreSQL 17.
+# Install pg_search (ParadeDB) for true BM25 alongside pgvector
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       build-essential ca-certificates curl postgresql-server-dev-17 \
-    && mkdir -p /tmp/pg_textsearch \
-    && curl -fsSL "https://github.com/timescale/pg_textsearch/archive/refs/tags/v${PG_TEXTSEARCH_VERSION}.tar.gz" \
-       | tar -xz --strip-components=1 -C /tmp/pg_textsearch \
-    && make -C /tmp/pg_textsearch PG_CONFIG=/usr/lib/postgresql/17/bin/pg_config \
-    && make -C /tmp/pg_textsearch PG_CONFIG=/usr/lib/postgresql/17/bin/pg_config install \
-    && rm -rf /tmp/pg_textsearch /var/lib/apt/lists/*
+       build-essential ca-certificates curl postgresql-server-dev-17 libssl-dev pkg-config \
+    && mkdir -p /tmp/pg_search \
+    && curl -fsSL "https://github.com/paradedb/paradedb/archive/refs/tags/v${PG_SEARCH_VERSION}.tar.gz" \
+       | tar -xz --strip-components=1 -C /tmp/pg_search \
+    && cd /tmp/pg_search/pg_search \
+    && cargo install --path . \
+    && rm -rf /tmp/pg_search /var/lib/apt/lists/* /root/.cargo/registry
