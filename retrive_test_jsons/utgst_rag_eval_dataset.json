@@ -1,0 +1,236 @@
+[
+  {
+    "query": "Which Union territories does the UTGST Act apply to?",
+    "answer": "The Act extends to the Union territories of the Andaman and Nicobar Islands, Lakshadweep, Dadra and Nagar Haveli and Daman and Diu, Ladakh, Chandigarh and other territory.",
+    "section_number": "1",
+    "section_title": "Short title, extent and commencement",
+    "page_number": 2,
+    "relevant_text": "It extends to the Union territories of the Andaman and Nicobar Islands, Lakshadweep, Dadra and Nagar Haveli and Daman and Diu, Ladakh, Chandigarh and other territory.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "How does the UTGST Act define 'exempt supply'?",
+    "answer": "Exempt supply means a supply of goods or services or both that attracts a nil rate of tax, or that is exempt from tax under section 8 of this Act or section 6 of the Integrated Goods and Services Tax Act, and it also includes non-taxable supply.",
+    "section_number": "2(4)",
+    "section_title": "Definitions",
+    "page_number": 2,
+    "relevant_text": "''exempt supply'' means supply of any goods or services or both which attracts nil rate of tax or which may be exempt from tax under section 8, or under section 6 of the Integrated Goods and Services Tax Act, and includes non-taxable supply",
+    "query_type": "factual"
+  },
+  {
+    "query": "In the UTGST Act, who or what does the term 'Government' actually refer to?",
+    "answer": "Under this Act, 'Government' means the Administrator, or any Authority or officer authorised to act as Administrator by the Central Government — not a State-style elected government.",
+    "section_number": "2(6)",
+    "section_title": "Definitions",
+    "page_number": 2,
+    "relevant_text": "''Government'' means the Administrator or any Authority or officer authorised to act as Administrator by the Central Government",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "Are Chandigarh and Ladakh treated as one combined Union territory for GST purposes, or separately?",
+    "answer": "They are treated as separate Union territories. Section 2(8) lists each territory (including Chandigarh and Ladakh) as part of the definition of 'Union territory', and its Explanation clarifies that each of the listed territories is considered a separate Union territory.",
+    "section_number": "2(8)",
+    "section_title": "Definitions",
+    "page_number": 2,
+    "relevant_text": "Explanation.- For the purposes of this Act, each of the territories specified in sub-clauses (i) to (vi) shall be considered to be a separate Union territory",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Can an Appellate Authority officer also exercise the powers given to other Union territory tax officers?",
+    "answer": "No. Section 5(4) specifically states that, notwithstanding the rest of the section, an Appellate Authority shall not exercise the powers and discharge the duties conferred or imposed on any other officer of Union territory tax.",
+    "section_number": "5",
+    "section_title": "Powers of officers",
+    "page_number": 4,
+    "relevant_text": "Notwithstanding anything contained in this section, an Appellate Authority shall not exercise the powers and discharge the duties conferred or imposed on any other officer of Union territory tax.",
+    "query_type": "exact"
+  },
+  {
+    "query": "If a central tax officer has already started proceedings on a matter, can a Union territory tax officer start separate proceedings on the same matter?",
+    "answer": "No. Under section 6(2)(b), where a proper officer under the Central Goods and Services Tax Act has initiated proceedings on a subject matter, no proceedings shall be initiated by the proper officer under the UTGST Act on the same subject matter.",
+    "section_number": "6",
+    "section_title": "Authorisation of officers of central tax as proper officer in certain circumstances",
+    "page_number": 4,
+    "relevant_text": "where a proper officer under the Central Goods and Services Tax Act has initiated any proceedings on a subject matter, no proceedings shall be initiated by the proper officer under this Act on the same subject matter.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "What is the maximum rate at which Union territory tax can be levied on intra-State supplies, and what is excluded from this levy?",
+    "answer": "Union territory tax can be levied at a rate not exceeding twenty per cent, as notified by the Central Government on the Council's recommendations, and it excludes the supply of alcoholic liquor for human consumption.",
+    "section_number": "7",
+    "section_title": "Levy and collection",
+    "page_number": 5,
+    "relevant_text": "there shall be levied a tax called the Union territory tax on all intra-State supplies of goods or services or both, except on the supply of alcoholic liquor for human consumption... at such rates, not exceeding twenty percent., as may be notified by the Central Government",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "On what value is Union territory tax calculated for a supply?",
+    "answer": "The value for levying Union territory tax is the value determined under section 15 of the Central Goods and Services Tax Act, since the UTGST Act adopts the CGST Act's valuation provisions rather than prescribing its own.",
+    "section_number": "7",
+    "section_title": "Levy and collection",
+    "page_number": 5,
+    "relevant_text": "on the value determined under section 15 of the Central Goods and Services Tax Act and at such rates, not exceeding twenty percent., as may be notified by the Central Government",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "Under what special circumstances can the Central Government exempt specific goods from Union territory tax through a special order rather than a general notification?",
+    "answer": "Under section 8(2), where the Central Government is satisfied it is necessary in the public interest, it may, on the Council's recommendations, exempt any goods or services from tax by a special order in each case, under circumstances of an exceptional nature stated in that order.",
+    "section_number": "8",
+    "section_title": "Power to grant exemption from tax",
+    "page_number": 5,
+    "relevant_text": "Where the Central Government is satisfied that it is necessary in the public interest so to do, it may, on the recommendations of the Council, by special order in each case, under circumstances of an exceptional nature to be stated in such order, exempt from payment of tax any goods or services or both on which tax is leviable.",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "In what order must a taxpayer's Union territory tax input credit be used against their tax liabilities?",
+    "answer": "Under section 9(b), Union territory tax credit must first be utilised toward payment of Union territory tax, and only the remaining balance, if any, may be utilised toward payment of integrated tax; under section 9(c) it can never be used to pay central tax.",
+    "section_number": "9",
+    "section_title": "Payment of tax",
+    "page_number": 6,
+    "relevant_text": "the Union territory tax shall first be utilised towards payment of Union territory tax and the amount remaining, if any, may be utilised towards payment of integrated tax... (c) the Union territory tax shall not be utilised towards payment of central tax.",
+    "query_type": "procedural"
+  },
+  {
+    "query": "Can Union territory tax credit be used to pay integrated tax before the integrated tax credit itself has been fully used up?",
+    "answer": "No. Section 9A overrides section 9 and requires that Union territory tax credit be utilised toward integrated tax or Union territory tax only after the input tax credit available on account of integrated tax has first been utilised toward such payment.",
+    "section_number": "9A",
+    "section_title": "Utilisation of input tax credit",
+    "page_number": 6,
+    "relevant_text": "the input tax credit on account of Union territory tax shall be utilised towards payment of integrated tax or Union territory tax, as the case may be, only after the input tax credit available on account of integrated tax has first been utilised towards such payment.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "When a taxpayer's Union territory tax credit is used to settle integrated tax dues, what does the Central Government do with the corresponding amount?",
+    "answer": "The Central Government transfers an amount equal to the Union territory tax credit so utilised from the Union territory tax account to the integrated tax account, in the manner and time prescribed, once it is reflected in the taxpayer's valid return.",
+    "section_number": "10",
+    "section_title": "Transfer of input tax credit",
+    "page_number": 6,
+    "relevant_text": "the amount collected as Union territory tax shall stand reduced by an amount equal to such credit so utilised and the Central Government shall transfer an amount equal to the amount so reduced from the Union territory tax account to the integrated tax account in such manner and within such time as may be prescribed.",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "Besides tax officers, which other categories of government officers are legally required to assist proper officers under the UTGST Act?",
+    "answer": "Section 11(1) requires all officers of Police, Railways, and Customs, officers engaged in collection of land revenue (including village officers), and officers of central tax and State tax to assist the proper officers in implementing the Act.",
+    "section_number": "11",
+    "section_title": "Officers required to assist proper officers",
+    "page_number": 7,
+    "relevant_text": "All officers of Police, Railways, Customs, and those officers engaged in the collection of land revenue, including village officers, and officers of central tax and officers of the State tax shall assist the proper officers in the implementation of this Act.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "A business treated an intra-State sale as such and paid central tax plus Union territory tax on it, but it later turns out the sale was actually inter-State. What happens to the tax already paid?",
+    "answer": "Under section 12(1), the registered person is entitled to a refund of the central tax and Union territory tax already paid on the transaction, in the manner and subject to the conditions prescribed, since it is later held to be an inter-State supply.",
+    "section_number": "12",
+    "section_title": "Tax wrongfully collected and paid to Central Government or Union territory Government",
+    "page_number": 8,
+    "relevant_text": "A registered person who has paid the central tax and the Union territory tax on a transaction considered by him to be an intra-State supply, but which is subsequently held to be an inter-State supply, shall be refunded the amount of taxes so paid",
+    "query_type": "scenario"
+  },
+  {
+    "query": "If a taxpayer paid integrated tax on a supply believing it was inter-State, but it turns out to be intra-State, do they owe interest on the central and Union territory tax now payable?",
+    "answer": "No. Section 12(2) provides that such a registered person shall not be required to pay any interest on the amount of central tax and Union territory tax that becomes payable as a result of the reclassification.",
+    "section_number": "12",
+    "section_title": "Tax wrongfully collected and paid to Central Government or Union territory Government",
+    "page_number": 8,
+    "relevant_text": "A registered person who has paid integrated tax on a transaction considered by him to be an inter-State supply, but which is subsequently held to be an intra-State supply, shall not be required to pay any interest on the amount of the central tax and the Union territory tax payable.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Which officer actually carries out recovery of unpaid Union territory tax arrears from a defaulting taxpayer?",
+    "answer": "Under section 13(1), the proper officer of central tax recovers the unpaid amount as if it were an arrear of central tax, and then credits the amount recovered to the Government's account under the appropriate head of Union territory tax.",
+    "section_number": "13",
+    "section_title": "Recovery of tax",
+    "page_number": 8,
+    "relevant_text": "the proper officer of central tax, during the course of recovery of said tax arrears, may recover the amount from the said person as if it were an arrear of central tax and credit the amount so recovered to the account of the Government under the appropriate head of Union territory tax.",
+    "query_type": "procedural"
+  },
+  {
+    "query": "Who sits on the Authority for Advance Ruling constituted under the UTGST Act?",
+    "answer": "The Authority consists of one member from among the officers of central tax and one member from among the officers of Union territory tax, both appointed by the Central Government.",
+    "section_number": "15",
+    "section_title": "Constitution of Authority for Advance Ruling",
+    "page_number": 9,
+    "relevant_text": "The Authority shall consist of- (i) one member from amongst the officers of central tax; and (ii) one member from amongst the officers of Union territory tax, to be appointed by the Central Government.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "Who hears appeals against an advance ruling under the UTGST Act, and who sits on that body?",
+    "answer": "The Appellate Authority for Advance Ruling hears such appeals. It consists of the Chief Commissioner of central tax as designated by the Board, and the Commissioner of Union territory tax having jurisdiction over the applicant.",
+    "section_number": "16",
+    "section_title": "Constitution of Appellate Authority for Advance Ruling",
+    "page_number": 9,
+    "relevant_text": "The Appellate Authority shall consist of- (i) the Chief Commissioner of central tax as designated by the Board; and (ii) the Commissioner of Union territory tax having jurisdiction over the applicant.",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "If a taxpayer's provisional registration is cancelled because they successfully claim they were never liable to register, what is the legal effect on that certificate?",
+    "answer": "The certificate of registration issued on a provisional basis is deemed to have not been issued at all, once it is cancelled following the person's application stating they were not liable to registration under section 22 or section 24 of the Central Goods and Services Tax Act.",
+    "section_number": "17",
+    "section_title": "Migration of existing tax payers",
+    "page_number": 10,
+    "relevant_text": "The certificate of registration issued to a person under sub-section (1) shall be deemed to have not been issued if the said registration is cancelled in pursuance of an application filed by such person that he was not liable to registration under section 22 or section 24 of the Central Goods and Services Tax Act.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "How many days does a taxpayer have to claim transitional credit of VAT and Entry Tax carried forward from the pre-GST return?",
+    "answer": "Under section 18(1), a registered person (other than one opting for composition levy) is entitled to take credit of carried-forward VAT and Entry Tax in the electronic credit ledger not later than ninety days after the appointed day, subject to prescribed conditions.",
+    "section_number": "18",
+    "section_title": "Transitional arrangements for input tax credit",
+    "page_number": 10,
+    "relevant_text": "shall be entitled to take, in his electronic credit ledger, credit of the amount of Value Added Tax and Entry Tax, if any, carried forward in the return relating to the period ending with the day immediately preceding the appointed day, furnished by him under the existing law, not later than ninety days after the said day",
+    "query_type": "procedural"
+  },
+  {
+    "query": "Goods were sent to a job worker just before the GST transition. Within how long must they be returned to avoid the input tax credit being recovered?",
+    "answer": "Under section 19(1), such inputs must be returned within six months from the appointed day (extendable by the Commissioner by up to a further two months on sufficient cause); otherwise the input tax credit is liable to be recovered under section 142(8)(a) of the Central Goods and Services Tax Act.",
+    "section_number": "19",
+    "section_title": "Transitional provisions relating to job work",
+    "page_number": 10,
+    "relevant_text": "no tax shall be payable if such inputs, after completion of the job work or otherwise, are returned to the said place within six months from the appointed day: Provided that the period of six months may, on sufficient cause being shown, be extended by the Commissioner for a further period not exceeding two months",
+    "query_type": "scenario"
+  },
+  {
+    "query": "If the price of goods sold under a pre-GST contract is revised upward after the transition date, what document must the seller issue and by when?",
+    "answer": "Under section 20(2)(a), the registered person who sold the goods must issue the recipient a supplementary invoice or debit note, containing prescribed particulars, within thirty days of such price revision, and it is deemed to relate to an outward supply made under this Act.",
+    "section_number": "20",
+    "section_title": "Miscellaneous transitional provisions",
+    "page_number": 10,
+    "relevant_text": "the registered person who had sold such goods shall issue to the recipient a supplementary invoice or debit note, containing such particulars as may be prescribed, within thirty days of such price revision",
+    "query_type": "procedural"
+  },
+  {
+    "query": "Does the UTGST Act separately define its own registration and refund rules, or does it borrow these from another Act?",
+    "answer": "It borrows them. Section 21 provides that the Central Goods and Services Tax Act's provisions on matters including registration, refunds, and many other topics apply mutatis mutandis to Union territory tax, subject to specified modifications (such as reading 'central tax' as 'Union territory tax').",
+    "section_number": "21",
+    "section_title": "Application of provisions of Central Goods and Services Tax Act",
+    "page_number": 15,
+    "relevant_text": "the provisions of the Central Goods and Services Tax Act, relating to- (i) scope of supply;(ii)composition levy;(iii)composite supply and mixed supply;(iv)time and value of supply;(v)input tax credit;(vi)registration;... shall, mutatis mutandis, apply,- (a) so far as may be, in relation to Union territory tax as they apply in relation to central tax as if they were enacted under this Act",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "What is the maximum penalty that rules made under the UTGST Act can prescribe for contravening those rules?",
+    "answer": "Under section 22(4), any rules made under the Act may provide that contravention of them is liable to a penalty not exceeding ten thousand rupees.",
+    "section_number": "22",
+    "section_title": "Power to make rules",
+    "page_number": 16,
+    "relevant_text": "Any rules made under sub-section (1) may provide that a contravention there of shall be liable to a penalty not exceeding ten thousand rupees.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "For how long must new rules or notifications under the UTGST Act be laid before Parliament?",
+    "answer": "Every rule, regulation, or notification must be laid before each House of Parliament for a total period of thirty days, which may be spread across one session or two or more successive sessions.",
+    "section_number": "24",
+    "section_title": "Laying of rules, regulations and notifications",
+    "page_number": 16,
+    "relevant_text": "shall be laid, as soon as may be, after it is made or issued, before each House of Parliament, while it is in session, for a total period of thirty days which may be comprised in one session or in two or more successive sessions",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "How long after the UTGST Act commenced can the Central Government still issue an order to remove a difficulty in implementing it?",
+    "answer": "Under section 26(1) as amended, such an order cannot be made after the expiry of five years from the date of commencement of the Act (this was extended from the original three-year limit by the Finance Act, 2020).",
+    "section_number": "26",
+    "section_title": "Removal of difficulties",
+    "page_number": 16,
+    "relevant_text": "Provided that no such order shall be made after the expiry of a period of [five years] from the date of commencement of this Act.",
+    "query_type": "exact"
+  }
+]

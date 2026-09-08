@@ -60,3 +60,41 @@ CREATE TABLE IF NOT EXISTS rule_chunks (
 
 CREATE INDEX IF NOT EXISTS rule_chunks_embedding_hnsw_idx
     ON rule_chunks USING hnsw (embedding vector_cosine_ops);
+
+
+-- GST Forms chunks with BGE-M3 embeddings for semantic retrieval experiments.
+CREATE TABLE IF NOT EXISTS form_chunks (
+    chunk_id TEXT PRIMARY KEY,
+    form_uid TEXT NOT NULL,
+    form_number TEXT NOT NULL,
+    form_family TEXT NOT NULL,
+    form_code TEXT NOT NULL,
+    form_title TEXT NOT NULL,
+    title TEXT NOT NULL,
+    language TEXT NOT NULL,
+    rule_references TEXT[] NOT NULL DEFAULT '{}',
+    part_number INTEGER,
+    section_label TEXT,
+    source_start_page INTEGER,
+    source_end_page INTEGER,
+    page_start INTEGER,
+    page_end INTEGER,
+    content TEXT NOT NULL,
+    token_count INTEGER NOT NULL CHECK (token_count > 0),
+    chunk_strategy TEXT NOT NULL,
+    metadata JSONB NOT NULL,
+    embedding VECTOR(1024) NOT NULL
+);
+
+
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS form_uid TEXT;
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS language TEXT;
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS rule_references TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS part_number INTEGER;
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS section_label TEXT;
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS source_start_page INTEGER;
+ALTER TABLE form_chunks ADD COLUMN IF NOT EXISTS source_end_page INTEGER;
+
+CREATE INDEX IF NOT EXISTS form_chunks_embedding_hnsw_idx
+    ON form_chunks USING hnsw (embedding vector_cosine_ops);

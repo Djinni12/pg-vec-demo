@@ -1,0 +1,290 @@
+[
+  {
+    "query": "What does 'aggregate turnover' mean under the CGST Act?",
+    "answer": "Aggregate turnover means the aggregate value of all taxable supplies (excluding inward supplies taxed on reverse charge), exempt supplies, exports, and inter-State supplies of persons with the same PAN, computed on an all-India basis, excluding CGST, SGST, UTGST, IGST and cess.",
+    "section_number": "2(6)",
+    "section_title": "Definitions",
+    "page_number": 7,
+    "relevant_text": "\"aggregate turnover\" means the aggregate value of all taxable supplies (excluding the value of inward supplies on which tax is payable by a person on reverse charge basis), exempt supplies, exports of goods or services or both and inter-State supplies of persons having the same Permanent Account Number, to be computed on all India basis but excludes central tax, State tax, Union territory tax, integrated tax and cess.",
+    "query_type": "factual"
+  },
+  {
+    "query": "If a shopkeeper sells a gift hamper of chocolates, biscuits and a toy for one price, and the toy is taxed at the highest rate, how is the whole hamper taxed?",
+    "answer": "This is a mixed supply. Under section 8(b), a mixed supply comprising two or more supplies is treated as a supply of that particular item which attracts the highest rate of tax, so the entire hamper would be taxed at the toy's rate.",
+    "section_number": "8",
+    "section_title": "Tax liability on composite and mixed supplies",
+    "page_number": 18,
+    "relevant_text": "a mixed supply comprising two or more supplies shall be treated as a supply of that particular supply which attracts the highest rate of tax.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Is alcoholic liquor for human consumption subject to central tax under section 9?",
+    "answer": "No. Section 9(1) specifically excludes the supply of alcoholic liquor for human consumption from the levy of central tax on intra-State supplies.",
+    "section_number": "9",
+    "section_title": "Levy and collection",
+    "page_number": 19,
+    "relevant_text": "there shall be levied a tax called the central goods and services tax on all intra-State supplies of goods or services or both, except on the supply of alcoholic liquor for human consumption",
+    "query_type": "exact"
+  },
+  {
+    "query": "Up to what turnover can a manufacturer opt for the composition scheme, and what is the maximum rate?",
+    "answer": "A registered person (including a manufacturer) whose aggregate turnover in the preceding financial year did not exceed fifty lakh rupees may opt for composition levy, with the rate for a manufacturer capped at one percent of turnover in State/Union territory (subject to conditions, and the Government may raise the fifty lakh threshold up to one crore fifty lakh rupees).",
+    "section_number": "10",
+    "section_title": "Composition levy",
+    "page_number": 19,
+    "relevant_text": "a registered person, whose aggregate turnover in the preceding financial year did not exceed fifty lakh rupees, may opt to pay... an amount of tax calculated at such rate as may be prescribed, but not exceeding, - (a) one percent of the turnover in State or turnover in Union territory in case of a manufacturer",
+    "query_type": "factual"
+  },
+  {
+    "query": "A service was supplied before a GST rate change, but the invoice was issued and payment received after the rate change. Which time of supply rule applies and what rate is used?",
+    "answer": "Under section 14(a)(i), where goods or services have been supplied before the change in rate of tax and both the invoice is issued and payment received after the change, the time of supply is the date of receipt of payment or the date of issue of invoice, whichever is earlier, so the new (post-change) rate applies.",
+    "section_number": "14",
+    "section_title": "Change in rate of tax in respect of supply of goods or services",
+    "page_number": 22,
+    "relevant_text": "(i) where the invoice for the same has been issued and the payment is also received after the change in rate of tax, the time of supply shall be the date of receipt of payment or the date of issue of invoice, whichever is earlier",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Are interest and late fee for delayed payment included in the value of a taxable supply?",
+    "answer": "Yes. Section 15(2)(d) includes interest, late fee or penalty for delayed payment of consideration for a supply in the value of that supply.",
+    "section_number": "15",
+    "section_title": "Value of Taxable Supply",
+    "page_number": 24,
+    "relevant_text": "(d) interest or late fee or penalty for delayed payment of any consideration for any supply",
+    "query_type": "factual"
+  },
+  {
+    "query": "What conditions must a registered person satisfy before they can claim input tax credit on a purchase?",
+    "answer": "Under section 16(2), a registered person can claim input tax credit only if they possess a tax invoice or debit note, the supplier has furnished the relevant details, the person has actually received the goods or services, the tax charged has been paid to the Government, and the person has furnished the return under section 39.",
+    "section_number": "16",
+    "section_title": "Eligibility and conditions for taking input tax credit",
+    "page_number": 26,
+    "relevant_text": "no registered person shall be entitled to the credit of any input tax in respect of any supply of goods or services or both to him unless,- (a) he is in possession of a tax invoice or debit note... (b) he has received the goods or services or both... (c)... the tax charged in respect of such supply has been actually paid to the Government... and (d) he has furnished the return under section 39",
+    "query_type": "procedural"
+  },
+  {
+    "query": "Can a company claim input tax credit on a car it bought for its sales staff to travel to client meetings?",
+    "answer": "Generally no. Under section 17(5)(a), input tax credit is blocked on motor vehicles for transportation of persons with seating capacity up to thirteen (including driver), except when used for further supply of such vehicles, transportation of passengers, or driver training.",
+    "section_number": "17",
+    "section_title": "Apportionment of credit and blocked credits",
+    "page_number": 27,
+    "relevant_text": "motor vehicles for transportation of persons having approved seating capacity of not more than thirteen persons (including the driver), except when they are used for making the following taxable supplies, namely:- (A) further supply of such motor vehicles; or (B) transportation of passengers; or (C) imparting training on driving such motor vehicles",
+    "query_type": "scenario"
+  },
+  {
+    "query": "At what turnover does a business selling services from a normal (non-special-category) state need GST registration?",
+    "answer": "A supplier is liable to be registered if aggregate turnover in a financial year exceeds twenty lakh rupees, under section 22(1), for States/Union territories other than special category States.",
+    "section_number": "22",
+    "section_title": "Persons liable for registration",
+    "page_number": 32,
+    "relevant_text": "Every supplier shall be liable to be registered under this Act in the State or Union territory, other than special category States, from where he makes a taxable supply of goods or services or both, if his aggregate turnover in a financial year exceeds twenty lakh rupees",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "Does a farmer who only sells produce grown on their own land need to register under GST?",
+    "answer": "No. Section 23(1)(b) exempts an agriculturist from registration to the extent of supply of produce out of cultivation of land.",
+    "section_number": "23",
+    "section_title": "Persons not liable for registration",
+    "page_number": 33,
+    "relevant_text": "(b) an agriculturist, to the extent of supply of produce out of cultivation of land.",
+    "query_type": "scenario"
+  },
+  {
+    "query": "If a business only makes inter-State supplies, is it exempt from the standard turnover-based registration threshold?",
+    "answer": "No, it is not exempt; it must compulsorily register. Section 24(i) requires persons making any inter-State taxable supply to be registered regardless of the turnover threshold in section 22.",
+    "section_number": "24",
+    "section_title": "Compulsory registration in certain cases",
+    "page_number": 33,
+    "relevant_text": "Notwithstanding anything contained in sub-section (1) of section 22, the following categories of persons shall be required to be registered under this Act,- (i) persons making any inter-State taxable supply",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "When must a registered person issue a tax invoice for goods that do not involve movement, like an in-store sale?",
+    "answer": "Under section 31(1)(b), where the supply of goods does not involve movement, the tax invoice must be issued before or at the time of delivery of the goods or making them available to the recipient.",
+    "section_number": "31",
+    "section_title": "Tax invoice",
+    "page_number": 38,
+    "relevant_text": "(b) delivery of goods or making available thereof to the recipient, in any other case, issue a tax invoice showing the description, quantity and value of goods, the tax charged thereon and such other particulars as may be prescribed",
+    "query_type": "procedural"
+  },
+  {
+    "query": "By when in a month should a registered person furnish details of outward supplies for the previous tax period?",
+    "answer": "Under section 37(1), details of outward supplies must be furnished electronically on or before the tenth day of the month succeeding the tax period.",
+    "section_number": "37",
+    "section_title": "Furnishing details of outward supplies",
+    "page_number": 43,
+    "relevant_text": "shall furnish, electronically... the details of outward supplies of goods or services or both effected during a tax period on or before the tenth day of the month succeeding the said tax period",
+    "query_type": "exact"
+  },
+  {
+    "query": "In what order must input tax credit of integrated tax be utilised for payment of other taxes?",
+    "answer": "Under section 49(5)(a), input tax credit of integrated tax must first be utilised toward payment of integrated tax, and any remaining amount may then be utilised toward central tax and State/Union territory tax, in that order.",
+    "section_number": "49",
+    "section_title": "Payment of tax, interest, penalty and other amounts",
+    "page_number": 51,
+    "relevant_text": "the amount of input tax credit available in the electronic credit ledger of the registered person on account of- (a) integrated tax shall first be utilised towards payment of integrated tax and the amount remaining, if any, may be utilised towards the payment of central tax and State tax, or as the case may be, Union territory tax, in that order",
+    "query_type": "procedural"
+  },
+  {
+    "query": "What is the maximum rate of interest that can be charged on delayed payment of GST, and is it different for wrongly availed input tax credit?",
+    "answer": "Under section 50, interest for delayed payment of tax can be notified at a rate not exceeding eighteen per cent, while interest on input tax credit wrongly availed and utilised can be notified at a rate not exceeding twenty-four per cent.",
+    "section_number": [
+      "50",
+      "50"
+    ],
+    "section_title": "Interest on delayed payment of tax",
+    "page_number": [
+      53,
+      53
+    ],
+    "relevant_text": "pay, on his own, interest at such rate, not exceeding eighteen per cent... Where the input tax credit has been wrongly availed and utilised, the registered person shall pay interest on such input tax credit wrongly availed and utilised, at such rate not exceeding twenty-four per cent.",
+    "query_type": "multi_subsection"
+  },
+  {
+    "query": "What rate does an e-commerce operator use to collect tax at source on supplies made through its platform?",
+    "answer": "An electronic commerce operator must collect an amount at a rate not exceeding one per cent, as notified by the Government, of the net value of taxable supplies made through it.",
+    "section_number": "52",
+    "section_title": "Collection of tax at source",
+    "page_number": 54,
+    "relevant_text": "every electronic commerce operator... shall collect an amount calculated at such rate not exceeding one per cent., as may be notified by the Government on the recommendations of the Council, of the net value of taxable supplies made through it",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "How long does a taxpayer have to file an application claiming a refund of tax paid?",
+    "answer": "Under section 54(1), a person claiming a refund of tax and interest paid, or any other amount paid, may make an application before the expiry of two years from the relevant date.",
+    "section_number": "54",
+    "section_title": "Refund of tax",
+    "page_number": 57,
+    "relevant_text": "Any person claiming refund of any tax and interest, if any, paid on such tax or any other amount paid by him, may make an application before the expiry of two years from the relevant date",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "Who is responsible for self-assessing the tax payable under GST?",
+    "answer": "Every registered person is responsible for self-assessing the taxes payable under the Act and furnishing a return for each tax period, as specified under section 39.",
+    "section_number": "59",
+    "section_title": "Self-assessment",
+    "page_number": 61,
+    "relevant_text": "Every registered person shall self-assess the taxes payable under this Act and furnish a return for each tax period as specified under section 39.",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "If a taxpayer cannot determine the value of their goods for GST purposes, what option do they have before the final assessment is done?",
+    "answer": "Under section 60, the taxable person may request the proper officer in writing to allow payment of tax on a provisional basis, executing a bond with surety or security as required, pending final assessment.",
+    "section_number": "60",
+    "section_title": "Provisional assessment",
+    "page_number": 61,
+    "relevant_text": "he may request the proper officer in writing giving reasons for payment of tax on provisional basis and the proper officer shall pass an order... allowing payment of tax on provisional basis... The payment of tax on provisional basis may be allowed, if the taxable person executes a bond in such form as may be prescribed",
+    "query_type": "procedural"
+  },
+  {
+    "query": "How much advance notice must a registered person be given before a departmental GST audit, and how long can the audit take?",
+    "answer": "The registered person must be informed by notice at least fifteen working days before the audit, and the audit must generally be completed within three months from its commencement, extendable by a further six months by the Commissioner.",
+    "section_number": "65",
+    "section_title": "Audit by tax authorities",
+    "page_number": 63,
+    "relevant_text": "The registered person shall be informed by way of a notice not less than fifteen working days prior to the conduct of audit... The audit under sub-section (1) shall be completed within a period of three months from the date of commencement of the audit... he may... extend the period by a further period not exceeding six months.",
+    "query_type": "procedural"
+  },
+  {
+    "query": "Who has the power to authorise the arrest of a person under GST law?",
+    "answer": "The Commissioner, where he has reasons to believe a person has committed certain specified offences under section 132, may by order authorise an officer of central tax to arrest that person.",
+    "section_number": "69",
+    "section_title": "Power to arrest",
+    "page_number": 65,
+    "relevant_text": "Where the Commissioner has reasons to believe that a person has committed any offence specified in clause (a) or clause (b) or clause (c) or clause (d) of sub-section (1) of section 132... he may, by order, authorise any officer of central tax to arrest such person.",
+    "query_type": "exact"
+  },
+  {
+    "query": "How does the penalty differ between a case of tax evasion involving fraud and one without fraud, under the demand provisions?",
+    "answer": "Under section 73 (no fraud), if a taxpayer pays tax and interest within 30 days of the notice, no penalty is payable; under section 74 (fraud/wilful misstatement), even on early payment before notice, a penalty equivalent to fifteen per cent of the tax is payable, and if paid within 30 days of the notice, the penalty is twenty-five per cent of the tax.",
+    "section_number": [
+      "73",
+      "74"
+    ],
+    "section_title": "Determination of tax (non-fraud vs fraud cases)",
+    "page_number": [
+      68,
+      68
+    ],
+    "relevant_text": "(5) The person chargeable with tax may, before service of notice under sub-section (1), pay the amount of tax along with interest payable under section 50 and a penalty equivalent to fifteen per cent. of such tax... (8) Where any person chargeable with tax under sub-section (1) pays the said tax along with interest payable under section 50 and a penalty equivalent to twenty-five per cent. of such tax within thirty days of issue of the notice, all proceedings in respect of the said notice shall be deemed to be concluded.",
+    "query_type": "multi_section_comparison"
+  },
+  {
+    "query": "How much time does a taxpayer get to pay an amount ordered against them before recovery proceedings begin?",
+    "answer": "Under section 78, any amount payable under an order must be paid within three months from the date of service of the order, failing which recovery proceedings shall be initiated (though the proper officer may specify a shorter period in the interest of revenue).",
+    "section_number": "78",
+    "section_title": "Initiation of recovery proceedings",
+    "page_number": 71,
+    "relevant_text": "Any amount payable by a taxable person in pursuance of an order passed under this Act shall be paid by such person within a period of three months from the date of service of such order failing which recovery proceedings shall be initiated",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "Within how many months of a decision can a taxpayer file an appeal to the Appellate Authority?",
+    "answer": "An aggrieved person may appeal to the Appellate Authority within three months from the date on which the decision or order is communicated to them, extendable by one further month if sufficient cause is shown.",
+    "section_number": "107",
+    "section_title": "Appeals to Appellate Authority",
+    "page_number": 85,
+    "relevant_text": "Any person aggrieved by any decision or order passed under this Act... may appeal to such Appellate Authority as may be prescribed within three months from the date on which the said decision or order is communicated to such person.",
+    "query_type": "easy_factual"
+  },
+  {
+    "query": "Which authority is treated as the Authority for advance ruling under the central GST law?",
+    "answer": "The Authority for advance ruling constituted under the State GST Act or Union Territory GST Act for a State or Union territory is deemed to be the Authority for advance ruling under the CGST Act for that State or Union territory.",
+    "section_number": "96",
+    "section_title": "Authority for advance ruling",
+    "page_number": 80,
+    "relevant_text": "the Authority for advance ruling constituted under the provisions of a State Goods and Services Tax Act or Union Territory Goods and Services Tax Act shall be deemed to be the Authority for advance ruling in respect of that State or Union territory.",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "What is the maximum imprisonment for GST offences involving tax evasion exceeding five hundred lakh rupees?",
+    "answer": "Under section 132(1)(i), where the amount of tax evaded, input tax credit wrongly availed/utilised, or refund wrongly taken exceeds five hundred lakh rupees, the offence is punishable with imprisonment for a term which may extend to five years, along with fine.",
+    "section_number": "132",
+    "section_title": "Punishment for certain offences",
+    "page_number": 101,
+    "relevant_text": "in cases where the amount of tax evaded or the amount of input tax credit wrongly availed or utilised or the amount of refund wrongly taken exceeds five hundred lakh rupees, with imprisonment for a term which may extend to five years and with fine",
+    "query_type": "exact"
+  },
+  {
+    "query": "Can a business carry forward its old CENVAT credit into GST if it opts for the composition scheme?",
+    "answer": "No. Section 140(1) allows a registered person, other than one opting to pay tax under section 10 (the composition scheme), to carry forward eligible CENVAT credit into the electronic credit ledger; a composition taxpayer is excluded from this transitional credit.",
+    "section_number": "140",
+    "section_title": "Transitional arrangements for input tax credit",
+    "page_number": 105,
+    "relevant_text": "A registered person, other than a person opting to pay tax under section 10, shall be entitled to take, in his electronic credit ledger, the amount of CENVAT credit of eligible duties carried forward in the return relating to the period ending with the day immediately preceding the appointed day",
+    "query_type": "conceptual"
+  },
+  {
+    "query": "How long can a principal keep capital goods (other than moulds, dies, jigs, fixtures or tools) with a job worker before it is treated as a deemed supply?",
+    "answer": "Under section 143(1)(a)/(b), capital goods other than moulds and dies, jigs and fixtures, or tools must be brought back or supplied from the job worker's place of business within three years of being sent out; if not, section 19(6) deems them supplied by the principal to the job worker on the day they were sent out.",
+    "section_number": [
+      "143",
+      "19"
+    ],
+    "section_title": "Job work procedure",
+    "page_number": [
+      111,
+      30
+    ],
+    "relevant_text": "bring back inputs... or capital goods, other than moulds and dies, jigs and fixtures, or tools, within one year and three years, respectively, of their being sent out... Where the capital goods sent for job work are not received back by the principal within a period of three years of being sent out, it shall be deemed that such capital goods had been supplied by the principal to the job worker",
+    "query_type": "multi_section"
+  },
+  {
+    "query": "If a company reduces its GST rate on a product but keeps the retail price the same, could it be penalised under anti-profiteering rules?",
+    "answer": "Yes. Section 171(1) requires that any reduction in the rate of tax, or the benefit of input tax credit, be passed on to the recipient through a commensurate reduction in price; under section 171(3A), profiteering can attract a penalty equivalent to ten per cent of the profiteered amount.",
+    "section_number": "171",
+    "section_title": "Anti-profiteering measure",
+    "page_number": 120,
+    "relevant_text": "Any reduction in rate of tax on any supply of goods or services or the benefit of input tax credit shall be passed on to the recipient by way of commensurate reduction in prices... such person shall be liable to pay penalty equivalent to ten per cent. of the amount so profiteered",
+    "query_type": "scenario"
+  },
+  {
+    "query": "Is the sale of land treated as a supply of goods or services under GST, or neither?",
+    "answer": "Sale of land is treated as neither a supply of goods nor a supply of services under Schedule III, meaning it falls outside the scope of GST (though sale of building is only excluded subject to clause (b) of paragraph 5 of Schedule II).",
+    "section_number": "Schedule III",
+    "section_title": "Activities which shall be treated neither as a supply of goods nor a supply of services",
+    "page_number": 124,
+    "relevant_text": "Sale of land and, subject to clause (b) of paragraph 5 of Schedule II, sale of building.",
+    "query_type": "easy_factual"
+  }
+]
