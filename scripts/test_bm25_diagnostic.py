@@ -4,7 +4,7 @@ Diagnostic test script for BM25 retrieval.
 
 This script tests the BM25 retriever with a sample query against a live database.
 Requires:
-- PostgreSQL with pg_search extension installed
+- PostgreSQL with pg_textsearch extension installed
 - Database populated with act_chunks, rule_chunks, and form_chunks tables
 - BM25 indexes created via migration/add_bm25_indexes.sql
 
@@ -112,8 +112,8 @@ def main():
         print(f"\n✗ Error occurred: {type(e).__name__}: {e}")
         print("\nTroubleshooting steps:")
         print("  1. Ensure PostgreSQL is running")
-        print("  2. Verify pg_search extension is installed:")
-        print("     SELECT * FROM pg_extension WHERE extname = 'pg_search';")
+        print("  2. Verify pg_textsearch extension is installed:")
+        print("     SELECT * FROM pg_extension WHERE extname = 'pg_textsearch';")
         print("  3. Check that BM25 indexes exist:")
         print("     SELECT * FROM pg_indexes WHERE indexname LIKE '%bm25%';")
         print("  4. Run migration script if needed:")
