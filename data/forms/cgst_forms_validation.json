@@ -1,0 +1,15 @@
+{
+  "missing_forms": [],
+  "cross_form_chunks": [],
+  "oversized_chunks": [],
+  "broken_table_blocks": [],
+  "content_loss": [],
+  "empty_chunks": [],
+  "PASS": true,
+  "statistics": {
+    "total_forms": 4,
+    "total_chunks": 4,
+    "chunks_per_form_avg": 1.0,
+    "max_tokens_in_chunk": 117
+  }
+}
