@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from statistics import mean
 
-from act_chunker import count_tokens, split_large_text
+from .act_chunker import count_tokens, split_large_text
 
 
 DEFAULT_RULES_JSON = Path("data/rules/gst_rules_rules.json")
