@@ -67,7 +67,7 @@ In this snapshot, 1,643 retained records have parsed exact codes; 86 are searcha
 
 Both CSVs are validated before any database write or model load. Embeddings are generated in batches of 32. One transaction upserts retained records and removes stale records from the two imported source files, including rows newly marked omitted. Reimporting a changed snapshot regenerates embeddings; no incremental model cache is added. The source filename/row identity is stable within a snapshot, not a permanent identifier across arbitrary file reordering. A failed import rolls back database changes.
 
-The downloaded CSVs are in ignored `data/gst/`; they are not embedded into Python or committed as fixtures. `test_pgvector.py` remains a small compatibility entry point to the GST loader.
+The downloaded CSVs are in ignored `data/gst/csvs/`; they are not embedded into Python or committed as fixtures. `tests/test_pgvector.py` remains a small compatibility entry point to the GST loader.
 
 ## Snapshot fingerprints
 
@@ -79,4 +79,4 @@ Services.csv
 3d6f3428dbe9327caf598819ec25e034dd4dcbe24f574c9bf78d8a883fe8631c
 ```
 
-Run `python ingest_gst.py data/gst --dry-run` to inspect counts and hashes for the files present locally. Counts above describe the inspected snapshot; future Kaggle downloads may differ.
+Run `python ingest_gst.py --dry-run` to inspect counts and hashes for the files present locally. Counts above describe the inspected snapshot; future Kaggle downloads may differ.

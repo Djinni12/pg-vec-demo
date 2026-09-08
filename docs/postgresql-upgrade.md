@@ -30,7 +30,7 @@ Do not mount the old PostgreSQL 16 data directory into PostgreSQL 17. The comman
    docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d hybrid_rag < schema.sql
    ```
 
-   Existing code, description, and embedding rows are preserved. The schema script creates the separate GST table and its indexes. The restored medical demo table is retained but is not used by the GST search. After restoring, download the CSVs as described in the README and run `python ingest_gst.py data/gst` to populate the GST corpus.
+   Existing code, description, and embedding rows are preserved. The schema script creates the separate GST table and its indexes. The restored medical demo table is retained but is not used by the GST search. After restoring, download the CSVs as described in the README and run `python ingest_gst.py` to populate the GST corpus.
 
 4. Verify extensions, data, and keyword retrieval:
 

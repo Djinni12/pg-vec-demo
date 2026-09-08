@@ -25,3 +25,38 @@ CREATE INDEX IF NOT EXISTS gst_documents_search_bm25_idx
 
 CREATE INDEX IF NOT EXISTS gst_documents_exact_codes_idx
     ON gst_documents USING GIN(exact_codes);
+
+-- Legal Act chunks with BGE-M3 embeddings for semantic retrieval experiments.
+CREATE TABLE IF NOT EXISTS act_chunks (
+    chunk_id TEXT PRIMARY KEY,
+    act_name TEXT NOT NULL,
+    chapter TEXT,
+    section_number TEXT NOT NULL,
+    section_title TEXT NOT NULL,
+    subsection_numbers TEXT[] NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL,
+    content TEXT NOT NULL,
+    token_count INTEGER NOT NULL CHECK (token_count > 0),
+    embedding VECTOR(1024) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS act_chunks_embedding_hnsw_idx
+    ON act_chunks USING hnsw (embedding vector_cosine_ops);
+
+-- CGST Rules chunks with BGE-M3 embeddings for semantic retrieval experiments.
+CREATE TABLE IF NOT EXISTS rule_chunks (
+    chunk_id TEXT PRIMARY KEY,
+    rule_number TEXT NOT NULL,
+    rule_title TEXT NOT NULL,
+    chapter TEXT,
+    chapter_title TEXT,
+    subrule_numbers TEXT[] NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL,
+    content TEXT NOT NULL,
+    token_count INTEGER NOT NULL CHECK (token_count > 0),
+    chunk_strategy TEXT NOT NULL,
+    embedding VECTOR(1024) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS rule_chunks_embedding_hnsw_idx
+    ON rule_chunks USING hnsw (embedding vector_cosine_ops);

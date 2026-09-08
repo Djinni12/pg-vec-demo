@@ -16,6 +16,7 @@ load_dotenv()
 DATABASE_URL = "dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432"
 DATASET_URL = "https://www.kaggle.com/datasets/prasad22/goods-and-service-tax-rates-dataset"
 MODEL_NAME = "all-MiniLM-L6-v2"
+DEFAULT_DATA_DIR = Path("data/gst/csvs")
 FIELDS = {
     "Goods.csv": (
         "goods", "Chapter / Heading / Sub-heading / Tariff item",
@@ -171,7 +172,7 @@ def save_records(conn, records, embeddings):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("data_dir", type=Path, help="Directory containing Goods.csv and Services.csv")
+    parser.add_argument("data_dir", nargs="?", type=Path, default=DEFAULT_DATA_DIR, help="Directory containing Goods.csv and Services.csv (default: data/gst/csvs)")
     parser.add_argument("--dry-run", action="store_true", help="Validate CSVs without models or database writes")
     parser.add_argument("--database-url", default=DATABASE_URL)
     args = parser.parse_args()

@@ -1,16 +1,23 @@
 """Validate parsed CGST Act sections JSON before chunking."""
 
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import argparse
 from collections import Counter
 import json
-from pathlib import Path
 import re
+
+from gst_act_parser import CHAPTER_HEADING_RE, subsection_boundary_warnings
 
 
 DEFAULT_JSON_PATH = Path("data/acts/central_gst_act_2017_sections.json")
-REQUIRED_FIELDS = {"section_number", "section_title", "content", "token_count"}
+REQUIRED_FIELDS = {"section_number", "section_title", "content", "token_count", "subsections"}
 SECTION_REFERENCE_RE = re.compile(r"\bSection\s+(\d+[A-Z]?)\s*\.", re.IGNORECASE)
-CHAPTER_RE = re.compile(r"\bCHAPTER\b", re.IGNORECASE)
 
 
 def load_sections(path):
@@ -92,6 +99,7 @@ def validate(sections):
 
     suspicious_refs = []
     chapter_hits = []
+    subsection_warnings = []
     over_1000 = []
     over_2000 = []
 
@@ -109,8 +117,12 @@ def validate(sections):
         if refs:
             suspicious_refs.append((index, sorted(set(refs))))
 
-        if CHAPTER_RE.search(content):
+        if CHAPTER_HEADING_RE.search(content):
             chapter_hits.append(index)
+
+        boundary_warnings = subsection_boundary_warnings(section)
+        if boundary_warnings:
+            subsection_warnings.append((index, boundary_warnings))
 
         token_count = section.get("token_count")
         if isinstance(token_count, int):
@@ -130,6 +142,15 @@ def validate(sections):
             warnings.append(f"{section_label(sections[index], index)} contains a CHAPTER heading")
     else:
         passes.append("No CHAPTER headings inside section content")
+
+    if subsection_warnings:
+        for index, boundary_warnings in subsection_warnings:
+            warnings.append(
+                f"{section_label(sections[index], index)} has suspicious subsection boundaries: "
+                + "; ".join(boundary_warnings)
+            )
+    else:
+        passes.append("No suspicious subsection boundaries")
 
     if over_1000:
         warnings.append(f"Sections with token_count > 1000: {', '.join(sections[i]['section_number'] for i in over_1000)}")
@@ -166,6 +187,35 @@ def print_largest_sections(sections, limit=10):
     print()
 
 
+def print_subsection_counts(sections):
+    sections_with_subsections = sum(1 for section in sections if section.get("subsections"))
+    print("SUBSECTION SUMMARY")
+    print(f"Sections with subsections: {sections_with_subsections}")
+    print()
+    print("SUBSECTION COUNT PER SECTION")
+    for section in sections:
+        number = section.get("section_number", "<missing>")
+        count = len(section.get("subsections", [])) if isinstance(section.get("subsections"), list) else "<invalid>"
+        title = section.get("section_title", "<missing>")
+        print(f"{number} | {count} | {title}")
+    print()
+
+
+def print_subsection_examples(sections, limit=5):
+    print("SUBSECTION EXAMPLES")
+    examples = [section for section in sections if section.get("subsections")][:limit]
+    if not examples:
+        print("- None")
+        print()
+        return
+    for section in examples:
+        print(f"Section {section['section_number']}: {section['section_title']}")
+        for subsection in section["subsections"][:3]:
+            text = " ".join(str(subsection.get("text", "")).split())[:220]
+            print(f"  {subsection.get('subsection_number', '<missing>')} | {text}")
+        print()
+
+
 def print_messages(title, messages):
     print(title)
     if messages:
@@ -197,6 +247,8 @@ def main():
     print(f"Total entries: {len(sections)}")
     print()
     print_sections(sections)
+    print_subsection_counts(sections)
+    print_subsection_examples(sections)
     print_largest_sections(sections)
     print_messages("WARNINGS", warnings)
     print_messages("FAILURES", failures)
