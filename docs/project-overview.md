@@ -60,7 +60,7 @@ The code uses local model inference through Sentence Transformers; it does not c
 
 ### 1. Dense embeddings for semantic retrieval
 
-`ingest_gst.py` encodes cleaned descriptions in batches of 32 and stores each vector alongside the GST source record. `test_pgvector.py` delegates to the same loader for compatibility. `vector_search.py` encodes the query using the same model, placing queries and descriptions into a comparable vector space.
+`ingest_gst.py` encodes cleaned descriptions in batches of 32 and stores each vector alongside the GST source record. `tests/test_pgvector.py` delegates to the same loader for compatibility. `vector_search.py` encodes the query using the same model, placing queries and descriptions into a comparable vector space.
 
 This permits matching by learned semantic similarity rather than requiring an exact word overlap. A query such as `roasted coffee beans` can be compared to goods descriptions about coffee. This is the intent of the example, not an asserted ranking guarantee.
 
@@ -78,7 +78,7 @@ The repository defines no vector index. With the minimal schema in the README, t
 
 The document key comes from `(metadata["source_file"], metadata["source_row"])`, which matches the ingestion primary key. If a row appears in both lists, its two rank contributions are summed. If it appears in only one list, its one contribution is kept. Raw BM25 scores and vector distances are not normalized or added. Final results are sorted by RRF score descending and trimmed to Top-K.
 
-The command-line path is `python search_pgvec.py "query text" --rrf`. Add `--rerank-vector-before-rrf` to score the vector candidate list with the existing CrossEncoder before fusion. BM25 keeps its original rank order. RRF still uses only the post-rerank vector positions and original BM25 positions; it does not use CrossEncoder scores in the fusion formula. The manual smoke script `dummy_search_test.py` prints BM25, vector, and fused RRF sections for the same query and supports the same rerank option.
+The command-line path is `python search_pgvec.py "query text" --rrf`. Add `--rerank-vector-before-rrf` to score the vector candidate list with the existing CrossEncoder before fusion. BM25 keeps its original rank order. RRF still uses only the post-rerank vector positions and original BM25 positions; it does not use CrossEncoder scores in the fusion formula. The manual smoke script `tests/dummy_search_test.py` prints BM25, vector, and fused RRF sections for the same query and supports the same rerank option.
 
 ### 4. Retrieve, then rerank
 
@@ -126,7 +126,7 @@ The previous `documents` table is left intact but is no longer read or written. 
 - **RAG answer generation:** no generative model, prompt construction, retrieved context assembly, citations, or conversation handling.
 - **Data ingestion:** the loader targets these two CSV formats. There is no scheduled dataset synchronization, chunking, or incremental embedding cache.
 - **Exact lookup:** ranges, exclusions, malformed classifications, and parent/child code inference are not resolved. Multiple source rows can share a code. Rates and conditions are preserved as dataset content.
-- **Evaluation:** Parsing, routing, and optional database integration tests live in `test_ingest_gst.py` and `test_keyword_search.py`. There are no relevance labels, recall/precision measurements, reranker comparisons, or latency benchmarks.
+- **Evaluation:** Parsing, routing, and optional database integration tests live in `tests/test_ingest_gst.py` and `tests/test_keyword_search.py`. There are no relevance labels, recall/precision measurements, reranker comparisons, or latency benchmarks.
 - **Search configuration:** queries, exact codes, input directory, and database URL have CLI options. Model names and semantic candidate/output counts remain in source; keyword retrieval functions expose a `limit` argument.
 - **Performance:** `schema.sql` defines BM25 and exact-code array indexes, but no vector or trigram indexes. Embeddings are generated in batches and inserted one row at a time, suitable for this small dataset.
 - **Robustness:** empty semantic results are handled before reranking, but model and database failures propagate without retries.
@@ -137,14 +137,17 @@ Possible extensions are to rerank the fused candidate pool after RRF, add measur
 ## Source map
 
 - [GST loader](../ingest_gst.py): CSV validation, rate conversion, embeddings, and transactional upserts.
-- [Ingestion tests](../test_ingest_gst.py): parsing and repeat-import checks.
+- [Ingestion tests](../tests/test_ingest_gst.py): parsing and repeat-import checks.
 - [Dataset inspection](gst-dataset.md): source columns, schema mapping, and provenance.
 - [Search demonstration](../search_pgvec.py): query embedding, cosine-distance retrieval, reranking, keyword demonstrations, and optional RRF.
 - [Keyword search](../keyword_search.py): primary BM25 SQL, trigram fallback routing, and exact lookup.
 - [Vector search](../vector_search.py): pgvector semantic retrieval helper.
 - [RRF fusion](../rrf.py): rank-only fusion over BM25 and vector result lists.
-- [RRF tests](../test_rrf.py): rank fusion behavior and deduplication.
-- [Keyword tests](../test_keyword_search.py): routing and PostgreSQL integration checks.
+- [RRF tests](../tests/test_rrf.py): rank fusion behavior and deduplication.
+- [Keyword tests](../tests/test_keyword_search.py): routing and PostgreSQL integration checks.
+- [CGST parser](../gst_act_parser.py): Central GST Act section parsing.
+- [CGST inspection script](../scripts/inspect_gst_act_sections.py): section previews and JSON export.
+- [CGST validation script](../scripts/validate_sections.py): pre-chunking section checks.
 - [Database schema](../schema.sql): extension initialization and the BM25 index.
 - [Database image](../Dockerfile.db): PostgreSQL 17, pgvector, and Timescale `pg_textsearch`.
 - [Database upgrade](postgresql-upgrade.md): preserve PostgreSQL 16 data when moving to PostgreSQL 17.

@@ -1,12 +1,18 @@
 """Inspect parsed Central GST Act sections before chunking."""
 
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import argparse
 import json
-from pathlib import Path
 
 from transformers import AutoTokenizer
 
-from gst_act_parser import DEFAULT_PDF_PATH, parse_sections
+from gst_act_parser import DEFAULT_PDF_PATH, parse_sections, subsection_boundary_warnings
 
 
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
@@ -36,6 +42,8 @@ def main():
 
     print(f"PDF: {args.pdf_path}")
     print(f"Total sections found: {len(sections)}")
+    sections_with_subsections = sum(1 for section in sections if section.get("subsections"))
+    print(f"Sections with subsections: {sections_with_subsections}")
     print()
 
     for section in sections:
@@ -44,7 +52,24 @@ def main():
         inspected_sections.append({**section, "token_count": count, "preview": section_preview})
         print(f"Section {section['section_number']}: {section['section_title']}")
         print(f"Token count: {count}")
+        print(f"Subsections: {len(section.get('subsections', []))}")
+        warnings = subsection_boundary_warnings(section)
+        if warnings:
+            print(f"Subsection warnings: {'; '.join(warnings)}")
         print(f"Preview: {section_preview}")
+        print()
+
+    print("SUBSECTION COUNT PER SECTION")
+    for section in sections:
+        print(f"{section['section_number']} | {len(section.get('subsections', []))} | {section['section_title']}")
+    print()
+
+    print("SUBSECTION PARSE EXAMPLES")
+    examples = [section for section in sections if section.get("subsections")][:5]
+    for section in examples:
+        print(f"Section {section['section_number']}: {section['section_title']}")
+        for subsection in section["subsections"][:3]:
+            print(f"  {subsection['subsection_number']} | {preview(subsection['text'], 220)}")
         print()
 
     if args.json_output:

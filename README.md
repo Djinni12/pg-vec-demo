@@ -45,21 +45,22 @@ docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d hybrid_rag < sc
 
 ### 4. Download, inspect, and ingest GST data
 
-Download and extract `Goods.csv` and `Services.csv` from the Kaggle dataset into `data/gst/`. The files downloaded during this implementation are already there locally and ignored by Git. On a new checkout, a public download can be attempted with:
+Download and extract `Goods.csv` and `Services.csv` from the Kaggle dataset into `data/gst/csvs/`. The files downloaded during this implementation are already there locally and ignored by Git. On a new checkout, a public download can be attempted with:
 
 ```bash
 curl -fL 'https://www.kaggle.com/api/v1/datasets/download/prasad22/goods-and-service-tax-rates-dataset' -o /tmp/gst-kaggle.zip
-python -m zipfile -e /tmp/gst-kaggle.zip data/gst
+mkdir -p data/gst/csvs
+python -m zipfile -e /tmp/gst-kaggle.zip data/gst/csvs
 ```
 
 If Kaggle requires authentication, download through the dataset page instead.
 
 ```bash
-python ingest_gst.py data/gst --dry-run
-python ingest_gst.py data/gst
+python ingest_gst.py --dry-run
+python ingest_gst.py
 ```
 
-The dry run validates both files and prints row counts, skipped rows, encoding, and hashes without downloading models or writing to PostgreSQL. The import embeds descriptions and upserts GST records in one transaction. Repeat imports update existing records and remove stale rows from the same source files. `python test_pgvector.py data/gst` is a compatibility alias for the loader.
+The dry run validates both files and prints row counts, skipped rows, encoding, and hashes without downloading models or writing to PostgreSQL. The import embeds descriptions and upserts GST records in one transaction. Repeat imports update existing records and remove stale rows from the same source files. `python tests/test_pgvector.py` is a compatibility alias for the loader.
 
 Goods fractional rates are converted to percentages; service percentage values remain unchanged. Conditional or missing rates retain their source text and have no numeric value. The [dataset guide](docs/gst-dataset.md) explains these decisions.
 
@@ -83,7 +84,64 @@ Exact lookup skips the models and returns up to 20 rows containing the explicit 
 
 Both ingestion and search accept `--database-url` to override the local connection string.
 
-### 6. Stop the database
+### 6. Parse CGST Rules
+
+To inspect the Central GST Rules PDF and write rule/sub-rule JSON:
+
+```bash
+python scripts/inspect_gst_rules.py --json-output data/rules/gst_rules_rules.json
+python scripts/validate_gst_rules.py data/rules/gst_rules_rules.json
+```
+
+This parser records chapter metadata on each rule and keeps clauses, provisos, explanations, and tables inside rule/sub-rule text.
+
+### 7. Generate CGST Act chunks
+
+After parsing and validating sections, generate structure-aware chunks in JSON without embeddings or database writes:
+
+```bash
+python scripts/chunk_gst_act_sections.py
+```
+
+The script keeps small sections whole, groups complete subsections for larger sections, and only uses token-overlap when a single subsection must be split.
+
+### 8. Generate BGE-M3 embeddings for CGST chunks
+
+After chunk inspection, generate one dense BGE-M3 embedding per chunk into a separate JSONL file:
+
+```bash
+python scripts/embed_gst_act_chunks.py
+```
+
+This writes `data/acts/central_gst_act_2017_bge_m3_embeddings.jsonl` for inspection only. It does not connect to PostgreSQL or create retrieval indexes.
+
+### 9. Ingest Act chunks into Docker PostgreSQL/pgvector
+
+After BGE-M3 embedding generation, initialize the Docker database schema and upsert all Act chunk embeddings:
+
+```bash
+docker compose up -d db
+docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d hybrid_rag < schema.sql
+python ingest_act_chunks.py
+```
+
+`ingest_act_chunks.py` reads the existing `*_bge_m3_embeddings.jsonl` files, validates every vector is dimension `1024`, namespaces each JSON chunk id with the Act slug, and upserts by that stable `chunk_id` into `act_chunks`. The table has a cosine HNSW index on `embedding`.
+
+### 10. Generate and ingest CGST Rules chunks
+
+After validating `data/rules/gst_rules_rules.json`, generate structure-aware Rule chunks, embed them with BGE-M3, initialize the database schema, and upsert them into `rule_chunks`:
+
+```bash
+python scripts/chunk_gst_rules.py
+python scripts/embed_gst_rule_chunks.py
+docker compose up -d db
+docker compose exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d hybrid_rag < schema.sql
+python ingest_rule_chunks.py
+```
+
+`rules_chunker.py` keeps small rules whole, groups complete sub-rules for larger rules, and only token-splits inside an oversized sub-rule. `ingest_rule_chunks.py` reads `data/rules/gst_rules_bge_m3_embeddings.jsonl`, validates every vector is dimension `1024`, and upserts by `chunk_id`. The separate `rule_chunks` table has a cosine HNSW index on `embedding`.
+
+### 11. Stop the database
 
 ```bash
 docker compose down
@@ -96,25 +154,45 @@ The named database volume is retained for future runs.
 | Path | Purpose |
 | --- | --- |
 | `ingest_gst.py` | Validates GST CSVs, normalizes fields, embeds descriptions, and upserts records. |
-| `test_pgvector.py` | Compatibility entry point for the GST loader. |
-| `test_ingest_gst.py` | CSV/rate/code parsing tests and a transactional PostgreSQL ingestion test. |
+| `tests/test_pgvector.py` | Compatibility entry point for the GST loader. |
+| `tests/test_ingest_gst.py` | CSV/rate/code parsing tests and a transactional PostgreSQL ingestion test. |
 | `search_pgvec.py` | Runs vector retrieval, cross-encoder reranking, and BM25 keyword search with trigram fallback. |
 | `keyword_search.py` | BM25 SQL, trigram fallback routing, and exact code lookup without model-loading side effects. |
 | `vector_search.py` | pgvector semantic retrieval helper reused by the CLI and RRF. |
 | `rrf.py` | Reciprocal Rank Fusion over BM25 and vector result ranks. |
-| `dummy_search_test.py` | Prints BM25, vector, and RRF sections for manual command-line smoke tests. |
-| `test_keyword_search.py` | Routing tests and optional PostgreSQL integration tests. |
-| `test_rrf.py` | Unit tests for rank fusion, single-list results, duplicate merging, and ordering. |
+| `gst_act_parser.py` | Parses GST Act PDFs into sections/subsections without database or embedding work. |
+| `gst_rules_parser.py` | Parses CGST Rules PDF into chapters, rules, and sub-rules. |
+| `scripts/inspect_gst_act_sections.py` | Prints parsed GST Act section previews and writes inspected JSON. |
+| `scripts/inspect_gst_rules.py` | Prints parsed CGST Rules previews and writes inspected JSON. |
+| `scripts/validate_gst_rules.py` | Validates parsed CGST Rules structure. |
+| `scripts/validate_sections.py` | Validates parsed section JSON before chunking. |
+| `act_chunker.py` | Builds structure-aware CGST Act chunks from parsed sections/subsections. |
+| `rules_chunker.py` | Builds structure-aware CGST Rules chunks from parsed rules/sub-rules. |
+| `scripts/chunk_gst_act_sections.py` | Generates chunk JSON and prints chunk size/sample reports. |
+| `scripts/chunk_gst_rules.py` | Generates CGST Rules chunk JSON and prints chunk size/sample reports. |
+| `act_embedder.py` | Generates dense BGE-M3 embeddings for chunk JSON records. |
+| `ingest_act_chunks.py` | Upserts Act chunk embeddings into Docker PostgreSQL/pgvector. |
+| `ingest_rule_chunks.py` | Upserts CGST Rules chunk embeddings into Docker PostgreSQL/pgvector. |
+| `scripts/embed_gst_act_chunks.py` | Writes chunk embeddings to JSONL or JSON for inspection. |
+| `scripts/embed_gst_rule_chunks.py` | Writes CGST Rules chunk embeddings to JSONL or JSON for inspection. |
+| `tests/test_gst_act_parser.py` | Unit tests for section heading, omission, duplicate, and chapter parsing. |
+| `tests/test_rules_chunker.py` | Unit tests for CGST Rules chunking behavior. |
+| `tests/test_ingest_rule_chunks.py` | Unit tests for CGST Rules embedding ingestion validation/upsert behavior. |
+| `tests/dummy_search_test.py` | Prints BM25, vector, and RRF sections for manual command-line smoke tests. |
+| `tests/test_keyword_search.py` | Routing tests and optional PostgreSQL integration tests. |
+| `tests/test_rrf.py` | Unit tests for rank fusion, single-list results, duplicate merging, and ordering. |
 | `Dockerfile.db` | Adds Timescale `pg_textsearch` 1.4.0 to the PostgreSQL 17/pgvector image. |
-| `schema.sql` | Enables extensions and creates the GST table, BM25 index, and exact-code array index. |
+| `schema.sql` | Enables extensions and creates GST, Act chunk, and Rule chunk tables/indexes. |
 | `docker-compose.yml` | Configures the PostgreSQL/pgvector container and persistent volume. |
 | `requirements.txt` | Lists direct Python dependencies without version pins. |
-| `.env.example` | Empty placeholder; the scripts do not currently load environment variables. |
+| `.env.example` | Template for local environment values such as `HF_TOKEN`. |
 | `docs/project-overview.md` | Detailed architecture and inventory of tools and techniques. |
-| `data/gst/` | Local Kaggle CSVs, ignored by Git. |
-| `src/` | Unused placeholder; code remains in the root scripts. |
+| `data/gst/csvs/` | Local Kaggle CSVs, ignored by Git. |
+| `data/acts/central_gst_act_2017_chunks.json` | Generated CGST Act chunks for inspection before retrieval ingestion. |
+| `data/acts/central_gst_act_2017_bge_m3_embeddings.jsonl` | Generated BGE-M3 chunk embeddings, ignored if produced locally. |
+| `data/rules/gst_rules_chunks.json` | Generated CGST Rules chunks for inspection before retrieval ingestion. |
+| `data/rules/gst_rules_bge_m3_embeddings.jsonl` | Generated CGST Rules BGE-M3 chunk embeddings. |
 | `docs/gst-dataset.md` | Inspected files, source columns, schema, cleaning, and field mapping. |
-| `hello.txt` | Incidental text file, unused by the retrieval scripts. |
 
 ## Configuration and troubleshooting
 
@@ -141,13 +219,13 @@ HF_TOKEN="hf_your_read_token_here"
 Run the parsing and keyword routing tests with:
 
 ```bash
-venv/bin/python -m unittest test_ingest_gst test_keyword_search test_rrf -v
+venv/bin/python -m unittest discover -s tests -v
 ```
 
 To also run PostgreSQL integration tests against the initialized PostgreSQL 17 database:
 
 ```bash
-TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest test_ingest_gst test_keyword_search test_rrf -v
+TEST_DATABASE_URL='dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432' venv/bin/python -m unittest discover -s tests -v
 ```
 
 Integration tests use a temporary table and roll back without changing stored documents. They cover ingestion upserts and stale-row removal, exact codes, BM25 matching and score ordering, stemming, stopwords, limits, typo fallback, and empty results. There is no retrieval-quality evaluation dataset or assertion of model rankings.
