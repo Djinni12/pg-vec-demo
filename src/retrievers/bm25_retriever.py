@@ -1,12 +1,12 @@
 """
-PostgreSQL-native BM25 retrieval for GST legal knowledge base using pg_search (ParadeDB).
+PostgreSQL-native BM25 retrieval for GST legal knowledge base using pg_textsearch.
 
 This module provides true BM25 lexical search across:
 - act_chunks (GST Act sections)
 - rule_chunks (CGST Rules)
 - form_chunks (GST Forms)
 
-Requires pg_search extension to be installed and enabled in PostgreSQL.
+Requires pg_textsearch extension to be installed and enabled in PostgreSQL.
 """
 
 import time
@@ -16,10 +16,13 @@ import psycopg
 
 class BM25Retriever:
     """
-    PostgreSQL-native BM25 retriever using pg_search (ParadeDB).
+    PostgreSQL-native BM25 retriever using pg_textsearch.
     
     Performs lexical search across legal documents using the BM25 algorithm,
     which is superior to TF-IDF for information retrieval tasks.
+    
+    Note: pg_textsearch returns negative BM25 scores where more negative = better match.
+    Results are sorted in ASCENDING order by score.
     """
     
     def __init__(self, conn_params: Dict[str, Any]):
@@ -48,9 +51,9 @@ class BM25Retriever:
             query: User's natural language query
             
         Returns:
-            Formatted query string for pg_search
+            Formatted query string for pg_textsearch
         """
-        # Simple tokenization - pg_search handles stemming and normalization
+        # Simple tokenization - pg_textsearch handles stemming and normalization
         return query.strip()
     
     def retrieve(
@@ -66,7 +69,7 @@ class BM25Retriever:
         2. Search rule_chunks → top 10  
         3. Search form_chunks → top 10
         4. Normalize results into common structure
-        5. Globally rank by BM25 score
+        5. Globally rank by BM25 score (ascending, more negative = better)
         6. Return final top 10
         
         Args:
@@ -80,7 +83,7 @@ class BM25Retriever:
                     - document_type: Type of document (act/rule/form)
                     - reference: Section/rule/form reference number
                     - title: Title of the section/rule/form
-                    - bm25_score: BM25 relevance score (higher is better)
+                    - bm25_score: BM25 relevance score (more negative = better)
                     - chunk_id: Unique chunk identifier
                     - snippet: Relevant text excerpt
                 - stats: Dictionary with retrieval statistics:
@@ -127,8 +130,8 @@ class BM25Retriever:
                     all_results.extend(form_results)
                     stats['forms_fetched'] = len(form_results)
                     
-                    # Globally rank by BM25 score and take top_k
-                    all_results.sort(key=lambda x: x['bm25_score'], reverse=True)
+                    # Globally rank by BM25 score (ascending - more negative is better)
+                    all_results.sort(key=lambda x: x['bm25_score'])
                     final_results = all_results[:top_k]
                     
                     # Update ranks after global sorting
@@ -148,7 +151,10 @@ class BM25Retriever:
         limit: int
     ) -> List[Dict[str, Any]]:
         """
-        Search act_chunks using BM25.
+        Search act_chunks using BM25 with pg_textsearch.
+        
+        Uses to_bm25query(field, query) syntax for proper field-specific searching.
+        Scores are negative - more negative means better match.
         
         Args:
             cur: Database cursor
@@ -161,23 +167,23 @@ class BM25Retriever:
         sql = """
             SELECT 
                 chunk_id,
-                act_name,
-                chapter,
-                section_number,
-                section_title,
+                COALESCE(act_name, '') as act_name,
+                COALESCE(chapter, '') as chapter,
+                COALESCE(section_number, '') as section_number,
+                COALESCE(section_title, '') as section_title,
                 content,
-                paradedb.score(chunk_id) AS bm25_score
+                (act_chunks @@@ to_bm25query('content', %s)) AS bm25_score
             FROM act_chunks
-            WHERE content @@@ %s
-               OR section_title @@@ %s
-               OR section_number @@@ %s
-               OR chapter @@@ %s
-               OR act_name @@@ %s
-            ORDER BY bm25_score DESC
+            WHERE act_chunks @@@ to_bm25query('content', %s)
+               OR act_chunks @@@ to_bm25query('section_title', %s)
+               OR act_chunks @@@ to_bm25query('section_number', %s)
+               OR act_chunks @@@ to_bm25query('chapter', %s)
+               OR act_chunks @@@ to_bm25query('act_name', %s)
+            ORDER BY bm25_score ASC
             LIMIT %s
         """
         
-        cur.execute(sql, (query, query, query, query, query, limit))
+        cur.execute(sql, (query, query, query, query, query, query, limit))
         rows = cur.fetchall()
         
         results = []
@@ -209,7 +215,10 @@ class BM25Retriever:
         limit: int
     ) -> List[Dict[str, Any]]:
         """
-        Search rule_chunks using BM25.
+        Search rule_chunks using BM25 with pg_textsearch.
+        
+        Uses to_bm25query(field, query) syntax for proper field-specific searching.
+        Scores are negative - more negative means better match.
         
         Args:
             cur: Database cursor
@@ -222,23 +231,23 @@ class BM25Retriever:
         sql = """
             SELECT 
                 chunk_id,
-                rule_number,
-                rule_title,
-                chapter,
-                chapter_title,
+                COALESCE(rule_number, '') as rule_number,
+                COALESCE(rule_title, '') as rule_title,
+                COALESCE(chapter, '') as chapter,
+                COALESCE(chapter_title, '') as chapter_title,
                 content,
-                paradedb.score(chunk_id) AS bm25_score
+                (rule_chunks @@@ to_bm25query('content', %s)) AS bm25_score
             FROM rule_chunks
-            WHERE content @@@ %s
-               OR rule_title @@@ %s
-               OR rule_number @@@ %s
-               OR chapter @@@ %s
-               OR chapter_title @@@ %s
-            ORDER BY bm25_score DESC
+            WHERE rule_chunks @@@ to_bm25query('content', %s)
+               OR rule_chunks @@@ to_bm25query('rule_title', %s)
+               OR rule_chunks @@@ to_bm25query('rule_number', %s)
+               OR rule_chunks @@@ to_bm25query('chapter', %s)
+               OR rule_chunks @@@ to_bm25query('chapter_title', %s)
+            ORDER BY bm25_score ASC
             LIMIT %s
         """
         
-        cur.execute(sql, (query, query, query, query, query, limit))
+        cur.execute(sql, (query, query, query, query, query, query, limit))
         rows = cur.fetchall()
         
         results = []
@@ -270,7 +279,10 @@ class BM25Retriever:
         limit: int
     ) -> List[Dict[str, Any]]:
         """
-        Search form_chunks using BM25.
+        Search form_chunks using BM25 with pg_textsearch.
+        
+        Uses to_bm25query(field, query) syntax for proper field-specific searching.
+        Scores are negative - more negative means better match.
         
         Args:
             cur: Database cursor
@@ -283,23 +295,23 @@ class BM25Retriever:
         sql = """
             SELECT 
                 chunk_id,
-                form_number,
-                form_title,
-                form_uid,
-                section_label,
+                COALESCE(form_number, '') as form_number,
+                COALESCE(form_title, '') as form_title,
+                COALESCE(form_uid, '') as form_uid,
+                COALESCE(section_label, '') as section_label,
                 content,
-                paradedb.score(chunk_id) AS bm25_score
+                (form_chunks @@@ to_bm25query('content', %s)) AS bm25_score
             FROM form_chunks
-            WHERE content @@@ %s
-               OR title @@@ %s
-               OR form_title @@@ %s
-               OR form_number @@@ %s
-               OR section_label @@@ %s
-            ORDER BY bm25_score DESC
+            WHERE form_chunks @@@ to_bm25query('content', %s)
+               OR form_chunks @@@ to_bm25query('title', %s)
+               OR form_chunks @@@ to_bm25query('form_title', %s)
+               OR form_chunks @@@ to_bm25query('form_number', %s)
+               OR form_chunks @@@ to_bm25query('section_label', %s)
+            ORDER BY bm25_score ASC
             LIMIT %s
         """
         
-        cur.execute(sql, (query, query, query, query, query, limit))
+        cur.execute(sql, (query, query, query, query, query, query, limit))
         rows = cur.fetchall()
         
         results = []
