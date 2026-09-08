@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pymupdf
 
-from gst_act_parser import normalize_text, subsection_marker_text
+from .gst_act_parser import normalize_text, subsection_marker_text
 
 
 DEFAULT_RULES_PDF_PATH = Path("data/rules/gst_rules.pdf")
