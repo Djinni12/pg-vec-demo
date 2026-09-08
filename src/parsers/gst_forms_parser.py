@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover - older PyMuPDF import name
 
 from transformers import AutoTokenizer
 
-from act_chunker import count_tokens
+from ..chunkers.act_chunker import count_tokens
 
 DEFAULT_FORMS_PDF = Path("data/form/CGST forms compiled 2017 hindi.pdf")
 DEFAULT_FORMS_JSON = Path("data/form/gst_forms_forms.json")

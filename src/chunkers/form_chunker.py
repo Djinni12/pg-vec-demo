@@ -8,7 +8,7 @@ from statistics import mean
 
 from transformers import AutoTokenizer
 
-from act_chunker import count_tokens, split_large_text
+from .act_chunker import count_tokens, split_large_text
 
 DEFAULT_FORMS_JSON = Path("data/form/gst_forms_forms.json")
 DEFAULT_FORM_CHUNKS_JSON = Path("data/form/gst_forms_chunks.json")

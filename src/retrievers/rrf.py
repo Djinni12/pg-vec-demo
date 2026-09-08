@@ -1,7 +1,7 @@
 """Reciprocal Rank Fusion for independent GST retrieval results."""
 
-from keyword_search import bm25_search
-from vector_search import vector_search
+from .keyword_search import bm25_search
+from .vector_search import vector_search
 
 
 def document_key(row):
