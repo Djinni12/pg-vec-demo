@@ -1,0 +1,17 @@
+{
+  "notification_number": null,
+  "file_name": "18-2025-CTR-Eng.pdf",
+  "parser_type": "EXCLUDED_ZERO_TEXT",
+  "normalization_status": "NEEDS_VISUAL_EXTRACTION",
+  "notification_date": null,
+  "document_effective_date": null,
+  "effective_date_scopes": [],
+  "amendment_operations": [],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [
+    "Zero text extracted. File contains vector outline drawings (NEEDS_VISUAL_EXTRACTION). Excluded from structural normalization."
+  ],
+  "counts": {}
+}

@@ -1,0 +1,37 @@
+{
+  "notification_number": "11/2025-Central Tax (Rate)",
+  "file_name": "11-2025-CTR-eng.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-09-17",
+  "document_effective_date": "2025-09-22",
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "11-2025-CTR-eng.pdf_op_1",
+      "operation_type": "SUBSTITUTE",
+      "target_notification": "03/2017-Central Tax (Rate)",
+      "target_schedule": "TABLE",
+      "target_serial_no": "1",
+      "target_column": "column (4)",
+      "target_clause_item": null,
+      "anchor_text": "In the said notification",
+      "explicit_old_text": null,
+      "explicit_new_text": null,
+      "effective_date": "2025-09-22",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 1,
+      "raw_legal_text": "In the said notification, in the TABLE, against S. No. 1, for the entry under column (4), the entry \u201c9%\u201d shall be \nsubstituted.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 1,
+    "annexures": 0
+  }
+}

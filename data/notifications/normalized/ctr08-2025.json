@@ -1,0 +1,37 @@
+{
+  "notification_number": "08/2025-Central Tax (Rate)",
+  "file_name": "ctr08-2025.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-01-16",
+  "document_effective_date": "2025-04-01",
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "ctr08-2025.pdf_op_1",
+      "operation_type": "SUBSTITUTE",
+      "target_notification": "17/2017-Central Tax (Rate)",
+      "target_schedule": "Explanation",
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": "clause (c)",
+      "anchor_text": "In the said notification",
+      "explicit_old_text": null,
+      "explicit_new_text": "\u201cspecified premises",
+      "effective_date": "2025-04-01",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 1,
+      "raw_legal_text": "1.  \nIn the said notification, in the Explanation, for item (c), the following shall be \nsubstituted, namely,- \n\u201c \u201cspecified premises\u201d has the same meaning as assigned to it in clause (xxxvi) of \nparagraph 4 of notification number 11/2017-Central Tax (Rate) dated 28.06.2017.\u201d.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 1,
+    "annexures": 0
+  }
+}

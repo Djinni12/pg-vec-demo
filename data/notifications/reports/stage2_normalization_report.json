@@ -1,0 +1,210 @@
+{
+  "total_files": 20,
+  "successfully_normalized": 19,
+  "needs_visual_extraction": 1,
+  "total_schedule_entries": 1371,
+  "total_amendment_operations": 73,
+  "total_annexures": 5,
+  "per_file_summary": [
+    {
+      "file": "09-2025-CTR-eng-2.pdf",
+      "notif_number": "09/2025-Central Tax (Rate)",
+      "parser_type": "SCHEDULE_RATE_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 1195,
+      "amend_ops": 0,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "10-2025-CTR-eng.pdf",
+      "notif_number": "10/2025-Central Tax (Rate)",
+      "parser_type": "EXEMPTION_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 172,
+      "amend_ops": 0,
+      "annexures": 2,
+      "warnings_count": 0
+    },
+    {
+      "file": "11-2025-CTR-eng.pdf",
+      "notif_number": "11/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 1,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "12-2025-CTR-eng.pdf",
+      "notif_number": "12/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 1,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "13-2025-CTR-eng.pdf",
+      "notif_number": "13/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_TABLE_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 1,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "14-2025-CTR-eng.pdf",
+      "notif_number": "14/2025-Central Tax (Rate)",
+      "parser_type": "SCHEDULE_RATE_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 4,
+      "amend_ops": 0,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "15-2025-CTR-eng.pdf",
+      "notif_number": "15/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 39,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "16-2025-CTR-eng.pdf",
+      "notif_number": "16/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 5,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "17-2025-CTR-eng.pdf",
+      "notif_number": "17/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 1,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "18-2025-CTR-Eng.pdf",
+      "notif_number": null,
+      "parser_type": "EXCLUDED_ZERO_TEXT",
+      "status": "NEEDS_VISUAL_EXTRACTION",
+      "sched_entries": 0,
+      "amend_ops": 0,
+      "annexures": 0,
+      "warnings_count": 1
+    },
+    {
+      "file": "19-2025-CTR-Eng-1.pdf",
+      "notif_number": "19/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 3,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "CTR-E-updated-1.pdf",
+      "notif_number": "01/2026-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 4,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr01-2025.pdf",
+      "notif_number": "01/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 3,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr02-2025.pdf",
+      "notif_number": "02/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 2,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr03-2025.pdf",
+      "notif_number": "03/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 1,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr04-2025.pdf",
+      "notif_number": "04/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 1,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr05-2025.pdf",
+      "notif_number": "05/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 3,
+      "annexures": 3,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr06-2025.pdf",
+      "notif_number": "06/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 5,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr07-2025.pdf",
+      "notif_number": "07/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 2,
+      "annexures": 0,
+      "warnings_count": 0
+    },
+    {
+      "file": "ctr08-2025.pdf",
+      "notif_number": "08/2025-Central Tax (Rate)",
+      "parser_type": "AMENDMENT_PARSER",
+      "status": "SUCCESS",
+      "sched_entries": 0,
+      "amend_ops": 1,
+      "annexures": 0,
+      "warnings_count": 0
+    }
+  ]
+}

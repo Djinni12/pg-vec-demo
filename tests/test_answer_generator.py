@@ -3,8 +3,10 @@ import pytest
 import openai
 
 from src.generators.answer_generator import (
+    DIRECT_REASONING_SYSTEM_PROMPT,
     GenerationError,
     SYSTEM_PROMPT,
+    build_direct_full_prompt,
     build_full_prompt,
     build_user_prompt,
     extract_sources,
@@ -166,6 +168,26 @@ def test_generate_answer_with_mocked_openai():
     assert result["sources"][0]["chunk_id"] == "c1"
 
 
+def test_generate_answer_direct_reasoning_uses_direct_prompt():
+    mock_client = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.message.content = "5% of 100000 is 5000."
+    mock_client.chat.completions.create.return_value = MagicMock(choices=[mock_choice])
+
+    result = generate_answer(
+        query="What is 5% of 100000?",
+        model="test-gst-model",
+        client=mock_client,
+        direct_reasoning=True,
+    )
+
+    call_kwargs = mock_client.chat.completions.create.call_args[1]
+    assert call_kwargs["messages"][0]["content"] == DIRECT_REASONING_SYSTEM_PROMPT
+    assert "RETRIEVED CONTEXT" not in call_kwargs["messages"][1]["content"]
+    assert result["answer"] == "5% of 100000 is 5000."
+    assert result["sources"] == []
+
+
 def test_generate_answer_empty_query_raises():
     with pytest.raises(ValueError, match="query cannot be empty"):
         generate_answer("   ", chunks=[])
@@ -245,6 +267,78 @@ def test_run_gst_answer_flow_orchestration():
     assert res["sources"][0]["reference"] == "Section 29"
     assert "retrieval_debug" in res
     assert res["retrieval_debug"]["metadata"]["embedding_model"] == "BAAI/bge-m3"
+
+
+def test_run_gst_answer_flow_direct_percentage_skips_all_retrieval():
+    mock_models = LoadedModels(embedding_model=object(), reranker=object(), initialization_ms=10.0)
+    mock_client = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.message.content = "5% of 100000 is 5000."
+    mock_client.chat.completions.create.return_value = MagicMock(choices=[mock_choice])
+
+    with patch("src.generators.answer_generator.retrieve_rates") as mock_ret_rates, \
+         patch("src.generators.answer_generator.inspect_retrieval") as mock_ret_legal:
+        res = run_gst_answer_flow(
+            query="What is 5% of 100000?",
+            top_k=2,
+            models=mock_models,
+            openai_client=mock_client,
+        )
+
+    mock_ret_rates.assert_not_called()
+    mock_ret_legal.assert_not_called()
+    assert res["route"] == "direct"
+    assert res["answer"] == "5% of 100000 is 5000."
+    assert res["sources"] == []
+    assert res["retrieval_timing"] == 0.0
+
+
+def test_run_gst_answer_flow_direct_taxable_value_skips_all_retrieval():
+    mock_models = LoadedModels(embedding_model=object(), reranker=object(), initialization_ms=10.0)
+    mock_client = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.message.content = "Taxable value = 5000 / 0.05 = 100000."
+    mock_client.chat.completions.create.return_value = MagicMock(choices=[mock_choice])
+
+    with patch("src.generators.answer_generator.retrieve_rates") as mock_ret_rates, \
+         patch("src.generators.answer_generator.inspect_retrieval") as mock_ret_legal:
+        res = run_gst_answer_flow(
+            query="If GST amount is 5000 at 5%, what is taxable value?",
+            top_k=2,
+            models=mock_models,
+            openai_client=mock_client,
+        )
+
+    mock_ret_rates.assert_not_called()
+    mock_ret_legal.assert_not_called()
+    assert res["route"] == "direct"
+    assert "100000" in res["answer"]
+
+
+def test_run_gst_answer_flow_gujarati_direct_discount_gst_skips_all_retrieval():
+    mock_models = LoadedModels(embedding_model=object(), reranker=object(), initialization_ms=10.0)
+    mock_client = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.message.content = "અંતિમ રકમ ₹18,900 થશે."
+    mock_client.chat.completions.create.return_value = MagicMock(choices=[mock_choice])
+
+    query = (
+        "કોઈ વસ્તુની કિંમત ₹20,000 છે. પહેલા કિંમત પર 10% ડિસ્કાઉન્ટ આપવામાં "
+        "આવે છે અને પછી બાકી રકમ પર 5% GST લગાવવામાં આવે છે. અંતિમ રકમ કેટલી થશે?"
+    )
+    with patch("src.generators.answer_generator.retrieve_rates") as mock_ret_rates, \
+         patch("src.generators.answer_generator.inspect_retrieval") as mock_ret_legal:
+        res = run_gst_answer_flow(
+            query=query,
+            top_k=2,
+            models=mock_models,
+            openai_client=mock_client,
+        )
+
+    mock_ret_rates.assert_not_called()
+    mock_ret_legal.assert_not_called()
+    assert res["route"] == "direct"
+    assert "₹18,900" in res["answer"]
 
 
 def test_streaming_thought_filter():
@@ -376,6 +470,48 @@ def test_format_rate_item_and_context():
     assert "--- Rate Item 1 (Goods) ---" in context_block
 
 
+def test_format_rate_item_central_tax_and_notification_date():
+    from src.generators.answer_generator import extract_rate_sources, format_rate_item
+
+    rate_item = {
+        "item_type": "goods",
+        "code": "0405",
+        "description": "Butter and other fats and oils derived from milk",
+        "section_heading": "CGST rates on goods as on 22.09.2025",
+        "rate_category": "CGST",
+        "source_rate": "2.5%",
+        "cgst_rate": "2.5%",
+        "sgst_rate": "2.5%",
+        "total_gst_rate": "5%",
+        "formatted_rate": "Total GST: 5% (CGST: 2.5%, SGST: 2.5%)",
+        "notification_no": "09/2025-Central Tax (Rate)",
+        "notification_date": "17th September, 2025",
+        "rate_as_on_date": "22.09.2025",
+        "effective_date": None,
+        "condition": None,
+        "source_reference": "GST rates2025.pdf (09/2025-Central Tax (Rate))",
+    }
+    formatted = format_rate_item(rate_item, 1)
+    assert "Section Heading: CGST rates on goods as on 22.09.2025" in formatted
+    assert "Rate Category: CGST" in formatted
+    assert "Total GST Rate: 5%" in formatted
+    assert "Derived CGST Rate: 2.5%" in formatted
+    assert "Derived SGST Rate: 2.5%" in formatted
+    assert "Notification Date: 17th September, 2025" in formatted
+    assert "Rate As On Date: 22.09.2025" in formatted
+    assert "Effective Date:" not in formatted
+
+    sources = extract_rate_sources([rate_item])
+    assert len(sources) == 1
+    src = sources[0]
+    assert "Total GST: 5%" in src["content"]
+    assert "Notification Date: 17th September, 2025" in src["content"]
+    assert "Rate As On Date: 22.09.2025" in src["content"]
+    assert "Effective Date:" not in src["content"]
+    assert "Total GST: 5%" in src["snippet"]
+
+
+
 def test_run_gst_answer_flow_rate_route_skips_legal_retrieval():
     mock_models = LoadedModels(embedding_model=object(), reranker=object(), initialization_ms=10.0)
     mock_rates = [
@@ -417,6 +553,69 @@ def test_run_gst_answer_flow_rate_route_skips_legal_retrieval():
     assert "18% IGST" in res["answer"]
     assert len(res["sources"]) == 1
     assert res["sources"][0]["reference"] == "HSN 1806"
+
+
+def test_product_rate_query_uses_rag_not_direct():
+    mock_models = LoadedModels(embedding_model=object(), reranker=object(), initialization_ms=10.0)
+    mock_rates = [
+        {
+            "item_type": "goods",
+            "code": "9999",
+            "description": "X",
+            "formatted_rate": "18% IGST",
+            "source_reference": "GST rates2025.pdf",
+        }
+    ]
+    mock_client = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.message.content = "X attracts 18% IGST."
+    mock_client.chat.completions.create.return_value = MagicMock(choices=[mock_choice])
+
+    with patch("src.generators.answer_generator.retrieve_rates", return_value=mock_rates) as mock_ret_rates, \
+         patch("src.generators.answer_generator.inspect_retrieval") as mock_ret_legal:
+        res = run_gst_answer_flow(
+            query="What GST rate applies to X?",
+            top_k=2,
+            models=mock_models,
+            openai_client=mock_client,
+        )
+
+    mock_ret_rates.assert_called_once()
+    mock_ret_legal.assert_not_called()
+    assert res["route"] == "rate"
+
+
+def test_document_rate_calculation_uses_rate_retrieval():
+    mock_models = LoadedModels(embedding_model=object(), reranker=object(), initialization_ms=10.0)
+    mock_rates = [
+        {
+            "item_type": "goods",
+            "code": "9999",
+            "description": "Applicable taxable supply",
+            "formatted_rate": "18% IGST",
+            "source_reference": "GST rates2025.pdf",
+        }
+    ]
+    mock_client = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.message.content = "Using the retrieved 18% GST rate, tax on 100000 is 18000."
+    mock_client.chat.completions.create.return_value = MagicMock(choices=[mock_choice])
+
+    query = "Using the applicable GST rate from the documents, calculate tax on 100000"
+    with patch("src.generators.answer_generator.retrieve_rates", return_value=mock_rates) as mock_ret_rates, \
+         patch("src.generators.answer_generator.inspect_retrieval") as mock_ret_legal:
+        res = run_gst_answer_flow(
+            query=query,
+            top_k=2,
+            models=mock_models,
+            openai_client=mock_client,
+        )
+
+    mock_ret_rates.assert_called_once_with(query, db_url=None, limit=2)
+    mock_ret_legal.assert_not_called()
+    assert res["route"] == "rate"
+    assert len(res["rate_results"]) == 1
+    assert "18000" in res["answer"]
 
 
 def test_run_gst_answer_flow_mixed_route_executes_both():
@@ -481,3 +680,22 @@ def test_run_gst_answer_flow_mixed_route_executes_both():
     assert res["sources"][1]["reference"] == "Rule 22"
     assert res["timings_ms"]["rate_lookup"] >= 0
 
+
+def test_system_prompt_rate_response_format_guidelines():
+    """Verify SYSTEM_PROMPT contains the required natural opening and structured details instructions."""
+    from src.generators.answer_generator import SYSTEM_PROMPT
+
+    assert "SIMPLE DIRECT ANSWER" in SYSTEM_PROMPT
+    assert "FULL RATE / SOURCE DETAILS" in SYSTEM_PROMPT
+    assert "exempt from GST, so no GST is charged (0%)" in SYSTEM_PROMPT
+    assert "attracts [Total GST]% GST under HSN [Code]" in SYSTEM_PROMPT
+    assert "NEVER start with database labels like \"Item Description:\"" in SYSTEM_PROMPT
+    assert "Description: [Must ALWAYS show the full retrieved legal description verbatim" in SYSTEM_PROMPT
+    assert "Keep compensation cess distinct from base GST" in SYSTEM_PROMPT
+
+
+def test_direct_full_prompt_keeps_legal_grounding_boundary():
+    prompt = build_direct_full_prompt("What is 5% of 100000?")
+    assert "Answer directly using only the numbers" in prompt
+    assert "Do not look up, invent, estimate, or assume any GST law" in prompt
+    assert "RETRIEVED CONTEXT" not in prompt

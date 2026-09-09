@@ -1,0 +1,89 @@
+{
+  "notification_number": "14/2025-Central Tax (Rate)",
+  "file_name": "14-2025-CTR-eng.pdf",
+  "parser_type": "SCHEDULE_RATE_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-09-17",
+  "document_effective_date": "2025-09-22",
+  "effective_date_scopes": [],
+  "amendment_operations": [],
+  "schedules": {
+    "Schedule": [
+      {
+        "entry_id": "14/2025-Central Tax (Rate)_schedule_1",
+        "schedule_name": "Schedule",
+        "schedule_rate_raw": "6%",
+        "schedule_rate_pct": 6.0,
+        "serial_no": "1",
+        "classification_raw": "6815",
+        "normalized_hsn": [
+          "6815"
+        ],
+        "description": "Fly ash bricks; Fly ash aggregates; Fly ash blocks",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "1.\t6815\tFly ash bricks; Fly ash aggregates; Fly ash blocks",
+        "tax_treatment": "TAXABLE"
+      },
+      {
+        "entry_id": "14/2025-Central Tax (Rate)_schedule_2",
+        "schedule_name": "Schedule",
+        "schedule_rate_raw": "6%",
+        "schedule_rate_pct": 6.0,
+        "serial_no": "2",
+        "classification_raw": "6901 00 10",
+        "normalized_hsn": [
+          "69010010"
+        ],
+        "description": "Bricks of fossil meals or similar siliceous earths",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "2.\t6901 00 10\tBricks of fossil meals or similar siliceous earths",
+        "tax_treatment": "TAXABLE"
+      },
+      {
+        "entry_id": "14/2025-Central Tax (Rate)_schedule_3",
+        "schedule_name": "Schedule",
+        "schedule_rate_raw": "6%",
+        "schedule_rate_pct": 6.0,
+        "serial_no": "3",
+        "classification_raw": "6904 10 00",
+        "normalized_hsn": [
+          "69041000"
+        ],
+        "description": "Building bricks",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "3.\t6904 10 00\tBuilding bricks",
+        "tax_treatment": "TAXABLE"
+      },
+      {
+        "entry_id": "14/2025-Central Tax (Rate)_schedule_4",
+        "schedule_name": "Schedule",
+        "schedule_rate_raw": "6%",
+        "schedule_rate_pct": 6.0,
+        "serial_no": "4",
+        "classification_raw": "6905 10 00",
+        "normalized_hsn": [
+          "69051000"
+        ],
+        "description": "Earthen or roofing tiles",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "4.\t6905 10 00\tEarthen or roofing tiles",
+        "tax_treatment": "TAXABLE"
+      }
+    ]
+  },
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "total_schedules": 1,
+    "total_schedule_entries": 4
+  }
+}

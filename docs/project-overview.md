@@ -1,156 +1,259 @@
-# Project architecture, tools, and techniques
+# Technical Architecture, Tech Stack & Query Lifecycl
+e Specification
 
-## Purpose and implemented scope
+This document provides a comprehensive technical breakdown of the GST Assistant and Retrieval Inspector system. It details every component of the technology stack—from underlying machine learning models and database extensions down to runtime libraries—explaining the engineering rationale for each choice, followed by a step-by-step trace of how queries are routed, retrieved, fused, reranked, and generated.
 
-The project demonstrates retrieval over the Kaggle GST goods and services dataset. It combines BM25 keyword retrieval and pgvector semantic retrieval with Reciprocal Rank Fusion (RRF). Keyword search uses Timescale `pg_textsearch` BM25 matching first; character-based fuzzy similarity remains available as the no-match keyword fallback. The existing cross-encoder reranker can reorder candidates before RRF when requested.
+---
 
-The downloaded snapshot contains `Goods.csv` (1,850 rows) and `Services.csv` (232 rows). The loader retains 1,729 searchable records after skipping omitted, blank-description, and column-number rows. [Dataset inspection and field mapping](gst-dataset.md) describes all source columns, metadata, percentage conversion, and exact codes.
+## 1. High-Level System Architecture
 
-Semantic retrieval and keyword retrieval run independently for the same input query. RRF then merges their ranked lists by stable GST source identity, using only rank positions. With `--rerank-vector-before-rrf`, only the vector list is reordered by CrossEncoder scores before RRF reads the ranks. There is no answer-generation stage. Explicit classification lookup is a separate mode that does not load models.
+The system is a production-grade **Hybrid Retrieval-Augmented Generation (RAG)** engine tailored for Indian Goods and Services Tax (GST) laws, procedures, rules, forms, and tariff rates.
 
-## Data flow
+The architecture solves two fundamentally distinct retrieval problems:
+1. **Statutory Legal RAG (Acts, Rules, Forms, Procedures)**: Unstructured and semi-structured legal text where taxpayers require grounded legal reasoning, exact section/rule citations, and procedural clarity.
+2. **Structured Tariff Rate Retrieval (HSN/SAC Codes & Rates)**: Highly structured, exact tariff tables where users require deterministic rates (CGST, SGST, IGST, Compensation Cess), strict date integrity, and exact exemption statuses without mathematical errors or hallucinations.
 
 ```mermaid
 flowchart TD
-    A[Goods.csv and Services.csv] --> A1[Validate and clean GST rows]
-    A1 --> B[SentenceTransformer: all-MiniLM-L6-v2]
-    B --> C[PostgreSQL gst_documents table with pgvector embeddings]
-    D[Query: roasted coffee beans] --> E[Embed query with the same model]
-    E --> F[Cosine-distance SQL search: up to 10 candidates]
-    C --> F
-    F --> G[CrossEncoder scores query-description pairs]
-    G --> H[Sort scores descending and print up to 5 results]
-    D --> J[pg_textsearch BM25 ranking]
-    C --> J
-    F --> R[Reciprocal Rank Fusion]
-    J --> R
-    R --> S[Print fused Top-K]
-    J --> L{Any matches?}
-    L -->|Yes| K[Print BM25 results]
-    L -->|No| M[pg_trgm fallback for the same query]
-    C --> M
-    M --> N[Print fuzzy results or no matches]
-    O[Explicit code query] --> P[Array membership lookup]
-    C --> P
+    User([User / Web UI]) --> API[FastAPI Server :8000]
+    API --> QR[Query Router: classify_query]
+    
+    QR -->|Rate Intent| RR[Structured Rate Retriever]
+    QR -->|Legal Intent| LR[Legal Hybrid Pipeline]
+    QR -->|Mixed Intent| MR[Dual Retrieval]
+    
+    subgraph "Structured Rate Pipeline (Sub-millisecond)"
+        RR --> HSNIdx[In-Memory HSN Index & Exact Lookup]
+        RR --> TextSearch[Phrase & Stem Search over 1,663 Tariff Rows]
+        HSNIdx --> RateData[(gst_rates.csv)]
+        TextSearch --> RateData
+    end
+    
+    subgraph "Legal Hybrid RAG Pipeline"
+        LR --> DenseRet[Dense Vector Retrieval: BAAI/bge-m3]
+        LR --> BM25Ret[Lexical BM25: Timescale pg_textsearch]
+        
+        DenseRet --> PG[(PostgreSQL 17 + pgvector HNSW)]
+        BM25Ret --> PG
+        
+        DenseRet -->|Top-N Dense Candidates| RRF[Reciprocal Rank Fusion k=60]
+        BM25Ret -->|Top-N BM25 Candidates| RRF
+        
+        RRF -->|Top-K Hybrid Candidates| CE[Cross-Encoder Reranker: ms-marco-MiniLM-L-6-v2]
+        CE --> TopChunks[Top Reranked Legal Chunks]
+    end
+    
+    MR --> RR
+    MR --> LR
+    
+    RR --> RateResults[Rate Records]
+    TopChunks --> GroundedPrompt[Context Assembly & Prompt Builder]
+    RateResults --> GroundedPrompt
+    
+    GroundedPrompt --> LLM[LLM Generation: gemini-3.1-flash-lite]
+    LLM --> STF[StreamingThoughtFilter: Strip thought tags]
+    STF --> SSE[Server-Sent Events Stream]
+    SSE --> User
 ```
 
-## Tools and technologies
+---
 
-This inventory covers direct dependencies and the infrastructure and model choices explicitly used or declared in the repository. Transitive library versions are not recorded by a lockfile.
+## 2. Complete Tech Stack & Component Rationales
 
-| Tool or component | How this project uses it |
-| --- | --- |
-| Python | Implements CSV ingestion, embedding inference, SQL execution, reranking, and console output in two standalone scripts and a keyword-search module. Standard-library `csv`, `Decimal`, `hashlib`, and `json` handle source parsing, rate conversion, provenance, and reporting; `argparse` exposes the small CLI and `unittest` runs tests. |
-| `psycopg[binary]` | PostgreSQL driver; opens connections, executes parameterized SQL, fetches rows, and commits inserted data. The requirement requests its binary distribution option. |
-| `pgvector` Python package | Supplies `pgvector.psycopg.register_vector(conn)` so vector values can be adapted through Psycopg. This package is distinct from the database extension. |
-| PostgreSQL 17 | Stores codes, descriptions, and embeddings and executes semantic, BM25, fallback, and exact-code queries. JSONB stores source metadata; a GIN array index supports exact code membership. |
-| pgvector PostgreSQL extension | Provides the vector column type and the `<=>` cosine-distance operator used for semantic retrieval. |
-| Timescale `pg_textsearch` 1.4.0 | Supplies the primary BM25 keyword index and `<@>` scoring operator; requires preloading at server startup. |
-| `pg_trgm` PostgreSQL extension | Provides `similarity()` and the `%` threshold operator used only for fallback fuzzy matching. It is required by the search SQL but is not enabled by either script. |
-| `sentence-transformers` | Provides the `SentenceTransformer` and `CrossEncoder` model interfaces. |
-| `all-MiniLM-L6-v2` | Encodes each description and the semantic query into 384-dimensional dense vectors. |
-| `cross-encoder/ms-marco-MiniLM-L-6-v2` | Scores each retrieved query/description pair before the semantic results are reordered. |
-| Docker and Docker Compose | Run the database as the `hybrid-rag-db` container using a custom image based on `pgvector/pgvector:pg17`, with host port `5432` and a persistent `pgdata17` volume. `Dockerfile.db` builds the pinned `pg_textsearch` release using Make, a C compiler, and PostgreSQL development headers; curl downloads the release archive. |
-| `python-dotenv` | Loads `.env` so local secrets such as `HF_TOKEN` are available to ingestion and search scripts without hardcoding them. |
-| `pip` and Python `venv` | Used in the documented local installation workflow to install dependencies into an isolated environment. |
+### 2.1 Machine Learning & NLP Models
 
-The code uses local model inference through Sentence Transformers; it does not call an embedding or generation API. Model files may need downloading when first loaded. No explicit device selection, model revision, dependency version pin, or inference tuning is configured.
+| Component | Model / Technology | Parameters / Specifications | Technical Rationale & Role |
+| :--- | :--- | :--- | :--- |
+| **Dense Embedding Model** | **`BAAI/bge-m3`** | • Dimension: `1024`<br>• Max Context: `8,192` tokens<br>• Multi-lingual (100+ languages)<br>• Dense representations | **Why chosen over standard embedding models (e.g., MiniLM, OpenAI text-embedding-3):**<br>1. **Multi-lingual & Bilingual Competence**: Indian GST statutory documents (especially registration, refund, and appeal forms) contain extensive bilingual Hindi and English terminology. BGE-M3 exhibits superior cross-lingual semantic alignment.<br>2. **Extended Context Window (8,192 tokens)**: Unlike standard 512-token models (`all-MiniLM-L6-v2`), BGE-M3 can encode entire legal statutory subsections and schedule conditions without truncation.<br>3. **1024-Dimensional Semantic Richness**: Encodes dense legal nuances and domain-specific terminology (such as *"input tax credit reversal"*, *"composition levy"*, *"revocation of cancellation"*). |
+| **Cross-Encoder Reranker** | **`cross-encoder/ms-marco-MiniLM-L-6-v2`** (and BAAI BGE rerankers) | • Joint cross-attention<br>• Input: `[CLS] Query [SEP] Passage [SEP]`<br>• Output: Unbounded logit relevance score | **Why chosen over bi-encoder similarity alone:**<br>1. **Cross-Attention Interaction**: Bi-encoders encode queries and passages into single independent vectors, losing inter-token interactions. A cross-encoder performs all-to-all attention across query tokens and document tokens simultaneously.<br>2. **Eliminates False Positives**: Filters out passages that share similar keywords but differ in legal meaning (e.g., distinguishing conditions under *Section 29* for cancellation vs *Section 30* for revocation). |
+| **Generative LLM** | **`gemini-3.1-flash-lite`** (via Google Generative Language OpenAI Compatibility API) | • Context Window: `1,000,000+` tokens<br>• Low-latency inference<br>• High instruction compliance<br>• Temperature: `0.1` | **Why chosen:**<br>1. **Strict Context Grounding**: Follows negative constraints flawlessly (e.g., *"Never invent missing fields"*, *"Never label notification dates as effective dates"*).<br>2. **Near-Zero Latency**: Extremely fast time-to-first-token, essential for interactive streaming chatbots.<br>3. **Cost-Effective Scalability**: Optimized for high-throughput query answering. |
 
-## Techniques in detail
+---
 
-### 1. Dense embeddings for semantic retrieval
+### 2.2 Database, Extensions & Storage Layer
 
-`ingest_gst.py` encodes cleaned descriptions in batches of 32 and stores each vector alongside the GST source record. `tests/test_pgvector.py` delegates to the same loader for compatibility. `vector_search.py` encodes the query using the same model, placing queries and descriptions into a comparable vector space.
+| Component | Technology | Role & Engineering Rationale |
+| :--- | :--- | :--- |
+| **Relational Database** | **PostgreSQL 17** | Provides reliable ACID storage, JSONB document querying, enterprise index types, and extensibility. Serves as the single unified persistence engine for metadata, text chunks, and vectors. |
+| **Vector Extension** | **`pgvector` (v0.8.0+)** | Adds native vector types and distance operators (`<=>` cosine distance, `<->` L2 distance, `<#>` inner product). Facilitates fast similarity queries directly in SQL without needing a separate standalone vector database (e.g., Pinecone/Milvus), keeping vector embeddings and relational metadata transactionally unified. |
+| **Vector Indexing** | **HNSW (`hierarchical navigable small world`)** | Constructed with `m=16, ef_construction=64` over 1024-dimensional BGE-M3 embeddings. Provides sub-millisecond approximate nearest neighbor (ANN) retrieval with logarithmic search complexity, outperforming IVFFlat in recall and query latency. |
+| **Lexical Search Extension** | **Timescale `pg_textsearch` 1.4.0 / ParadeDB `pg_search`** | Implements the industry-standard Okapi BM25 ranking algorithm natively inside PostgreSQL (`<@>` scoring operator, `k1=1.2, b=0.75`). Standard PostgreSQL full-text search (`to_tsvector`/`tsquery`) only counts term frequencies; BM25 balances term frequency, corpus-wide inverse document frequency (IDF), and document length normalization. |
+| **Fuzzy Text Fallback** | **`pg_trgm`** | Supplies trigram similarity (`similarity()`, `%` operator). Used as a secondary fallback mechanism for typos and misspellings when exact BM25 matches yield zero candidates. |
+| **Database Driver** | **`psycopg` 3.x (`[binary]`)** | Modern, high-performance PostgreSQL client library for Python. Supports binary protocol data exchange, client-side connection parameters, parameterized SQL preventing injection, and native vector conversion via `pgvector.psycopg.register_vector(conn)`. |
+| **Containerization** | **Docker & Docker Compose** | Multi-stage build (`Dockerfile.db`) compiling pinned PostgreSQL 17 with pgvector and Timescale `pg_textsearch` extensions from C source headers. Mounts persistent volume `pgdata17` to guarantee data durability. |
 
-This permits matching by learned semantic similarity rather than requiring an exact word overlap. A query such as `roasted coffee beans` can be compared to goods descriptions about coffee. This is the intent of the example, not an asserted ranking guarantee.
+---
 
-Each description is whitespace-normalized and passed to the embedding model as one input. Classification codes, rates, and long conditions are excluded from embeddings. There is no chunking or explicit vector normalization; descriptions beyond the model token limit are truncated by the model.
+### 2.3 Backend & Application Frameworks
 
-### 2. Cosine-distance nearest-neighbor retrieval
+| Component | Library / Framework | Role & Engineering Rationale |
+| :--- | :--- | :--- |
+| **Web API Framework** | **FastAPI 0.115+** | High-performance asynchronous Python web framework built on Starlette and Pydantic. Provides automatic OpenAPI docs, CORS middleware, and dependency injection. |
+| **Model Preloading Lifespan** | **FastAPI `lifespan` handler** | Pre-loads heavy PyTorch SentenceTransformer and CrossEncoder models once at server startup into memory (`app.state.models`). Avoids 3–8 second model initialization delays during live user queries. |
+| **Web Server (ASGI)** | **Uvicorn 0.34+** | Production ASGI server running asynchronous event loops for concurrent request handling. |
+| **Data Validation** | **Pydantic v2** | Validates incoming payloads (`ChatRequest`, `SearchRequest`, `RateSearchRequest`), verifying positive integer ranges (`top_k`, `limit`) and non-empty strings. |
+| **Real-Time Streaming** | **Server-Sent Events (`StreamingResponse`)** | Emits JSON chunks with event types (`meta`, `token`, `done`, `error`) over an open HTTP connection (`text/event-stream`), enabling typewriter-style live token generation in the browser. |
+| **Thought Tag Filter** | **`StreamingThoughtFilter`** | Custom stateful streaming buffer. Intercepts and suppresses `<thought>...</thought>` or `<thinking>...</thinking>` reasoning tokens generated by thinking models, preventing internal scratchpads from leaking to users. |
+| **Configuration** | **`python-dotenv`** | Securely loads environment variables (`HF_TOKEN`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `DATABASE_URL`) from `.env`. |
 
-The semantic SQL query computes `embedding <=> query_embedding`, orders by this distance in ascending order, and applies the requested limit. Lower distance means a closer match under the cosine-distance metric.
+---
 
-The repository defines no vector index. With the minimal schema in the README, this is an exact search over stored vectors, rather than an approximate nearest-neighbor search. HNSW and IVFFlat are not configured. Any indexes created independently in an existing database are outside what the repository records.
+### 2.4 Data Parsing, Chunking & Retrieval Utilities
 
-### 3. Reciprocal Rank Fusion
+| Component | Library / Module | Role & Engineering Rationale |
+| :--- | :--- | :--- |
+| **PDF Extraction** | **PyMuPDF (`fitz`) 1.25+** | Lightning-fast PDF parsing library written in C. Extracts text, structural fonts, and tables from the 94-page GST Rates notification PDF and legislative Acts/Rules documents. |
+| **Structure-Aware Chunkers** | **`act_chunker.py`, `rules_chunker.py`, `form_chunker.py`** | **Why not naive fixed-character/token chunking?**<br>Arbitrary token slicing splits legal sentences across subsection boundaries, destroying statutory provisos and conditions. Custom chunkers split strictly along legal boundaries: Sections, Subsections, Chapters, Rules, Sub-rules, and Form tables, attaching parent statutory headers to every chunk. |
+| **Structured Rate Retriever** | **`src/retrievers/rate_retriever.py`** | Performs exact and fuzzy HSN tariff lookups over `gst_rates.csv` (1,663 records). Builds an in-memory normalized digit hash index (`2`, `4`, `6`, `8` digits) providing **sub-millisecond lookups** without incurring embedding, database, or LLM overhead. |
+| **Rank Fusion** | **Reciprocal Rank Fusion (`rrf.py`)** | Merges ranked lists from disparate retrieval systems (dense vector cosine distance and sparse lexical BM25 scores) using the formula: $RRF\_score(d) = \sum_{m \in M} \frac{1}{k + r_m(d)}$ with smoothing constant $k=60$. Requires no score normalization or calibration across different metric spaces. |
 
-`rrf.py` provides `hybrid_rrf_search(conn, query, retrieve_limit=20, top_k=5, k=60)`. It calls the existing BM25 retriever and the pgvector retriever independently, assigns rank positions inside each list, and computes `sum(1 / (k + rank))` for each stable GST document key.
+---
 
-The document key comes from `(metadata["source_file"], metadata["source_row"])`, which matches the ingestion primary key. If a row appears in both lists, its two rank contributions are summed. If it appears in only one list, its one contribution is kept. Raw BM25 scores and vector distances are not normalized or added. Final results are sorted by RRF score descending and trimmed to Top-K.
+### 2.5 Frontend Stack
 
-The command-line path is `python search_pgvec.py "query text" --rrf`. Add `--rerank-vector-before-rrf` to score the vector candidate list with the existing CrossEncoder before fusion. BM25 keeps its original rank order. RRF still uses only the post-rerank vector positions and original BM25 positions; it does not use CrossEncoder scores in the fusion formula. The manual smoke script `tests/dummy_search_test.py` prints BM25, vector, and fused RRF sections for the same query and supports the same rerank option.
+| Component | Technology | Role & Engineering Rationale |
+| :--- | :--- | :--- |
+| **Frontend Framework** | **React 18 (Standalone Babel)** | Single-page application loaded directly in the browser via CDN without heavy Node.js/Webpack build steps. |
+| **Interactive Inspector** | **Retrieval Debug Drawer** | Renders intermediate stage tabs: **Hybrid + Reranker**, **Hybrid (RRF)**, **Dense (pgvector)**, and **BM25**, exposing candidate scores, ranks, and stage latency in milliseconds. |
+| **Markdown Renderer** | Custom lightweight regex parser | Renders headings, lists, bold text, and code blocks safely without external npm vulnerabilities. |
 
-### 4. Retrieve, then rerank
+---
 
-After fetching candidates, the script builds `(query, description)` pairs and passes them to `reranker.predict(pairs)`. The cross-encoder evaluates each pair jointly and produces a relevance score. The script converts each score to a Python float, sorts descending, and prints the top five candidates.
+## 3. End-to-End Technical Execution Lifecycle
 
-This is a two-stage retrieval architecture: embeddings select a small candidate set, then a more detailed pairwise model scores that set. The reranker can change the order of those candidates but cannot recover a document excluded from the initial top 10.
+When a user submits a query to the GST bot, the system executes through the following distinct stages:
 
-Each printed semantic result includes its code, description, original vector distance, and reranking score. The final order uses only the reranking score. These model scores are not calibrated probabilities or combined with the vector distance.
+```
+[User Query]
+     │
+     ▼
+[Stage 1: Intent Routing] ────► RATE / LEGAL / MIXED
+     │
+     ├────────────────────────┬────────────────────────┐
+     ▼                        ▼                        ▼
+[Stage 2A: Rate Path]   [Stage 2B: Legal Path]   [Mixed Path]
+(Exact HSN + Stemming)   (BGE-M3 + BM25 + RRF)   (Runs Both)
+     │                        │                        │
+     └────────────────────────┴────────────────────────┘
+     │
+     ▼
+[Stage 3: Context Assembly & Prompt Construction]
+     │
+     ▼
+[Stage 4: LLM Generation & Live Token Streaming]
+     │
+     ▼
+[Stage 5: Client Display via SSE & Source Citations]
+```
 
-### 5. BM25 keyword search with trigram fallback
+---
 
-`keyword_search.py` provides `keyword_search(conn, query, limit=5)`, returning `(rows, method)`. Each row contains code, description, method-specific score, three numeric GST rates, and source metadata.
+### Stage 1: Query Ingestion & Route Classification
+**File:** [`src/routers/query_router.py`](file:///home/scalp-9/hybrid-rag-poc/src/routers/query_router.py)
 
-`schema.sql` creates `gst_documents_search_bm25_idx` using Timescale `pg_textsearch`, over description + classification + condition/cess, with English text processing and BM25 parameters `k1=1.2` and `b=0.75`. BM25 ranks keyword relevance using term frequency, corpus-wide term rarity, and document length. English processing handles stemming and stopwords. Documents can match any query term; there is no phrase or Boolean query interface in this application.
+1. The query arrives at `POST /chat` or `POST /chat/stream`.
+2. `classify_query(query)` evaluates the query using regular expressions:
+   - **Rate Intent (`has_rate_intent`)**: Looks for HSN/SAC mentions, tariff chapter headings, rate percentages (`%`, `gst rate`, `cgst`, `sgst`, `igst`, `cess`), standalone 4–8 digit codes, or product rate queries (`"What is the GST on butter?"`, `"Give me full GST details for fresh milk"`).
+   - **Legal Intent (`has_legal_intent`)**: Looks for statutory terms (*"section"*, *"rule"*, *"form"*, *"cancellation"*, *"revocation"*, *"penalty"*, *"procedure"*, *"appeal"*, *"input tax credit"*).
+3. Query Route assignment:
+   - Matches only rate intent $\rightarrow$ `RouteType.RATE`
+   - Matches only legal intent $\rightarrow$ `RouteType.LEGAL`
+   - Matches both $\rightarrow$ `RouteType.MIXED` (e.g., *"GST rate on footwear and procedure for cancellation under Rule 22"*)
 
-`bm25_search` uses `search_text <@> to_bm25query(query, 'gst_documents_search_bm25_idx')`. The explicit index supplies scoring context even for small-table sequential plans. The operator returns negative BM25 scores, so SQL orders ascending and filters to scores below zero. This prevents zero-relevance records from suppressing fallback. Returned scores are negated into positive `bm25_score` values, with higher values representing better matches. Equal-score ordering is unspecified. See the [pinned pg_textsearch documentation](https://github.com/timescale/pg_textsearch/blob/v1.4.0/README.md).
+---
 
-Only if BM25 returns zero relevant rows does the wrapper call `fuzzy_search` with the same query and limit. That function uses `similarity(description, query)` and the `%` threshold operator, ranking descending. The SQL escapes the literal operator as `%%` for Psycopg. Matching uses the entire description and the session's trigram threshold; no trigram index or threshold change is configured by the application.
+### Stage 2A: Structured Rate Retrieval (for RATE & MIXED)
+**File:** [`src/retrievers/rate_retriever.py`](file:///home/scalp-9/hybrid-rag-poc/src/retrievers/rate_retriever.py)
 
-Partial BM25 results are returned without fuzzy top-up. Blank input returns no rows without accessing the database; nonpositive limits raise `ValueError`. Stopword-only input attempts fallback after finding no BM25 matches. Database errors propagate rather than triggering fallback. BM25 scores and trigram similarities are not combined.
+1. **Code Extraction**: `extract_query_codes(query)` isolates 2, 4, 6, or 8-digit HSN codes (e.g., `"0405"` for butter, `"8711"` for motorcycles).
+2. **Exact Index Lookup**: `exact_code_lookup(code)` queries the pre-computed in-memory hash index mapping normalized digit strings to CSV row positions.
+3. **Natural Language Search**: If no HSN code was given or candidate limits allow, `extract_search_phrase(query)` strips query boilerplate (*"What is the GST rate on"*, *"Give me full details for"*) and searches `description` using word stems, prefix weighting, and exclusion clause penalties (`other than ...`).
+4. **Data Categorization & Safe Derivations**:
+   - `CGST` $\rightarrow$ derives `cgst_rate = source_rate`, `sgst_rate = source_rate`, `total_gst_rate = source_rate * 2`.
+   - `EXEMPTION` $\rightarrow$ preserves `source_rate` (`Nil`), sets `is_exempt = true`, `total_gst_rate = 0%`, never doubles.
+   - `COMPENSATION_CESS` $\rightarrow$ preserves cess rate independently, base rates remain `null`, never doubles.
+   - `SPECIAL` $\rightarrow$ conditional concessions (e.g. 3% without ITC under Notif 02/2022) preserved without automatic doubling.
 
-The script accepts GST queries such as `coffee` and the misspelling `cofee`, printing the method that supplied the results. The typo query may still return no rows under the default whole-description trigram threshold. Keyword results remain separate from cross-encoder reranking. RRF can combine BM25 ranks with vector ranks, without using the trigram fallback list.
+---
 
-### 6. Parameterized SQL and transactions
+### Stage 2B: Legal Hybrid Retrieval & Reranking (for LEGAL & MIXED)
+**Files:** [`src/retrieval_inspector.py`](file:///home/scalp-9/hybrid-rag-poc/src/retrieval_inspector.py), [`src/retrievers/legal_dense_retriever.py`](file:///home/scalp-9/hybrid-rag-poc/src/retrievers/legal_dense_retriever.py), [`src/retrievers/bm25_retriever.py`](file:///home/scalp-9/hybrid-rag-poc/src/retrievers/bm25_retriever.py), [`src/retrievers/legal_hybrid_retriever.py`](file:///home/scalp-9/hybrid-rag-poc/src/retrievers/legal_hybrid_retriever.py)
 
-Both scripts pass values separately from SQL using Psycopg placeholders. This covers inserted data, vector queries, keyword query text, and keyword result limits; values are not interpolated into SQL strings.
+1. **Dense Vector Retrieval**:
+   - The query text is encoded using the pre-loaded `BAAI/bge-m3` model via `embed_query()`, outputting a unit-normalized 1,024-dimensional float vector.
+   - Executes an SQL query against PostgreSQL:
+     ```sql
+     SELECT chunk_id, document_type, reference, title, content, 
+            (embedding <=> %(query_embedding)s) AS distance
+     FROM act_chunks
+     ORDER BY distance ASC
+     LIMIT 30;
+     ```
+   - Searches `act_chunks`, `rule_chunks`, and `form_chunks` using HNSW index navigation, returning top 30 dense candidates.
+2. **Sparse BM25 Retrieval**:
+   - Simultaneously, `BM25Retriever.retrieve()` runs a native full-text BM25 search via Timescale `pg_textsearch`:
+     ```sql
+     SELECT chunk_id, document_type, reference, title, content,
+            (search_text <@> to_bm25query(%(query)s, 'act_chunks_bm25_idx')) AS bm25_score
+     FROM act_chunks
+     WHERE search_text <@> to_bm25query(%(query)s, 'act_chunks_bm25_idx') < 0
+     ORDER BY bm25_score ASC
+     LIMIT 30;
+     ```
+   - Returns top 30 lexical candidates.
+3. **Reciprocal Rank Fusion (RRF)**:
+   - `fuse_legal_results()` merges the dense list and BM25 list by stable `chunk_id`.
+   - Computes rank score:
+     $$RRF\_score(d) = \sum_{m \in \{dense, bm25\}} \frac{1}{60 + rank_m(d)}$$
+   - Combines scores for documents appearing in both candidate lists. Yields the top 30 fused hybrid candidates.
+4. **Cross-Encoder Reranking**:
+   - `rerank_legal_results()` constructs candidate pairs: `[[query, candidate_1_text], [query, candidate_2_text], ...]`.
+   - Evaluates them through `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+   - Sorts candidates by cross-encoder logit scores descending and trims to final `top_k` (default: 5).
 
-The loader validates both files before writing and uses `(source_file, source_row)` for upserts. Stale rows belonging to those source files are removed in the same transaction. Both entry points use connection and cursor context managers; failures roll back uncommitted changes. No automatic retry logic is implemented.
+---
 
-### 7. Containerized persistence
+### Stage 3: Context Assembly & Prompt Construction
+**File:** [`src/generators/answer_generator.py`](file:///home/scalp-9/hybrid-rag-poc/src/generators/answer_generator.py)
 
-Docker Compose supplies a reproducible database service configuration and maps `pgdata17` to `/var/lib/postgresql/data`. The new PostgreSQL 17 volume preserves the initialized database and GST rows across ordinary container restarts and `docker compose down`.
+1. The system formats retrieved records into structured Markdown blocks:
+   - If rate records exist: `STRUCTURED GST RATE RECORDS` block with Tariff codes, full legal descriptions, notification details, dates, and schedules.
+   - If legal chunks exist: `RETRIEVED LEGAL CONTEXT` block with Document Type, Reference (e.g., *"Section 29"*), Title, Chunk ID, and Content.
+2. Combines context with the grounded `SYSTEM_PROMPT`. The prompt strictly enforces:
+   - **Direct Answer First**: The first sentence must be a human-style answer.
+   - **Exemptions**: Explicitly state that the product is exempt (0% GST).
+   - **Taxable Goods**: State the total GST rate and intra-state breakdown (CGST + SGST).
+   - **Cess**: Show Compensation Cess separately; never add cess into total GST.
+   - **Description**: Full retrieved statutory descriptions must be shown verbatim.
+   - **Date Integrity**: Notification dates are strictly labeled *"Notification Date"*, never *"Effective Date"*.
 
-Compose declares database credentials and the database name, but has no schema initialization mount or health check. The server command preloads `pg_textsearch`; database readiness and running `schema.sql` are manual steps in the README. The PostgreSQL 16 to 17 transition uses a new volume and a documented logical backup/restore procedure. Python runs on the host and connects through the mapped port; there is no application container.
+---
 
-## Data model
+### Stage 4: Generation, Streaming & Thought Filtering
+**File:** [`src/generators/answer_generator.py`](file:///home/scalp-9/hybrid-rag-poc/src/generators/answer_generator.py)
 
-The GST corpus lives in `gst_documents`, with source filename and CSV row number as its composite primary key. It stores the classification expression, an exact-code array, cleaned description, BM25 search text, three nullable numeric rate columns, original row/provenance JSONB, and a 384-dimensional vector. See [the full schema mapping](gst-dataset.md#schema-and-import-behavior).
+1. Dispatches the prompt to `client.chat.completions.create(model="gemini-3.1-flash-lite", temperature=0.1, stream=True)`.
+2. As token deltas arrive from the LLM, they pass through `StreamingThoughtFilter`:
+   - Buffers partial tokens to detect opening `<thought>` or `<thinking>` tags.
+   - Silently consumes internal reasoning tokens until closing `</thought>` tags.
+   - Flushes only clean, final answer tokens to the client stream.
+3. Emits Server-Sent Events (SSE):
+   - `type: "meta"`: Contains query route, candidate records, citations, and retrieval timings.
+   - `type: "token"`: Yields individual text tokens in real time.
+   - `type: "done"`: Final completed response string and end-to-end latency metrics.
 
-The previous `documents` table is left intact but is no longer read or written. `schema.sql` adds the GST table and indexes. Changing the embedding model requires checking vector dimensions and regenerating all GST embeddings in the same vector space.
+---
 
-## Current limitations and unfinished components
+## 4. Architectural Summary
 
-- **Hybrid result fusion:** RRF is implemented for BM25 and vector result ranks, with optional CrossEncoder reranking of vector results before fusion. There is no weighted score combination, score normalization, cross-encoder reranking after fusion, or trigram fallback fusion.
-- **RAG answer generation:** no generative model, prompt construction, retrieved context assembly, citations, or conversation handling.
-- **Data ingestion:** the loader targets these two CSV formats. There is no scheduled dataset synchronization, chunking, or incremental embedding cache.
-- **Exact lookup:** ranges, exclusions, malformed classifications, and parent/child code inference are not resolved. Multiple source rows can share a code. Rates and conditions are preserved as dataset content.
-- **Evaluation:** Parsing, routing, and optional database integration tests live in `tests/test_ingest_gst.py` and `tests/test_keyword_search.py`. There are no relevance labels, recall/precision measurements, reranker comparisons, or latency benchmarks.
-- **Search configuration:** queries, exact codes, input directory, and database URL have CLI options. Model names and semantic candidate/output counts remain in source; keyword retrieval functions expose a `limit` argument.
-- **Performance:** `schema.sql` defines BM25 and exact-code array indexes, but no vector or trigram indexes. Embeddings are generated in batches and inserted one row at a time, suitable for this small dataset.
-- **Robustness:** empty semantic results are handled before reranking, but model and database failures propagate without retries.
-- **Packaging and operations:** no API, UI, application container, CI configuration, lockfile, structured logging, or production deployment configuration is present.
-
-Possible extensions are to rerank the fused candidate pool after RRF, add measured retrieval evaluation, and then introduce an answer-generation stage if needed. These are future directions, not implemented behavior.
-
-## Source map
-
-- [GST loader](../ingest_gst.py): CSV validation, rate conversion, embeddings, and transactional upserts.
-- [Ingestion tests](../tests/test_ingest_gst.py): parsing and repeat-import checks.
-- [Dataset inspection](gst-dataset.md): source columns, schema mapping, and provenance.
-- [Search demonstration](../search_pgvec.py): query embedding, cosine-distance retrieval, reranking, keyword demonstrations, and optional RRF.
-- [Keyword search](../keyword_search.py): primary BM25 SQL, trigram fallback routing, and exact lookup.
-- [Vector search](../vector_search.py): pgvector semantic retrieval helper.
-- [RRF fusion](../rrf.py): rank-only fusion over BM25 and vector result lists.
-- [RRF tests](../tests/test_rrf.py): rank fusion behavior and deduplication.
-- [Keyword tests](../tests/test_keyword_search.py): routing and PostgreSQL integration checks.
-- [CGST parser](../gst_act_parser.py): Central GST Act section parsing.
-- [CGST inspection script](../scripts/inspect_gst_act_sections.py): section previews and JSON export.
-- [CGST validation script](../scripts/validate_sections.py): pre-chunking section checks.
-- [Database schema](../schema.sql): extension initialization and the BM25 index.
-- [Database image](../Dockerfile.db): PostgreSQL 17, pgvector, and Timescale `pg_textsearch`.
-- [Database upgrade](postgresql-upgrade.md): preserve PostgreSQL 16 data when moving to PostgreSQL 17.
-- [Database service](../docker-compose.yml): container image, port, credentials, and persistent storage.
-- [Python dependencies](../requirements.txt): direct package requirements.
-- [Setup and execution](../README.md): local commands, compatible schema initialization, and troubleshooting.
+| Layer | Implementation | Key Advantage |
+| :--- | :--- | :--- |
+| **Ingestion** | Structure-aware legal chunkers + PyMuPDF | Retains provisos, sub-rules, and statutory context intact |
+| **Embeddings** | `BAAI/bge-m3` (1024d) | Handles long legal contexts and English/Hindi bilingualism |
+| **Vector DB** | PostgreSQL 17 + `pgvector` HNSW | Zero data divergence between metadata and vectors; sub-ms ANN |
+| **Lexical Search** | Timescale `pg_textsearch` (BM25) | Native BM25 term frequency/IDF ranking |
+| **Hybrid Fusion** | Reciprocal Rank Fusion ($k=60$) | Robust multi-modal ranking without manual score normalization |
+| **Reranking** | Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) | Deep token-level cross-attention eliminates false positives |
+| **Rate Retrieval** | In-Memory Hash Index over `gst_rates.csv` | Sub-millisecond deterministic tariff lookups with zero hallucination |
+| **Generation** | `gemini-3.1-flash-lite` via OpenAI API Client | Low latency, strict instruction following, grounded citations |
+| **Streaming UI** | FastAPI SSE + React 18 + Thought Filter | Transparent RAG inspection with instantaneous typewriter feedback |

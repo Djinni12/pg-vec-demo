@@ -1,0 +1,55 @@
+{
+  "notification_number": "02/2025-Central Tax (Rate)",
+  "file_name": "ctr02-2025.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-01-16",
+  "document_effective_date": "2025-01-16",
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "ctr02-2025.pdf_op_1",
+      "operation_type": "INSERT",
+      "target_notification": "02/2017-Central Tax (Rate)",
+      "target_schedule": null,
+      "target_serial_no": "105",
+      "target_column": null,
+      "target_clause_item": null,
+      "anchor_text": "in the Schedule",
+      "explicit_old_text": null,
+      "explicit_new_text": null,
+      "effective_date": "2025-01-16",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 2,
+      "raw_legal_text": "(a)\nin the Schedule, after S. No. 105 and the entries relating thereto, the following S. No. and\nentries shall be inserted, namely: -",
+      "table_data": null
+    },
+    {
+      "operation_id": "ctr02-2025.pdf_op_2",
+      "operation_type": "SUBSTITUTE",
+      "target_notification": "02/2017-Central Tax (Rate)",
+      "target_schedule": "Explanation",
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": "clause (ii)",
+      "anchor_text": "in the Explanation",
+      "explicit_old_text": null,
+      "explicit_new_text": "(ii)\nThe expression \u2018pre-packaged and labelled\u2019 means all commodities that are intended\nfor retail sale and containing not more than 25 kg or 25 litre, which are \u2018pre-packed\u2019 as defined in\nclause (l) of section 2 of the Legal Metrology Act, 2009 (1 of 2010) where, the package in which\nthe commodity is pre-packed or a label securely affixed thereto is required to bear the declarations\nunder the provisions of the Legal Metrology Act, 2009 (1 of 2010) and the rules made thereunder.",
+      "effective_date": "2025-01-16",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 2,
+      "raw_legal_text": "(b)\nin the Explanation, for clause (ii) and the proviso appended to it, the following clause shall be\nsubstituted, namely:-\n\u201c(ii)\nThe expression \u2018pre-packaged and labelled\u2019 means all commodities that are intended\nfor retail sale and containing not more than 25 kg or 25 litre, which are \u2018pre-packed\u2019 as defined in\nclause (l) of section 2 of the Legal Metrology Act, 2009 (1 of 2010) where, the package in which\nthe commodity is pre-packed or a label securely affixed thereto is required to bear the declarations\nunder the provisions of the Legal Metrology Act, 2009 (1 of 2010) and the rules made thereunder.\u201d.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 2,
+    "annexures": 0
+  }
+}

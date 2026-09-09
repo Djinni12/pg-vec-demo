@@ -1,0 +1,37 @@
+{
+  "notification_number": "12/2025-Central Tax (Rate)",
+  "file_name": "12-2025-CTR-eng.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-09-17",
+  "document_effective_date": "2025-09-22",
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "12-2025-CTR-eng.pdf_op_1",
+      "operation_type": "SUBSTITUTE",
+      "target_notification": "08/2018-Central Tax (Rate)",
+      "target_schedule": "Schedule IV",
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": null,
+      "anchor_text": "In the said notification",
+      "explicit_old_text": null,
+      "explicit_new_text": "Schedule IV of Notification No. 1/2017 -Central Tax \n(Rate)",
+      "effective_date": "2025-09-22",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 2,
+      "raw_legal_text": "In the said notification, for the words, brackets, and figures \u201cSchedule IV of Notification No. 1/2017 -Central Tax \n(Rate)\u201d, the following shall be substituted, namely:- \u201cSchedule II or Schedule III of Notification No. 9/2025 -\nCentral Tax (Rate)\u201d.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 1,
+    "annexures": 0
+  }
+}

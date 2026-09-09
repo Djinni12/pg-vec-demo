@@ -1,0 +1,115 @@
+{
+  "total_chunks": 1495,
+  "min_tokens": 39,
+  "avg_tokens": 74.55,
+  "max_tokens": 450,
+  "oversized_chunks_count": 0,
+  "zero_token_chunks_count": 0,
+  "per_file_chunk_counts": {
+    "09-2025-CTR-eng-2.json": 1197,
+    "10-2025-CTR-eng.json": 178,
+    "11-2025-CTR-eng.json": 1,
+    "12-2025-CTR-eng.json": 1,
+    "13-2025-CTR-eng.json": 39,
+    "14-2025-CTR-eng.json": 4,
+    "15-2025-CTR-eng.json": 41,
+    "16-2025-CTR-eng.json": 5,
+    "17-2025-CTR-eng.json": 1,
+    "18-2025-CTR-Eng.json": 0,
+    "19-2025-CTR-Eng-1.json": 3,
+    "CTR-E-updated-1.json": 4,
+    "ctr01-2025.json": 3,
+    "ctr02-2025.json": 2,
+    "ctr03-2025.json": 1,
+    "ctr04-2025.json": 1,
+    "ctr05-2025.json": 6,
+    "ctr06-2025.json": 5,
+    "ctr07-2025.json": 2,
+    "ctr08-2025.json": 1
+  },
+  "chunks_by_type": {
+    "SCHEDULE_ENTRY": 1371,
+    "EXPLANATION_SPLIT": 4,
+    "ANNEXURE_ITEM_GROUP": 4,
+    "AMENDMENT_OPERATION": 70,
+    "AMENDMENT_TABLE_ROW": 39,
+    "AMENDMENT_OPERATION_SPLIT": 4,
+    "ANNEXURE_FORM": 3
+  },
+  "chunks_by_strategy": {
+    "schedule_entry": 1371,
+    "explanation_token_split": 4,
+    "annexure_group": 4,
+    "amendment_operation": 70,
+    "table_row": 39,
+    "amendment_token_split": 4,
+    "annexure_form": 3
+  },
+  "split_units_count": 8,
+  "split_units": [
+    {
+      "chunk_id": "chunk-09-2025-central_tax_rate-1196",
+      "file": "09-2025-CTR-eng-2.json",
+      "strategy": "explanation_token_split",
+      "tokens": 450,
+      "split_index": 1,
+      "split_count": 2
+    },
+    {
+      "chunk_id": "chunk-09-2025-central_tax_rate-1197",
+      "file": "09-2025-CTR-eng-2.json",
+      "strategy": "explanation_token_split",
+      "tokens": 417,
+      "split_index": 2,
+      "split_count": 2
+    },
+    {
+      "chunk_id": "chunk-10-2025-central_tax_rate-0177",
+      "file": "10-2025-CTR-eng.json",
+      "strategy": "explanation_token_split",
+      "tokens": 450,
+      "split_index": 1,
+      "split_count": 2
+    },
+    {
+      "chunk_id": "chunk-10-2025-central_tax_rate-0178",
+      "file": "10-2025-CTR-eng.json",
+      "strategy": "explanation_token_split",
+      "tokens": 82,
+      "split_index": 2,
+      "split_count": 2
+    },
+    {
+      "chunk_id": "chunk-15-2025-central_tax_rate-0016",
+      "file": "15-2025-CTR-eng.json",
+      "strategy": "amendment_token_split",
+      "tokens": 450,
+      "split_index": 1,
+      "split_count": 2
+    },
+    {
+      "chunk_id": "chunk-15-2025-central_tax_rate-0017",
+      "file": "15-2025-CTR-eng.json",
+      "strategy": "amendment_token_split",
+      "tokens": 228,
+      "split_index": 2,
+      "split_count": 2
+    },
+    {
+      "chunk_id": "chunk-15-2025-central_tax_rate-0027",
+      "file": "15-2025-CTR-eng.json",
+      "strategy": "amendment_token_split",
+      "tokens": 450,
+      "split_index": 1,
+      "split_count": 2
+    },
+    {
+      "chunk_id": "chunk-15-2025-central_tax_rate-0028",
+      "file": "15-2025-CTR-eng.json",
+      "strategy": "amendment_token_split",
+      "tokens": 350,
+      "split_index": 2,
+      "split_count": 2
+    }
+  ]
+}

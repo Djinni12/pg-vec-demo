@@ -1,0 +1,3690 @@
+{
+  "notification_number": "10/2025-Central Tax (Rate)",
+  "file_name": "10-2025-CTR-eng.pdf",
+  "parser_type": "EXEMPTION_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-09-17",
+  "document_effective_date": "2025-09-22",
+  "effective_date_scopes": [],
+  "amendment_operations": [],
+  "schedules": {
+    "Exempt Goods Schedule": [
+      {
+        "entry_id": "10_2025_exemption_1",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "1",
+        "classification_raw": "0101",
+        "normalized_hsn": [
+          "0101"
+        ],
+        "description": "Live asses, mules and hinnies",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "1.\t0101\tLive asses, mules and hinnies",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_2",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "2",
+        "classification_raw": "0102",
+        "normalized_hsn": [
+          "0102"
+        ],
+        "description": "Live bovine animals",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "2.\t0102\tLive bovine animals",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_3",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "3",
+        "classification_raw": "0103",
+        "normalized_hsn": [
+          "0103"
+        ],
+        "description": "Live swine",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "3.\t0103\tLive swine",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_4",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "4",
+        "classification_raw": "0104",
+        "normalized_hsn": [
+          "0104"
+        ],
+        "description": "Live sheep and goats",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "4.\t0104\tLive sheep and goats",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_5",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "5",
+        "classification_raw": "0105",
+        "normalized_hsn": [
+          "0105"
+        ],
+        "description": "Live poultry, that is to say, fowls of the species Gallus domesticus, ducks, geese, turkeys and guinea fowls",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "5.\t0105\tLive poultry, that is to say, fowls of the species Gallus domesticus, ducks, geese, turkeys and guinea fowls",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_6",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "6",
+        "classification_raw": "0106",
+        "normalized_hsn": [
+          "0106"
+        ],
+        "description": "Other live animals such as Mammals, Birds, Insects",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "6.\t0106\tOther live animals such as Mammals, Birds, Insects",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_7",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "7",
+        "classification_raw": "0201",
+        "normalized_hsn": [
+          "0201"
+        ],
+        "description": "Meat of bovine animals, fresh or chilled",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "7.\t0201\tMeat of bovine animals, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_8",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "8",
+        "classification_raw": "0203, 0204, 0205, 0206, 0207, 0208, 0209",
+        "normalized_hsn": [
+          "0203",
+          "0204",
+          "0205",
+          "0206",
+          "0207",
+          "0208",
+          "0209"
+        ],
+        "description": "All goods, fresh or chilled",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "8.\t0203, 0204, 0205, 0206, 0207, 0208, 0209\tAll goods, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_9",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "9",
+        "classification_raw": "0202, 0203, 0204, 0205, 0206, 0207, 0208, 0209, 0210",
+        "normalized_hsn": [
+          "0202",
+          "0203",
+          "0204",
+          "0205",
+          "0206",
+          "0207",
+          "0208",
+          "0209",
+          "0210"
+        ],
+        "description": "All goods, other than fresh or chilled, other than pre- packaged and labelled",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "9.\t0202, 0203, 0204, 0205, 0206, 0207, 0208, 0209, 0210\tAll goods, other than fresh or chilled, other than pre- packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_10",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "10",
+        "classification_raw": "03",
+        "normalized_hsn": [
+          "03"
+        ],
+        "description": "Fish seeds, prawn / shrimp seeds whether or not processed, cured or in frozen state [other than goods falling under Chapter 3 and attracting 2.5%]",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "10.\t03\tFish seeds, prawn / shrimp seeds whether or not processed, cured or in frozen state [other than goods falling under Chapter 3 and attracting 2.5%]",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_11",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "11",
+        "classification_raw": "0301",
+        "normalized_hsn": [
+          "0301"
+        ],
+        "description": "Live fish",
+        "conditions": null,
+        "page_start": 1,
+        "page_end": 1,
+        "raw_legal_text": "11.\t0301\tLive fish",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_12",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "12",
+        "classification_raw": "0302",
+        "normalized_hsn": [
+          "0302"
+        ],
+        "description": "Fish, fresh or chilled, excluding fish fillets and other fish meat of heading 0304",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "12.\t0302\tFish, fresh or chilled, excluding fish fillets and other fish meat of heading 0304",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_13",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "13",
+        "classification_raw": "0304, 0306, 0307, 0308,0309",
+        "normalized_hsn": [
+          "0304",
+          "0306",
+          "0307",
+          "0308",
+          "0309"
+        ],
+        "description": "All goods, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "13.\t0304, 0306, 0307, 0308,0309\tAll goods, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_14",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "14",
+        "classification_raw": "0303, 0304, 0305, 0306, 0307, 0308, 0309",
+        "normalized_hsn": [
+          "0303",
+          "0304",
+          "0305",
+          "0306",
+          "0307",
+          "0308",
+          "0309"
+        ],
+        "description": "All goods, other than fresh or chilled, and other than pre- packaged and labelled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "14.\t0303, 0304, 0305, 0306, 0307, 0308, 0309\tAll goods, other than fresh or chilled, and other than pre- packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_15",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "15",
+        "classification_raw": "0401",
+        "normalized_hsn": [
+          "0401"
+        ],
+        "description": "Fresh milk and pasteurised milk, including separated milk, milk and cream, not concentrated nor containing added sugar or other sweetening matter, UHT milk",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "15.\t0401\tFresh milk and pasteurised milk, including separated milk, milk and cream, not concentrated nor containing added sugar or other sweetening matter, UHT milk",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_16",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "16",
+        "classification_raw": "0403",
+        "normalized_hsn": [
+          "0403"
+        ],
+        "description": "Curd, Lassi, Butter milk, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "16.\t0403\tCurd, Lassi, Butter milk, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_17",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "17",
+        "classification_raw": "0406",
+        "normalized_hsn": [
+          "0406"
+        ],
+        "description": "Chena or paneer, whether or not pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "17.\t0406\tChena or paneer, whether or not pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_18",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "18",
+        "classification_raw": "0407",
+        "normalized_hsn": [
+          "0407"
+        ],
+        "description": "Birds' eggs, in shell, fresh, preserved or cooked",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "18.\t0407\tBirds' eggs, in shell, fresh, preserved or cooked",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_19",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "19",
+        "classification_raw": "0409",
+        "normalized_hsn": [
+          "0409"
+        ],
+        "description": "Natural honey, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "19.\t0409\tNatural honey, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_20",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "20",
+        "classification_raw": "0501",
+        "normalized_hsn": [
+          "0501"
+        ],
+        "description": "Human hair, unworked, whether or not washed or scoured; waste of human hair",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "20.\t0501\tHuman hair, unworked, whether or not washed or scoured; waste of human hair",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_21",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "21",
+        "classification_raw": "0504",
+        "normalized_hsn": [
+          "0504"
+        ],
+        "description": "All goods, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "21.\t0504\tAll goods, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_22",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "22",
+        "classification_raw": "0504",
+        "normalized_hsn": [
+          "0504"
+        ],
+        "description": "All goods, other than fresh or chilled, other than pre- packaged and labelled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "22.\t0504\tAll goods, other than fresh or chilled, other than pre- packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_23",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "23",
+        "classification_raw": "0506",
+        "normalized_hsn": [
+          "0506"
+        ],
+        "description": "All goods i.e. Bones and horn-cores, unworked, defatted, simply prepared (but not cut to shape), treated with acid or gelatinised; powder and waste of these products",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "23.\t0506\tAll goods i.e. Bones and horn-cores, unworked, defatted, simply prepared (but not cut to shape), treated with acid or gelatinised; powder and waste of these products",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_24",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "24",
+        "classification_raw": "0507 90",
+        "normalized_hsn": [
+          "050790"
+        ],
+        "description": "All goods i.e. Hoof meal; horn meal; hooves, claws, nails and beaks; antlers; etc.",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "24.\t0507 90\tAll goods i.e. Hoof meal; horn meal; hooves, claws, nails and beaks; antlers; etc.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_25",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "25",
+        "classification_raw": "0511",
+        "normalized_hsn": [
+          "0511"
+        ],
+        "description": "Semen including frozen semen",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "25.\t0511\tSemen including frozen semen",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_26",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "26",
+        "classification_raw": "06",
+        "normalized_hsn": [
+          "06"
+        ],
+        "description": "Live trees and other plants; bulbs, roots and the like; cut flowers and ornamental foliage",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "26.\t06\tLive trees and other plants; bulbs, roots and the like; cut flowers and ornamental foliage",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_27",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "27",
+        "classification_raw": "0701",
+        "normalized_hsn": [
+          "0701"
+        ],
+        "description": "Potatoes, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "27.\t0701\tPotatoes, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_28",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "28",
+        "classification_raw": "0702",
+        "normalized_hsn": [
+          "0702"
+        ],
+        "description": "Tomatoes, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "28.\t0702\tTomatoes, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_29",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "29",
+        "classification_raw": "0703",
+        "normalized_hsn": [
+          "0703"
+        ],
+        "description": "Onions, shallots, garlic, leeks and other alliaceous vegetables, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "29.\t0703\tOnions, shallots, garlic, leeks and other alliaceous vegetables, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_30",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "30",
+        "classification_raw": "0704",
+        "normalized_hsn": [
+          "0704"
+        ],
+        "description": "Cabbages, cauliflowers, kohlrabi, kale and similar edible brassicas, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "30.\t0704\tCabbages, cauliflowers, kohlrabi, kale and similar edible brassicas, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_31",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "31",
+        "classification_raw": "0705",
+        "normalized_hsn": [
+          "0705"
+        ],
+        "description": "Lettuce (Lactuca sativa) and chicory (Cichorium spp.), fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "31.\t0705\tLettuce (Lactuca sativa) and chicory (Cichorium spp.), fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_32",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "32",
+        "classification_raw": "0706",
+        "normalized_hsn": [
+          "0706"
+        ],
+        "description": "Carrots, turnips, salad beetroot, salsify, celeriac, radishes and similar edible roots, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "32.\t0706\tCarrots, turnips, salad beetroot, salsify, celeriac, radishes and similar edible roots, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_33",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "33",
+        "classification_raw": "0707",
+        "normalized_hsn": [
+          "0707"
+        ],
+        "description": "Cucumbers and gherkins, fresh or chilled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "33.\t0707\tCucumbers and gherkins, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_34",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "34",
+        "classification_raw": "0708",
+        "normalized_hsn": [
+          "0708"
+        ],
+        "description": "Leguminous vegetables, shelled or unshelled, fresh or chilled.",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "34.\t0708\tLeguminous vegetables, shelled or unshelled, fresh or chilled.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_35",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "35",
+        "classification_raw": "0709",
+        "normalized_hsn": [
+          "0709"
+        ],
+        "description": "Other vegetables, fresh or chilled.",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "35.\t0709\tOther vegetables, fresh or chilled.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_36",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "36",
+        "classification_raw": "0710",
+        "normalized_hsn": [
+          "0710"
+        ],
+        "description": "Vegetables (uncooked or cooked by steaming or boiling in water), frozen",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "36.\t0710\tVegetables (uncooked or cooked by steaming or boiling in water), frozen",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_37",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "37",
+        "classification_raw": "0711",
+        "normalized_hsn": [
+          "0711"
+        ],
+        "description": "Vegetables provisionally preserved, but unsuitable in that state for immediate consumption",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "37.\t0711\tVegetables provisionally preserved, but unsuitable in that state for immediate consumption",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_38",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "38",
+        "classification_raw": "0712",
+        "normalized_hsn": [
+          "0712"
+        ],
+        "description": "Dried vegetables, whole, cut, sliced, broken or in powder, but not further prepared",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "38.\t0712\tDried vegetables, whole, cut, sliced, broken or in powder, but not further prepared",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_39",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "39",
+        "classification_raw": "0713",
+        "normalized_hsn": [
+          "0713"
+        ],
+        "description": "Dried leguminous vegetables, shelled, whether or not skinned or split other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "39.\t0713\tDried leguminous vegetables, shelled, whether or not skinned or split other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_40",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "40",
+        "classification_raw": "0714",
+        "normalized_hsn": [
+          "0714"
+        ],
+        "description": "Manioc, arrowroot, salep, Jerusalem artichokes, sweet potatoes and similar roots and tubers with high starch or inulin content, fresh or chilled, dried; sago pith.",
+        "conditions": null,
+        "page_start": 2,
+        "page_end": 2,
+        "raw_legal_text": "40.\t0714\tManioc, arrowroot, salep, Jerusalem artichokes, sweet potatoes and similar roots and tubers with high starch or inulin content, fresh or chilled, dried; sago pith.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_41",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "41",
+        "classification_raw": "0714",
+        "normalized_hsn": [
+          "0714"
+        ],
+        "description": "Manioc, arrowroot, salep, Jerusalem artichokes, sweet potatoes and similar roots and tubers with high starch or inulin content, frozen, whether or not sliced or in the form of pellets, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "41.\t0714\tManioc, arrowroot, salep, Jerusalem artichokes, sweet potatoes and similar roots and tubers with high starch or inulin content, frozen, whether or not sliced or in the form of pellets, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_42",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "42",
+        "classification_raw": "08",
+        "normalized_hsn": [
+          "08"
+        ],
+        "description": "Dried makhana, whether or not shelled or peeled, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "42.\t08\tDried makhana, whether or not shelled or peeled, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_43",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "43",
+        "classification_raw": "0801",
+        "normalized_hsn": [
+          "0801"
+        ],
+        "description": "Coconuts, fresh or dried, whether or not shelled or peeled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "43.\t0801\tCoconuts, fresh or dried, whether or not shelled or peeled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_44",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "44",
+        "classification_raw": "0801",
+        "normalized_hsn": [
+          "0801"
+        ],
+        "description": "Brazil nuts, fresh, whether or not shelled or peeled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "44.\t0801\tBrazil nuts, fresh, whether or not shelled or peeled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_45",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "45",
+        "classification_raw": "0802",
+        "normalized_hsn": [
+          "0802"
+        ],
+        "description": "Other nuts, fresh such as Almonds, Hazelnuts or filberts (Corylus spp.), walnuts, Chestnuts (Castanea spp.), Pistachios, Macadamia nuts, Kola nuts (Cola spp.), Areca nuts, Pine nuts, fresh, whether or not shelled or peeled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "45.\t0802\tOther nuts, fresh such as Almonds, Hazelnuts or filberts (Corylus spp.), walnuts, Chestnuts (Castanea spp.), Pistachios, Macadamia nuts, Kola nuts (Cola spp.), Areca nuts, Pine nuts, fresh, whether or not shelled or peeled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_46",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "46",
+        "classification_raw": "0803",
+        "normalized_hsn": [
+          "0803"
+        ],
+        "description": "Bananas, including plantains, fresh or dried",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "46.\t0803\tBananas, including plantains, fresh or dried",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_47",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "47",
+        "classification_raw": "0804",
+        "normalized_hsn": [
+          "0804"
+        ],
+        "description": "Dates, figs, pineapples, avocados, guavas, mangoes and mangosteens, fresh.",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "47.\t0804\tDates, figs, pineapples, avocados, guavas, mangoes and mangosteens, fresh.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_48",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "48",
+        "classification_raw": "0805",
+        "normalized_hsn": [
+          "0805"
+        ],
+        "description": "Citrus fruit, such as Oranges, Mandarins (including tangerines and satsumas); clementines, wilkings and similar citrus hybrids, Grapefruit, including pomelos, Lemons (Citrus limon, Citrus limonum) and limes (Citrus aurantifolia, Citrus latifolia), fresh.",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "48.\t0805\tCitrus fruit, such as Oranges, Mandarins (including tangerines and satsumas); clementines, wilkings and similar citrus hybrids, Grapefruit, including pomelos, Lemons (Citrus limon, Citrus limonum) and limes (Citrus aurantifolia, Citrus latifolia), fresh.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_49",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "49",
+        "classification_raw": "0806",
+        "normalized_hsn": [
+          "0806"
+        ],
+        "description": "Grapes, fresh",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "49.\t0806\tGrapes, fresh",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_50",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "50",
+        "classification_raw": "0807",
+        "normalized_hsn": [
+          "0807"
+        ],
+        "description": "Melons (including watermelons) and papaws (papayas), fresh",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "50.\t0807\tMelons (including watermelons) and papaws (papayas), fresh",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_51",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "51",
+        "classification_raw": "0808",
+        "normalized_hsn": [
+          "0808"
+        ],
+        "description": "Apples, pears and quinces, fresh",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "51.\t0808\tApples, pears and quinces, fresh",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_52",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "52",
+        "classification_raw": "0809",
+        "normalized_hsn": [
+          "0809"
+        ],
+        "description": "Apricots, cherries, peaches (including nectarines), plums and sloes, fresh",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "52.\t0809\tApricots, cherries, peaches (including nectarines), plums and sloes, fresh",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_53",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "53",
+        "classification_raw": "0810",
+        "normalized_hsn": [
+          "0810"
+        ],
+        "description": "Other fruit such as strawberries, raspberries, blackberries, mulberries and loganberries, black, white or red currants and gooseberries, cranberries, bilberries and other fruits of the genus vaccinium, Kiwi fruit, Durians, Persimmons, Pomegranates, Tamarind, Sapota (chico), Custard-apple (ata), Bore, Lichi, fresh",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "53.\t0810\tOther fruit such as strawberries, raspberries, blackberries, mulberries and loganberries, black, white or red currants and gooseberries, cranberries, bilberries and other fruits of the genus vaccinium, Kiwi fruit, Durians, Persimmons, Pomegranates, Tamarind, Sapota (chico), Custard-apple (ata), Bore, Lichi, fresh",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_54",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "54",
+        "classification_raw": "0813",
+        "normalized_hsn": [
+          "0813"
+        ],
+        "description": "Tamarind dried",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "54.\t0813\tTamarind dried",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_55",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "55",
+        "classification_raw": "0814",
+        "normalized_hsn": [
+          "0814"
+        ],
+        "description": "Peel of citrus fruit or melons (including watermelons), fresh.",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "55.\t0814\tPeel of citrus fruit or melons (including watermelons), fresh.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_56",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "56",
+        "classification_raw": "07, 09 or 10",
+        "normalized_hsn": [
+          "07",
+          "09",
+          "10"
+        ],
+        "description": "All goods of seed quality",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "56.\t07, 09 or 10\tAll goods of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_57",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "57",
+        "classification_raw": "0901",
+        "normalized_hsn": [
+          "0901"
+        ],
+        "description": "Coffee beans, not roasted",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "57.\t0901\tCoffee beans, not roasted",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_58",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "58",
+        "classification_raw": "0902",
+        "normalized_hsn": [
+          "0902"
+        ],
+        "description": "Unprocessed green leaves of tea",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "58.\t0902\tUnprocessed green leaves of tea",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_59",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "59",
+        "classification_raw": "0909",
+        "normalized_hsn": [
+          "0909"
+        ],
+        "description": "Seeds of anise, badian, fennel, coriander, cumin or caraway; juniper berries of seed quality",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "59.\t0909\tSeeds of anise, badian, fennel, coriander, cumin or caraway; juniper berries of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_60",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "60",
+        "classification_raw": "0910 11 10",
+        "normalized_hsn": [
+          "09101110"
+        ],
+        "description": "Fresh ginger, other than in processed form",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "60.\t0910 11 10\tFresh ginger, other than in processed form",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_61",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "61",
+        "classification_raw": "0910 30 10",
+        "normalized_hsn": [
+          "09103010"
+        ],
+        "description": "Fresh turmeric, other than in processed form",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "61.\t0910 30 10\tFresh turmeric, other than in processed form",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_62",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "62",
+        "classification_raw": "1001",
+        "normalized_hsn": [
+          "1001"
+        ],
+        "description": "Wheat and meslin, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "62.\t1001\tWheat and meslin, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_63",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "63",
+        "classification_raw": "1002",
+        "normalized_hsn": [
+          "1002"
+        ],
+        "description": "Rye, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "63.\t1002\tRye, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_64",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "64",
+        "classification_raw": "1003",
+        "normalized_hsn": [
+          "1003"
+        ],
+        "description": "Barley, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "64.\t1003\tBarley, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_65",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "65",
+        "classification_raw": "1004",
+        "normalized_hsn": [
+          "1004"
+        ],
+        "description": "Oats, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "65.\t1004\tOats, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_66",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "66",
+        "classification_raw": "1005",
+        "normalized_hsn": [
+          "1005"
+        ],
+        "description": "Maize (corn), other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "66.\t1005\tMaize (corn), other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_67",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "67",
+        "classification_raw": "1006",
+        "normalized_hsn": [
+          "1006"
+        ],
+        "description": "Rice, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "67.\t1006\tRice, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_68",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "68",
+        "classification_raw": "1007",
+        "normalized_hsn": [
+          "1007"
+        ],
+        "description": "Grain sorghum, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "68.\t1007\tGrain sorghum, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_69",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "69",
+        "classification_raw": "1008",
+        "normalized_hsn": [
+          "1008"
+        ],
+        "description": "Buckwheat, millet and canary seed; other cereals such as Jawar, Bajra, Ragi, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "69.\t1008\tBuckwheat, millet and canary seed; other cereals such as Jawar, Bajra, Ragi, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_70",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "70",
+        "classification_raw": "1101",
+        "normalized_hsn": [
+          "1101"
+        ],
+        "description": "Wheat or meslin flour, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 3,
+        "page_end": 3,
+        "raw_legal_text": "70.\t1101\tWheat or meslin flour, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_71",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "71",
+        "classification_raw": "1102",
+        "normalized_hsn": [
+          "1102"
+        ],
+        "description": "Cereal flours other than of wheat or meslin, maize (corn) flour, rye flour etc, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "71.\t1102\tCereal flours other than of wheat or meslin, maize (corn) flour, rye flour etc, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_72",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "72",
+        "classification_raw": "1103",
+        "normalized_hsn": [
+          "1103"
+        ],
+        "description": "Cereal groats, meal and pellets, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "72.\t1103\tCereal groats, meal and pellets, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_73",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "73",
+        "classification_raw": "1104",
+        "normalized_hsn": [
+          "1104"
+        ],
+        "description": "Cereal grains hulled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "73.\t1104\tCereal grains hulled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_74",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "74",
+        "classification_raw": "1105",
+        "normalized_hsn": [
+          "1105"
+        ],
+        "description": "Flour, meal, powder, flakes, granules or pellets of potatoes, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "74.\t1105\tFlour, meal, powder, flakes, granules or pellets of potatoes, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_75",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "75",
+        "classification_raw": "1106",
+        "normalized_hsn": [
+          "1106"
+        ],
+        "description": "Flour, meal, powder of the dried leguminous vegetables of heading 0713 (pulses) [other than guar meal (HS 1106 10 10) and guar gum refined split (HS 1106 10 90)], of sago or of roots or tubers of heading 0714 or of the products of Chapter 8 i.e. of tamarind, of singoda, mango flour, etc. other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "75.\t1106\tFlour, meal, powder of the dried leguminous vegetables of heading 0713 (pulses) [other than guar meal (HS 1106 10 10) and guar gum refined split (HS 1106 10 90)], of sago or of roots or tubers of heading 0714 or of the products of Chapter 8 i.e. of tamarind, of singoda, mango flour, etc. other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_76",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "76",
+        "classification_raw": "1106 10 10",
+        "normalized_hsn": [
+          "11061010"
+        ],
+        "description": "Guar meal",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "76.\t1106 10 10\tGuar meal",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_77",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "77",
+        "classification_raw": "12",
+        "normalized_hsn": [
+          "12"
+        ],
+        "description": "All goods of seed quality",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "77.\t12\tAll goods of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_78",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "78",
+        "classification_raw": "1201",
+        "normalized_hsn": [
+          "1201"
+        ],
+        "description": "Soya beans, whether or not broken, of seed quality",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "78.\t1201\tSoya beans, whether or not broken, of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_79",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "79",
+        "classification_raw": "1202",
+        "normalized_hsn": [
+          "1202"
+        ],
+        "description": "Ground-nuts, not roasted or otherwise cooked, whether or not shelled or broken, of seed quality",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "79.\t1202\tGround-nuts, not roasted or otherwise cooked, whether or not shelled or broken, of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_80",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "80",
+        "classification_raw": "1204",
+        "normalized_hsn": [
+          "1204"
+        ],
+        "description": "Linseed, whether or not broken, of seed quality",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "80.\t1204\tLinseed, whether or not broken, of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_81",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "81",
+        "classification_raw": "1205",
+        "normalized_hsn": [
+          "1205"
+        ],
+        "description": "Rape or colza seeds, whether or not broken, of seed quality",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "81.\t1205\tRape or colza seeds, whether or not broken, of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_82",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "82",
+        "classification_raw": "1206",
+        "normalized_hsn": [
+          "1206"
+        ],
+        "description": "Sunflower seeds, whether or not broken, of seed quality",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "82.\t1206\tSunflower seeds, whether or not broken, of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_83",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "83",
+        "classification_raw": "1207",
+        "normalized_hsn": [
+          "1207"
+        ],
+        "description": "Other oil seeds and oleaginous fruits (i.e. Palm nuts and kernels, cotton seeds, Castor oil seeds, Sesamum seeds, Mustard seeds, Safflower (Carthamus tinctorius) seeds, Melon seeds, Poppy seeds, Ajams, Mango kernel, Niger seed, Kokam) whether or not broken, of seed quality",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "83.\t1207\tOther oil seeds and oleaginous fruits (i.e. Palm nuts and kernels, cotton seeds, Castor oil seeds, Sesamum seeds, Mustard seeds, Safflower (Carthamus tinctorius) seeds, Melon seeds, Poppy seeds, Ajams, Mango kernel, Niger seed, Kokam) whether or not broken, of seed quality",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_84",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "84",
+        "classification_raw": "1209",
+        "normalized_hsn": [
+          "1209"
+        ],
+        "description": "Seeds, fruit and spores, of a kind used for sowing. Explanation: This entry does not cover seeds meant for any use other than sowing",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "84.\t1209\tSeeds, fruit and spores, of a kind used for sowing. Explanation: This entry does not cover seeds meant for any use other than sowing",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_85",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "85",
+        "classification_raw": "1210",
+        "normalized_hsn": [
+          "1210"
+        ],
+        "description": "Hop cones, fresh",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "85.\t1210\tHop cones, fresh",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_86",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "86",
+        "classification_raw": "1210 10 00",
+        "normalized_hsn": [
+          "12101000"
+        ],
+        "description": "Hop cones, neither ground nor powdered nor in the form of pellets",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "86.\t1210 10 00\tHop cones, neither ground nor powdered nor in the form of pellets",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_87",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "87",
+        "classification_raw": "1211",
+        "normalized_hsn": [
+          "1211"
+        ],
+        "description": "Plants and parts of plants (including seeds and fruits), of a kind used primarily in perfumery, in pharmacy or for insecticidal, fungicidal or similar purpose, fresh or chilled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "87.\t1211\tPlants and parts of plants (including seeds and fruits), of a kind used primarily in perfumery, in pharmacy or for insecticidal, fungicidal or similar purpose, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_88",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "88",
+        "classification_raw": "1212",
+        "normalized_hsn": [
+          "1212"
+        ],
+        "description": "Locust beans, seaweeds and other algae, sugar beet and sugar cane, fresh or chilled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "88.\t1212\tLocust beans, seaweeds and other algae, sugar beet and sugar cane, fresh or chilled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_89",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "89",
+        "classification_raw": "1213",
+        "normalized_hsn": [
+          "1213"
+        ],
+        "description": "Cereal straw and husks, unprepared, whether or not chopped, ground, pressed or in the form of pellets",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "89.\t1213\tCereal straw and husks, unprepared, whether or not chopped, ground, pressed or in the form of pellets",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_90",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "90",
+        "classification_raw": "1214",
+        "normalized_hsn": [
+          "1214"
+        ],
+        "description": "Swedes, mangolds, fodder roots, hay, lucerne (alfalfa), clover, sainfoin, forage kale, lupines, vetches and similar forage products, whether or not in the form of pellets",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "90.\t1214\tSwedes, mangolds, fodder roots, hay, lucerne (alfalfa), clover, sainfoin, forage kale, lupines, vetches and similar forage products, whether or not in the form of pellets",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_91",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "91",
+        "classification_raw": "1301",
+        "normalized_hsn": [
+          "1301"
+        ],
+        "description": "Lac and Shellac",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "91.\t1301\tLac and Shellac",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_92",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "92",
+        "classification_raw": "1401",
+        "normalized_hsn": [
+          "1401"
+        ],
+        "description": "Sal leaves, siali leaves, sisal leaves, sabai grass",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "92.\t1401\tSal leaves, siali leaves, sisal leaves, sabai grass",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_93",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "93",
+        "classification_raw": "1404 90 40",
+        "normalized_hsn": [
+          "14049040"
+        ],
+        "description": "Betel leaves",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "93.\t1404 90 40\tBetel leaves",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_94",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "94",
+        "classification_raw": "1404 90 60",
+        "normalized_hsn": [
+          "14049060"
+        ],
+        "description": "Coconut shell, unworked",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "94.\t1404 90 60\tCoconut shell, unworked",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_95",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "95",
+        "classification_raw": "1404 90 90",
+        "normalized_hsn": [
+          "14049090"
+        ],
+        "description": "Vegetable materials, for manufacture of jhadoo or broom sticks",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "95.\t1404 90 90\tVegetable materials, for manufacture of jhadoo or broom sticks",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_96",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "96",
+        "classification_raw": "1701 or 1702",
+        "normalized_hsn": [
+          "1701",
+          "1702"
+        ],
+        "description": "(i) Jaggery of all types including Cane Jaggery (gur), Palmyra Jaggery, other than pre-packaged and labeled (ii) Khandsari Sugar, other than pre-packaged and labelled (iii) Rab,other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 4,
+        "page_end": 4,
+        "raw_legal_text": "96.\t1701 or 1702\t(i) Jaggery of all types including Cane Jaggery (gur), Palmyra Jaggery, other than pre-packaged and labeled (ii) Khandsari Sugar, other than pre-packaged and labelled (iii) Rab,other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_97",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "97",
+        "classification_raw": "1901",
+        "normalized_hsn": [
+          "1901"
+        ],
+        "description": "Food preparation of millet flour, in powder form, containing at least 70% millets by weight, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "97.\t1901\tFood preparation of millet flour, in powder form, containing at least 70% millets by weight, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_98",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "98",
+        "classification_raw": "1904",
+        "normalized_hsn": [
+          "1904"
+        ],
+        "description": "Puffed rice, commonly known as Muri, flattened or beaten rice, commonly known as Chira, parched rice, commonly known as khoi, parched paddy or rice coated with sugar or gur, commonly known as Murki, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "98.\t1904\tPuffed rice, commonly known as Muri, flattened or beaten rice, commonly known as Chira, parched rice, commonly known as khoi, parched paddy or rice coated with sugar or gur, commonly known as Murki, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_99",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "99",
+        "classification_raw": "1905",
+        "normalized_hsn": [
+          "1905"
+        ],
+        "description": "Pappad, by whatever name it is known",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "99.\t1905\tPappad, by whatever name it is known",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_100",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "100",
+        "classification_raw": "1905 or 2106",
+        "normalized_hsn": [
+          "1905",
+          "2106"
+        ],
+        "description": "Khakhra; Bread (branded or otherwise), Pizza bread, roti, chapathi, paratha, parotta and other Indian breads by any name called",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "100.\t1905 or 2106\tKhakhra; Bread (branded or otherwise), Pizza bread, roti, chapathi, paratha, parotta and other Indian breads by any name called",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_101",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "101",
+        "classification_raw": "2009 89 90",
+        "normalized_hsn": [
+          "20098990"
+        ],
+        "description": "Tender coconut water other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "101.\t2009 89 90\tTender coconut water other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_102",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "102",
+        "classification_raw": "2106",
+        "normalized_hsn": [
+          "2106"
+        ],
+        "description": "Prasadam supplied by religious places like temples, mosques, churches, gurudwaras, dargahs, etc",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "102.\t2106\tPrasadam supplied by religious places like temples, mosques, churches, gurudwaras, dargahs, etc",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_103",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "103",
+        "classification_raw": "2201",
+        "normalized_hsn": [
+          "2201"
+        ],
+        "description": "Water (other than aerated, mineral, distilled, medicinal, ionic, battery, de-mineralized and water sold in sealed unit container)",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "103.\t2201\tWater (other than aerated, mineral, distilled, medicinal, ionic, battery, de-mineralized and water sold in sealed unit container)",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_104",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "104",
+        "classification_raw": "2201",
+        "normalized_hsn": [
+          "2201"
+        ],
+        "description": "Non-alcoholic Toddy, Neera including date and palm neera",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "104.\t2201\tNon-alcoholic Toddy, Neera including date and palm neera",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_105",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "105",
+        "classification_raw": "2301, 2302, 2308, 2309",
+        "normalized_hsn": [
+          "2301",
+          "2302",
+          "2308",
+          "2309"
+        ],
+        "description": "Aquatic feed including shrimp feed and prawn feed, poultry feed and cattle feed, including grass, hay and straw, supplement and additives, wheat bran and de-oiled cake other than rice bran",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "105.\t2301, 2302, 2308, 2309\tAquatic feed including shrimp feed and prawn feed, poultry feed and cattle feed, including grass, hay and straw, supplement and additives, wheat bran and de-oiled cake other than rice bran",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_106",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "106",
+        "classification_raw": "2306",
+        "normalized_hsn": [
+          "2306"
+        ],
+        "description": "De-oiled rice bran",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "106.\t2306\tDe-oiled rice bran",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_107",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "107",
+        "classification_raw": "2306",
+        "normalized_hsn": [
+          "2306"
+        ],
+        "description": "Cotton seed oil cake",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "107.\t2306\tCotton seed oil cake",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_108",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "108",
+        "classification_raw": "2302, 2309",
+        "normalized_hsn": [
+          "2302",
+          "2309"
+        ],
+        "description": "Husk of pulses including Chilka, Concentrates including chuni or churi, Khanda",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "108.\t2302, 2309\tHusk of pulses including Chilka, Concentrates including chuni or churi, Khanda",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_109",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "109",
+        "classification_raw": "2501",
+        "normalized_hsn": [
+          "2501"
+        ],
+        "description": "Salt (including table salt and denatured salt) and pure sodium chloride, whether or not in aqueous solutions or containing added anti-caking or free flowing agents; sea water",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "109.\t2501\tSalt (including table salt and denatured salt) and pure sodium chloride, whether or not in aqueous solutions or containing added anti-caking or free flowing agents; sea water",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_110",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "110",
+        "classification_raw": "26",
+        "normalized_hsn": [
+          "26"
+        ],
+        "description": "Uranium Ore concentrate",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "110.\t26\tUranium Ore concentrate",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_111",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "111",
+        "classification_raw": "2716 00 00",
+        "normalized_hsn": [
+          "27160000"
+        ],
+        "description": "Electrical energy",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "111.\t2716 00 00\tElectrical energy",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_112",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "112",
+        "classification_raw": "2835",
+        "normalized_hsn": [
+          "2835"
+        ],
+        "description": "Dicalcium phosphate (DCP) of animal feed grade conforming to IS specification No.5470 : 2002",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "112.\t2835\tDicalcium phosphate (DCP) of animal feed grade conforming to IS specification No.5470 : 2002",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_113",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "113",
+        "classification_raw": "30 or any other Chapter",
+        "normalized_hsn": [
+          "30"
+        ],
+        "description": "Drugs or medicines listed in Annexure I",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "113.\t30 or any other Chapter\tDrugs or medicines listed in Annexure I",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_114",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "114",
+        "classification_raw": "3002",
+        "normalized_hsn": [
+          "3002"
+        ],
+        "description": "Human Blood and its components",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "114.\t3002\tHuman Blood and its components",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_115",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "115",
+        "classification_raw": "3006",
+        "normalized_hsn": [
+          "3006"
+        ],
+        "description": "All types of contraceptives",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "115.\t3006\tAll types of contraceptives",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_116",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "116",
+        "classification_raw": "3101",
+        "normalized_hsn": [
+          "3101"
+        ],
+        "description": "All goods and organic manure, other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "116.\t3101\tAll goods and organic manure, other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_117",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "117",
+        "classification_raw": "3304",
+        "normalized_hsn": [
+          "3304"
+        ],
+        "description": "Kajal (other than kajal pencil sticks), Kumkum, Bindi, Sindur, Alta",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "117.\t3304\tKajal (other than kajal pencil sticks), Kumkum, Bindi, Sindur, Alta",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_118",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "118",
+        "classification_raw": "3825",
+        "normalized_hsn": [
+          "3825"
+        ],
+        "description": "Municipal waste, sewage sludge, clinical waste",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "118.\t3825\tMunicipal waste, sewage sludge, clinical waste",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_119",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "119",
+        "classification_raw": "3926",
+        "normalized_hsn": [
+          "3926"
+        ],
+        "description": "Plastic bangles",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "119.\t3926\tPlastic bangles",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_120",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "120",
+        "classification_raw": "4014",
+        "normalized_hsn": [
+          "4014"
+        ],
+        "description": "Condoms and contraceptives",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "120.\t4014\tCondoms and contraceptives",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_121",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "121",
+        "classification_raw": "4016",
+        "normalized_hsn": [
+          "4016"
+        ],
+        "description": "Erasers",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "121.\t4016\tErasers",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_122",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "122",
+        "classification_raw": "4401",
+        "normalized_hsn": [
+          "4401"
+        ],
+        "description": "Firewood or fuel wood",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "122.\t4401\tFirewood or fuel wood",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_123",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "123",
+        "classification_raw": "4402",
+        "normalized_hsn": [
+          "4402"
+        ],
+        "description": "Wood charcoal (including shell or nut charcoal), whether or not agglomerated",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "123.\t4402\tWood charcoal (including shell or nut charcoal), whether or not agglomerated",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_124",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "124",
+        "classification_raw": "44 or 68",
+        "normalized_hsn": [
+          "44",
+          "68"
+        ],
+        "description": "Deities made of stone, marble or wood",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "124.\t44 or 68\tDeities made of stone, marble or wood",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_125",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "125",
+        "classification_raw": "46",
+        "normalized_hsn": [
+          "46"
+        ],
+        "description": "Khali Dona; Goods made of sal leaves, siali leaves, sisal leaves, sabai grass, including sabai grass rope",
+        "conditions": null,
+        "page_start": 5,
+        "page_end": 5,
+        "raw_legal_text": "125.\t46\tKhali Dona; Goods made of sal leaves, siali leaves, sisal leaves, sabai grass, including sabai grass rope",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_126",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "126",
+        "classification_raw": "46",
+        "normalized_hsn": [
+          "46"
+        ],
+        "description": "Plates and cups made up of all kinds of leaves/ flowers/bark",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "126.\t46\tPlates and cups made up of all kinds of leaves/ flowers/bark",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_127",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "127",
+        "classification_raw": "4802 / 4907",
+        "normalized_hsn": [
+          "4802",
+          "4907"
+        ],
+        "description": "Judicial, Non-judicial stamp papers, Court fee stamps when sold by the Government Treasuries or Vendors authorized by the Government",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "127.\t4802 / 4907\tJudicial, Non-judicial stamp papers, Court fee stamps when sold by the Government Treasuries or Vendors authorized by the Government",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_128",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "128",
+        "classification_raw": "4802",
+        "normalized_hsn": [
+          "4802"
+        ],
+        "description": "Uncoated paper and paperboard, of a kind used for writing, printing or other graphic purposes, in rolls or rectangular (including square) sheets, of any size, other than paper of heading 4801 or 4803, used for exercise book, graph book, laboratory note book and notebooks",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "128.\t4802\tUncoated paper and paperboard, of a kind used for writing, printing or other graphic purposes, in rolls or rectangular (including square) sheets, of any size, other than paper of heading 4801 or 4803, used for exercise book, graph book, laboratory note book and notebooks",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_129",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "129",
+        "classification_raw": "4817 / 4907",
+        "normalized_hsn": [
+          "4817",
+          "4907"
+        ],
+        "description": "Postal items, like envelope, Post card etc., sold by Government",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "129.\t4817 / 4907\tPostal items, like envelope, Post card etc., sold by Government",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_130",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "130",
+        "classification_raw": "4820",
+        "normalized_hsn": [
+          "4820"
+        ],
+        "description": "Exercise book, graph book, laboratory note book and notebooks",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "130.\t4820\tExercise book, graph book, laboratory note book and notebooks",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_131",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "131",
+        "classification_raw": "48 or 4907 or 71",
+        "normalized_hsn": [
+          "48",
+          "4907",
+          "71"
+        ],
+        "description": "Rupee notes or coins when sold to Reserve Bank of India or the Government of India",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "131.\t48 or 4907 or 71\tRupee notes or coins when sold to Reserve Bank of India or the Government of India",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_132",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "132",
+        "classification_raw": "4901",
+        "normalized_hsn": [
+          "4901"
+        ],
+        "description": "Printed books, including Braille books",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "132.\t4901\tPrinted books, including Braille books",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_133",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "133",
+        "classification_raw": "4902",
+        "normalized_hsn": [
+          "4902"
+        ],
+        "description": "Newspapers, journals and periodicals, whether or not illustrated or containing advertising material",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "133.\t4902\tNewspapers, journals and periodicals, whether or not illustrated or containing advertising material",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_134",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "134",
+        "classification_raw": "4903",
+        "normalized_hsn": [
+          "4903"
+        ],
+        "description": "Children's picture, drawing or colouring books",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "134.\t4903\tChildren's picture, drawing or colouring books",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_135",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "135",
+        "classification_raw": "4904 00 00",
+        "normalized_hsn": [
+          "49040000"
+        ],
+        "description": "Music, printed or in manuscript, whether or not bound or illustrated",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "135.\t4904 00 00\tMusic, printed or in manuscript, whether or not bound or illustrated",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_136",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "136",
+        "classification_raw": "4905",
+        "normalized_hsn": [
+          "4905"
+        ],
+        "description": "Maps and hydrographic or similar charts of all kinds, including atlases, wall maps, topographical plans and globes, printed",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "136.\t4905\tMaps and hydrographic or similar charts of all kinds, including atlases, wall maps, topographical plans and globes, printed",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_137",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "137",
+        "classification_raw": "4907",
+        "normalized_hsn": [
+          "4907"
+        ],
+        "description": "Duty Credit Scrips",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "137.\t4907\tDuty Credit Scrips",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_138",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "138",
+        "classification_raw": "5001",
+        "normalized_hsn": [
+          "5001"
+        ],
+        "description": "Silkworm laying, cocoon",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "138.\t5001\tSilkworm laying, cocoon",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_139",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "139",
+        "classification_raw": "5002",
+        "normalized_hsn": [
+          "5002"
+        ],
+        "description": "Raw silk",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "139.\t5002\tRaw silk",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_140",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "140",
+        "classification_raw": "5003",
+        "normalized_hsn": [
+          "5003"
+        ],
+        "description": "Silk waste",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "140.\t5003\tSilk waste",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_141",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "141",
+        "classification_raw": "5101",
+        "normalized_hsn": [
+          "5101"
+        ],
+        "description": "Wool, not carded or combed",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "141.\t5101\tWool, not carded or combed",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_142",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "142",
+        "classification_raw": "5102",
+        "normalized_hsn": [
+          "5102"
+        ],
+        "description": "Fine or coarse animal hair, not carded or combed",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "142.\t5102\tFine or coarse animal hair, not carded or combed",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_143",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "143",
+        "classification_raw": "5103",
+        "normalized_hsn": [
+          "5103"
+        ],
+        "description": "Waste of wool or of fine or coarse animal hair",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "143.\t5103\tWaste of wool or of fine or coarse animal hair",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_144",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "144",
+        "classification_raw": "52",
+        "normalized_hsn": [
+          "52"
+        ],
+        "description": "Gandhi Topi, Khadi yarn",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "144.\t52\tGandhi Topi, Khadi yarn",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_145",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "145",
+        "classification_raw": "50 to 55",
+        "normalized_hsn": [
+          "50",
+          "55"
+        ],
+        "description": "Khadi fabric, sold through Khadi and Village Industries Commission (KVIC) and KVIC certified institutions/outlets",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "145.\t50 to 55\tKhadi fabric, sold through Khadi and Village Industries Commission (KVIC) and KVIC certified institutions/outlets",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_146",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "146",
+        "classification_raw": "5303",
+        "normalized_hsn": [
+          "5303"
+        ],
+        "description": "Jute fibres, raw or processed but not spun",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "146.\t5303\tJute fibres, raw or processed but not spun",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_147",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "147",
+        "classification_raw": "5305",
+        "normalized_hsn": [
+          "5305"
+        ],
+        "description": "Coconut, coir fibre",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "147.\t5305\tCoconut, coir fibre",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_148",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "148",
+        "classification_raw": "53",
+        "normalized_hsn": [
+          "53"
+        ],
+        "description": "Coir pith compost other than pre-packaged and labelled",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "148.\t53\tCoir pith compost other than pre-packaged and labelled",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_149",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "149",
+        "classification_raw": "63",
+        "normalized_hsn": [
+          "63"
+        ],
+        "description": "Indian National Flag",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "149.\t63\tIndian National Flag",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_150",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "150",
+        "classification_raw": "6703",
+        "normalized_hsn": [
+          "6703"
+        ],
+        "description": "Human hair, dressed, thinned, bleached or otherwise worked",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "150.\t6703\tHuman hair, dressed, thinned, bleached or otherwise worked",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_151",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "151",
+        "classification_raw": "6912 00 40",
+        "normalized_hsn": [
+          "69120040"
+        ],
+        "description": "Earthen pot and clay lamps",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "151.\t6912 00 40\tEarthen pot and clay lamps",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_152",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "152",
+        "classification_raw": "69",
+        "normalized_hsn": [
+          "69"
+        ],
+        "description": "Idols made of clay",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "152.\t69\tIdols made of clay",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_153",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "153",
+        "classification_raw": "7018",
+        "normalized_hsn": [
+          "7018"
+        ],
+        "description": "Glass bangles (except those made from precious metals)",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "153.\t7018\tGlass bangles (except those made from precious metals)",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_154",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "154",
+        "classification_raw": "7117",
+        "normalized_hsn": [
+          "7117"
+        ],
+        "description": "Bangles of lac/shellac",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "154.\t7117\tBangles of lac/shellac",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_155",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "155",
+        "classification_raw": "8201",
+        "normalized_hsn": [
+          "8201"
+        ],
+        "description": "Agricultural implements manually operated or animal driven i.e. Hand tools, such as spades, shovels, mattocks, picks, hoes, forks and rakes; axes, bill hooks and similar hewing tools; secateurs and pruners of any kind; scythes, sickles, hay knives, hedge shears, timber wedges and other tools of a kind used in agriculture, horticulture or forestry other than ghamella.",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "155.\t8201\tAgricultural implements manually operated or animal driven i.e. Hand tools, such as spades, shovels, mattocks, picks, hoes, forks and rakes; axes, bill hooks and similar hewing tools; secateurs and pruners of any kind; scythes, sickles, hay knives, hedge shears, timber wedges and other tools of a kind used in agriculture, horticulture or forestry other than ghamella.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_156",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "156",
+        "classification_raw": "8214",
+        "normalized_hsn": [
+          "8214"
+        ],
+        "description": "Pencil sharpeners",
+        "conditions": null,
+        "page_start": 6,
+        "page_end": 6,
+        "raw_legal_text": "156.\t8214\tPencil sharpeners",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_157",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "157",
+        "classification_raw": "8445",
+        "normalized_hsn": [
+          "8445"
+        ],
+        "description": "Charkha for hand spinning of yarns, including amber charkha",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "157.\t8445\tCharkha for hand spinning of yarns, including amber charkha",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_158",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "158",
+        "classification_raw": "8446",
+        "normalized_hsn": [
+          "8446"
+        ],
+        "description": "Handloom [weaving machinery]",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "158.\t8446\tHandloom [weaving machinery]",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_159",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "159",
+        "classification_raw": "8802 60 00",
+        "normalized_hsn": [
+          "88026000"
+        ],
+        "description": "Spacecraft (including satellites) and suborbital and spacecraft launch vehicles",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "159.\t8802 60 00\tSpacecraft (including satellites) and suborbital and spacecraft launch vehicles",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_160",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "160",
+        "classification_raw": "9021",
+        "normalized_hsn": [
+          "9021"
+        ],
+        "description": "Hearing aids",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "160.\t9021\tHearing aids",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_161",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "161",
+        "classification_raw": "92",
+        "normalized_hsn": [
+          "92"
+        ],
+        "description": "Indigenous handmade musical instruments as listed in Annexure II",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "161.\t92\tIndigenous handmade musical instruments as listed in Annexure II",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_162",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "162",
+        "classification_raw": "9603",
+        "normalized_hsn": [
+          "9603"
+        ],
+        "description": "Muddhas made of sarkanda, Brooms or brushes, consisting of twigs or other vegetable materials, bound together, with or without handles",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "162.\t9603\tMuddhas made of sarkanda, Brooms or brushes, consisting of twigs or other vegetable materials, bound together, with or without handles",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_163",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "163",
+        "classification_raw": "9608,9609",
+        "normalized_hsn": [
+          "9608",
+          "9609"
+        ],
+        "description": "Pencils (including propelling or sliding pencils), crayons, pastels, drawing charcoals, writing or drawing chalks and tailor\u2019s chalk; Slate pencils and chalk sticks",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "163.\t9608,9609\tPencils (including propelling or sliding pencils), crayons, pastels, drawing charcoals, writing or drawing chalks and tailor\u2019s chalk; Slate pencils and chalk sticks",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_164",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "164",
+        "classification_raw": "9610 00 00",
+        "normalized_hsn": [
+          "96100000"
+        ],
+        "description": "Slates",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "164.\t9610 00 00\tSlates",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_165",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "165",
+        "classification_raw": "9619 00 10 or 9619 00 20",
+        "normalized_hsn": [
+          "96190010",
+          "96190020"
+        ],
+        "description": "Sanitary towels (pads) or sanitary napkins; tampons",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "165.\t9619 00 10 or 9619 00 20\tSanitary towels (pads) or sanitary napkins; tampons",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_166",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "166",
+        "classification_raw": "9803",
+        "normalized_hsn": [
+          "9803"
+        ],
+        "description": "Passenger baggage",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "166.\t9803\tPassenger baggage",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_167",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "167",
+        "classification_raw": "Any chapter",
+        "normalized_hsn": [],
+        "description": "Puja samagri namely:- (i) Rudraksha, rudraksha mala, tulsi kanthi mala, panchgavya (mixture of cowdung, desi ghee, milk and curd); (ii) Sacred thread (commonly known as yagnopavit); (iii) Wooden khadau; (iv) Panchamrit, (v) Vibhuti, (vi) Unbranded honey (vii) Wick for diya. (viii) Roli (ix) Kalava (Raksha sutra) (x) Chandan tika",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "167.\tAny chapter\tPuja samagri namely:- (i) Rudraksha, rudraksha mala, tulsi kanthi mala, panchgavya (mixture of cowdung, desi ghee, milk and curd); (ii) Sacred thread (commonly known as yagnopavit); (iii) Wooden khadau; (iv) Panchamrit, (v) Vibhuti, (vi) Unbranded honey (vii) Wick for diya. (viii) Roli (ix) Kalava (Raksha sutra) (x) Chandan tika",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_168",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "168",
+        "classification_raw": "-",
+        "normalized_hsn": [],
+        "description": "Supply of lottery by any person other than State Government, Union Territory or Local authority subject to the condition that the supply of such lottery has suffered appropriate Central tax, State tax, Union Territory tax or integrated tax, as the case may be, when supplied by State Government, Union Territory or local authority, as the case may be, to the lottery distributor or selling agent appointed by the State Government, Union Territory or local authority, as the case may be.",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "168.\t-\tSupply of lottery by any person other than State Government, Union Territory or Local authority subject to the condition that the supply of such lottery has suffered appropriate Central tax, State tax, Union Territory tax or integrated tax, as the case may be, when supplied by State Government, Union Territory or local authority, as the case may be, to the lottery distributor or selling agent appointed by the State Government, Union Territory or local authority, as the case may be.",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_169",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "169",
+        "classification_raw": "-",
+        "normalized_hsn": [],
+        "description": "Supply of goods by a Government entity to Central Government, State Government, Union Territory, local authority or any person specified by Central Government, State Government, Union Territory or local authority, against consideration received from Central Government, State Government, Union Territory or local authority in the form of grants",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "169.\t-\tSupply of goods by a Government entity to Central Government, State Government, Union Territory, local authority or any person specified by Central Government, State Government, Union Territory or local authority, against consideration received from Central Government, State Government, Union Territory or local authority in the form of grants",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_170",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "170",
+        "classification_raw": "Any Chapter",
+        "normalized_hsn": [],
+        "description": "Parts for manufacture of hearing aids",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "170.\tAny Chapter\tParts for manufacture of hearing aids",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_171",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "171",
+        "classification_raw": "Any Chapter except 71",
+        "normalized_hsn": [
+          "71"
+        ],
+        "description": "Rakhi (other than those made of goods falling under Chapter 71)",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 7,
+        "raw_legal_text": "171.\tAny Chapter except 71\tRakhi (other than those made of goods falling under Chapter 71)",
+        "tax_treatment": "EXEMPT"
+      },
+      {
+        "entry_id": "10_2025_exemption_172",
+        "schedule_name": "Exempt Goods Schedule",
+        "schedule_rate_raw": "Nil",
+        "schedule_rate_pct": null,
+        "serial_no": "172",
+        "classification_raw": "Any Chapter",
+        "normalized_hsn": [],
+        "description": "Supply of gift items received by the President, Prime Minister, Governor or Chief Minister of any State or Union territory, or any public servant, by way of public auction by the Government, where auction proceeds are to be used for public or charitable cause.",
+        "conditions": null,
+        "page_start": 7,
+        "page_end": 8,
+        "raw_legal_text": "172.\tAny Chapter\tSupply of gift items received by the President, Prime Minister, Governor or Chief Minister of any State or Union\nterritory, or any public servant, by way of public auction by\nthe Government, where auction proceeds are to be used for\npublic or charitable cause.",
+        "tax_treatment": "EXEMPT"
+      }
+    ]
+  },
+  "annexures": [
+    {
+      "annexure_id": "10_2025_annexure_I",
+      "annexure_title": "Annexure-I: List of drugs or medicines",
+      "related_serial_no": "113",
+      "content_type": "LIST",
+      "raw_legal_text": "[See S. No. 113 of the Schedule] List of drugs or medicines",
+      "items": [
+        {
+          "item_no": "1",
+          "name": "Gene Therapy"
+        },
+        {
+          "item_no": "2",
+          "name": "Agalsidase Beta"
+        },
+        {
+          "item_no": "3",
+          "name": "Imiglucerase"
+        },
+        {
+          "item_no": "4",
+          "name": "Eptacog alfa activated recombinant coagulation factor VIIa"
+        },
+        {
+          "item_no": "5",
+          "name": "Onasemnogene abeparvovec"
+        },
+        {
+          "item_no": "6",
+          "name": "Asciminib"
+        },
+        {
+          "item_no": "7",
+          "name": "Mepolizumab"
+        },
+        {
+          "item_no": "8",
+          "name": "Pegylated Liposomal Irinotecan"
+        },
+        {
+          "item_no": "9",
+          "name": "Daratumumab"
+        },
+        {
+          "item_no": "10",
+          "name": "Daratumumab subcutaneous"
+        },
+        {
+          "item_no": "11",
+          "name": "Teclistamab"
+        },
+        {
+          "item_no": "12",
+          "name": "Amivantamab"
+        },
+        {
+          "item_no": "13",
+          "name": "Alectinib"
+        },
+        {
+          "item_no": "14",
+          "name": "Risdiplam"
+        },
+        {
+          "item_no": "15",
+          "name": "Obinutuzumab"
+        },
+        {
+          "item_no": "16",
+          "name": "Polatuzumab vedotin"
+        },
+        {
+          "item_no": "17",
+          "name": "Entrectinib"
+        },
+        {
+          "item_no": "18",
+          "name": "Atezolizumab"
+        },
+        {
+          "item_no": "19",
+          "name": "Spesolimab"
+        },
+        {
+          "item_no": "20",
+          "name": "Velaglucerase Alpha"
+        },
+        {
+          "item_no": "21",
+          "name": "Agalsidase Alfa"
+        },
+        {
+          "item_no": "22",
+          "name": "Rurioctocog Alpha Pegol"
+        },
+        {
+          "item_no": "23",
+          "name": "Idursulphatase"
+        },
+        {
+          "item_no": "24",
+          "name": "Alglucosidase Alfa"
+        },
+        {
+          "item_no": "25",
+          "name": "Laronidase"
+        },
+        {
+          "item_no": "26",
+          "name": "Olipudase Alfa"
+        },
+        {
+          "item_no": "27",
+          "name": "Tepotinib"
+        },
+        {
+          "item_no": "28",
+          "name": "Avelumab"
+        },
+        {
+          "item_no": "29",
+          "name": "Emicizumab"
+        },
+        {
+          "item_no": "30",
+          "name": "Belumosudil"
+        },
+        {
+          "item_no": "31",
+          "name": "Miglustat"
+        },
+        {
+          "item_no": "32",
+          "name": "Velmanase Alfa"
+        },
+        {
+          "item_no": "33",
+          "name": "Alirocumab"
+        },
+        {
+          "item_no": "34",
+          "name": "Evolocumab"
+        },
+        {
+          "item_no": "35",
+          "name": "Cystamine Bitartrate"
+        },
+        {
+          "item_no": "36",
+          "name": "CI-Inhibitor injection"
+        },
+        {
+          "item_no": "37",
+          "name": "Inclisiran"
+        }
+      ],
+      "page_start": 9,
+      "page_end": 9
+    },
+    {
+      "annexure_id": "10_2025_annexure_II",
+      "annexure_title": "Annexure-II: List of indigenous handmade musical instruments",
+      "related_serial_no": "161",
+      "content_type": "LIST",
+      "raw_legal_text": "[See S. No. 161 of the Schedule] List of indigenous handmade musical instruments",
+      "items": [
+        {
+          "item_no": "1",
+          "name": "Bulbul Tarang"
+        },
+        {
+          "item_no": "2",
+          "name": "Dotar, Dotora, or Dotara"
+        },
+        {
+          "item_no": "3",
+          "name": "Ektara"
+        },
+        {
+          "item_no": "4",
+          "name": "Getchu Vadyam or Jhallari"
+        },
+        {
+          "item_no": "5",
+          "name": "Gopichand or Gopiyantra or Khamak"
+        },
+        {
+          "item_no": "6",
+          "name": "Gottuvadhyam or Chitravina"
+        },
+        {
+          "item_no": "7",
+          "name": "Katho"
+        },
+        {
+          "item_no": "8",
+          "name": "Sarod"
+        },
+        {
+          "item_no": "9",
+          "name": "Sitar"
+        },
+        {
+          "item_no": "10",
+          "name": "Surbahar"
+        },
+        {
+          "item_no": "11",
+          "name": "Surshringar"
+        },
+        {
+          "item_no": "12",
+          "name": "Swarabat"
+        },
+        {
+          "item_no": "13",
+          "name": "Swarmandal"
+        },
+        {
+          "item_no": "14",
+          "name": "Tambura"
+        },
+        {
+          "item_no": "15",
+          "name": "Tumbi"
+        },
+        {
+          "item_no": "16",
+          "name": "Tuntuna"
+        },
+        {
+          "item_no": "17",
+          "name": "Magadi Veena"
+        },
+        {
+          "item_no": "18",
+          "name": "Hansaveena"
+        },
+        {
+          "item_no": "19",
+          "name": "Mohan Veena"
+        },
+        {
+          "item_no": "20",
+          "name": "Nakula Veena"
+        },
+        {
+          "item_no": "21",
+          "name": "Nanduni"
+        },
+        {
+          "item_no": "22",
+          "name": "Rudra Veena"
+        },
+        {
+          "item_no": "23",
+          "name": "Saraswati Veena"
+        },
+        {
+          "item_no": "24",
+          "name": "Vichitra Veena"
+        },
+        {
+          "item_no": "25",
+          "name": "Yazh"
+        },
+        {
+          "item_no": "26",
+          "name": "Ranjan Veena"
+        },
+        {
+          "item_no": "27",
+          "name": "Triveni Veena"
+        },
+        {
+          "item_no": "28",
+          "name": "Chikara"
+        },
+        {
+          "item_no": "29",
+          "name": "Dilruba"
+        },
+        {
+          "item_no": "30",
+          "name": "Ektara violin"
+        },
+        {
+          "item_no": "31",
+          "name": "Esraj"
+        },
+        {
+          "item_no": "32",
+          "name": "Kamaicha"
+        },
+        {
+          "item_no": "33",
+          "name": "Mayuri Vina or Taus"
+        },
+        {
+          "item_no": "34",
+          "name": "Onavillu"
+        },
+        {
+          "item_no": "35",
+          "name": "Behala (violin type)"
+        },
+        {
+          "item_no": "36",
+          "name": "Pena or Bana"
+        },
+        {
+          "item_no": "37",
+          "name": "Pulluvan veena - one stringed violin"
+        },
+        {
+          "item_no": "38",
+          "name": "Ravanahatha"
+        },
+        {
+          "item_no": "39",
+          "name": "Folk sarangi"
+        },
+        {
+          "item_no": "40",
+          "name": "Classical sarangi"
+        },
+        {
+          "item_no": "41",
+          "name": "Sarinda"
+        },
+        {
+          "item_no": "42",
+          "name": "Tar shehnai"
+        },
+        {
+          "item_no": "43",
+          "name": "Gethu or Jhallari"
+        },
+        {
+          "item_no": "44",
+          "name": "Gubguba or Jamuku - Percussion string instrument"
+        },
+        {
+          "item_no": "45",
+          "name": "Pulluvan kutam"
+        },
+        {
+          "item_no": "46",
+          "name": "Santoor - Hammered chord box"
+        },
+        {
+          "item_no": "47",
+          "name": "Pepa"
+        },
+        {
+          "item_no": "48",
+          "name": "Pungi or Been"
+        },
+        {
+          "item_no": "49",
+          "name": "Indian Harmonium: Double reed"
+        },
+        {
+          "item_no": "50",
+          "name": "Kuzhal"
+        },
+        {
+          "item_no": "51",
+          "name": "Nadaswaram"
+        },
+        {
+          "item_no": "52",
+          "name": "Shehnai"
+        },
+        {
+          "item_no": "53",
+          "name": "Sundari"
+        },
+        {
+          "item_no": "54",
+          "name": "Tangmuri"
+        },
+        {
+          "item_no": "55",
+          "name": "Alghoza - double flute"
+        },
+        {
+          "item_no": "56",
+          "name": "Bansuri"
+        },
+        {
+          "item_no": "57",
+          "name": "Venu (Carnatic flute) Pullanguzhal"
+        },
+        {
+          "item_no": "58",
+          "name": "Mashak"
+        },
+        {
+          "item_no": "59",
+          "name": "Titti"
+        },
+        {
+          "item_no": "60",
+          "name": "Sruti upanga"
+        },
+        {
+          "item_no": "61",
+          "name": "Gogona"
+        },
+        {
+          "item_no": "62",
+          "name": "Morsing"
+        },
+        {
+          "item_no": "63",
+          "name": "Shruti box"
+        },
+        {
+          "item_no": "64",
+          "name": "Harmonium (hand-pumped)"
+        },
+        {
+          "item_no": "65",
+          "name": "Ekkalam"
+        },
+        {
+          "item_no": "66",
+          "name": "Karnal"
+        },
+        {
+          "item_no": "67",
+          "name": "Ramsinga"
+        },
+        {
+          "item_no": "68",
+          "name": "Kahal"
+        },
+        {
+          "item_no": "69",
+          "name": "Nagphani"
+        },
+        {
+          "item_no": "70",
+          "name": "Turi"
+        },
+        {
+          "item_no": "71",
+          "name": "Dhad"
+        },
+        {
+          "item_no": "72",
+          "name": "Damru"
+        },
+        {
+          "item_no": "73",
+          "name": "Dimadi"
+        },
+        {
+          "item_no": "74",
+          "name": "Dhol"
+        },
+        {
+          "item_no": "75",
+          "name": "Dholak"
+        },
+        {
+          "item_no": "76",
+          "name": "Dholki"
+        },
+        {
+          "item_no": "77",
+          "name": "Duggi"
+        },
+        {
+          "item_no": "78",
+          "name": "Ghat singhari or gada singari"
+        },
+        {
+          "item_no": "79",
+          "name": "Ghumot"
+        },
+        {
+          "item_no": "80",
+          "name": "Gummeta"
+        },
+        {
+          "item_no": "81",
+          "name": "Kanjira"
+        },
+        {
+          "item_no": "82",
+          "name": "Khol"
+        },
+        {
+          "item_no": "83",
+          "name": "Kinpar and Dhopar (tribal drums)"
+        },
+        {
+          "item_no": "84",
+          "name": "Maddale"
+        },
+        {
+          "item_no": "85",
+          "name": "Maram"
+        },
+        {
+          "item_no": "86",
+          "name": "Mizhavu"
+        },
+        {
+          "item_no": "87",
+          "name": "Mridangam"
+        },
+        {
+          "item_no": "88",
+          "name": "Pakhavaj"
+        },
+        {
+          "item_no": "89",
+          "name": "Pakhavaj jori - Sikh instrument similar to tabla"
+        },
+        {
+          "item_no": "90",
+          "name": "Panchamukha vadyam"
+        },
+        {
+          "item_no": "91",
+          "name": "Pung"
+        },
+        {
+          "item_no": "92",
+          "name": "Shuddha madalam or Maddalam"
+        },
+        {
+          "item_no": "93",
+          "name": "Tabala/tabl/chameli - goblet drum"
+        },
+        {
+          "item_no": "94",
+          "name": "Tabla"
+        },
+        {
+          "item_no": "95",
+          "name": "Tabla tarang - set of tablas"
+        },
+        {
+          "item_no": "96",
+          "name": "Tamte"
+        },
+        {
+          "item_no": "97",
+          "name": "Thanthi Panai"
+        },
+        {
+          "item_no": "98",
+          "name": "Thimila"
+        },
+        {
+          "item_no": "99",
+          "name": "Tumbak, tumbaknari, tumbaknaer"
+        },
+        {
+          "item_no": "100",
+          "name": "Daff, duff, daf or duf Dimdi or dimri - small frame drum without jingles"
+        },
+        {
+          "item_no": "101",
+          "name": "Kanjira - small frame drum with one jingle"
+        },
+        {
+          "item_no": "102",
+          "name": "Kansi - small without jingles"
+        },
+        {
+          "item_no": "103",
+          "name": "Patayani thappu - medium frame drum played with hands"
+        },
+        {
+          "item_no": "104",
+          "name": "Chenda"
+        },
+        {
+          "item_no": "105",
+          "name": "Dollu"
+        },
+        {
+          "item_no": "106",
+          "name": "Dhak"
+        },
+        {
+          "item_no": "107",
+          "name": "Dhol"
+        },
+        {
+          "item_no": "108",
+          "name": "Dholi"
+        },
+        {
+          "item_no": "109",
+          "name": "Idakka"
+        },
+        {
+          "item_no": "110",
+          "name": "Thavil"
+        },
+        {
+          "item_no": "111",
+          "name": "Udukai"
+        },
+        {
+          "item_no": "112",
+          "name": "Chande"
+        },
+        {
+          "item_no": "113",
+          "name": "Nagara - pair of kettledrums"
+        },
+        {
+          "item_no": "114",
+          "name": "Pambai - unit of two cylindrical drums"
+        },
+        {
+          "item_no": "115",
+          "name": "Parai thappu, halgi - frame drum played with two sticks"
+        },
+        {
+          "item_no": "116",
+          "name": "Sambal"
+        },
+        {
+          "item_no": "117",
+          "name": "Stick daff or stick duff - daff in a stand played with sticks"
+        },
+        {
+          "item_no": "118",
+          "name": "Tamak"
+        },
+        {
+          "item_no": "119",
+          "name": "Tasha - type of kettledrum"
+        },
+        {
+          "item_no": "120",
+          "name": "Urumee"
+        },
+        {
+          "item_no": "121",
+          "name": "JaltarangChimpta - fire tong with brass jingles"
+        },
+        {
+          "item_no": "122",
+          "name": "Chengila - metal disc"
+        },
+        {
+          "item_no": "123",
+          "name": "Elathalam"
+        },
+        {
+          "item_no": "124",
+          "name": "Geger - brass vessel"
+        },
+        {
+          "item_no": "125",
+          "name": "Ghatam and Matkam (Earthenware pot drum)"
+        },
+        {
+          "item_no": "126",
+          "name": "Ghungroo"
+        },
+        {
+          "item_no": "127",
+          "name": "Khartal or Chiplya"
+        },
+        {
+          "item_no": "128",
+          "name": "Manjeera or jhanj or taal"
+        },
+        {
+          "item_no": "129",
+          "name": "Nut - clay pot"
+        },
+        {
+          "item_no": "130",
+          "name": "Sankarjang - lithophone"
+        },
+        {
+          "item_no": "131",
+          "name": "Thali - metal plate"
+        },
+        {
+          "item_no": "132",
+          "name": "Thattukazhi mannai"
+        },
+        {
+          "item_no": "133",
+          "name": "Kanch tarang, a type of glass harp"
+        },
+        {
+          "item_no": "134",
+          "name": "Kashtha tarang, a type of xylophone."
+        }
+      ],
+      "page_start": 10,
+      "page_end": 13
+    }
+  ],
+  "explanations": [
+    {
+      "title": "Schedule Interpretation Explanation",
+      "raw_text": "Explanation.-  For the purposes of this Schedule,- \n \n(a) the expressions, - \n(i) \n\u201cunit container\u201d means a package, whether large or small (for example, \ntin, can, box, jar, bottle, bag, or carton, drum, barrel, or canister) \ndesigned to hold a pre-determined quantity or number, which is \nindicated on such package; \n(ii) \n\u201cpre-packaged and labelled\u201d means all commodities that are intended \nfor retail sale and containing not more than 25 kg or 25 litre, which are \n\u201cpre-packed\u201d as defined in clause (l) of section 2 of the Legal Metrology \nAct, 2009 (1 of 2010) where, the package in which the commodity is \npre-packed or a label securely affixed thereto is required to bear the \ndeclarations under the provisions of the Legal Metrology Act, 2009 (1 \nof 2010) and the rules made thereunder; \n(iii) \n\u201ctariff item\u201d, \u201csub-heading\u201d \u201cheading\u201d and \u201cChapter\u201d shall mean \nrespectively a tariff item, heading, sub-heading and Chapter as specified \nin the First Schedule to the Customs Tariff Act, 1975 (51 of 1975); \n(iv) \n\u201cGovernment entity\u201d shall mean an authority or a board or any other \nbody including a society, trust, corporation, which is- \n(a) \nset up by an Act of Parliament or State Legislature; or \n(b) \nestablished by any Government,  \nwith 90 percent or more participation by way of equity or control, to carry \nout a function entrusted by the Central Government, State government, \nUnion territory or a local authority; \n \n(b) the rules for the interpretation of the First Schedule to the said Customs Tariff Act, \n1975 including the Section and Chapter Notes and the General Explanatory Notes of \nthe First Schedule shall, so far as may be, apply to the interpretation of this notification. \n \n2. \nThis notification shall come into force with effect from the 22nd day of September, 2025. \n \n \n[F. No. CBIC-190341/188/2025-TRU] \n \n(Dheeraj Sharma)  \nUnder Secretary to the Government of India",
+      "page_start": 8,
+      "page_end": 8
+    }
+  ],
+  "validation_warnings": [],
+  "counts": {
+    "exemption_schedule_entries": 172,
+    "annexure_I_items": 37,
+    "annexure_II_items": 134
+  }
+}

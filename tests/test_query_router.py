@@ -1,7 +1,30 @@
 """Tests for query router module."""
 
 import pytest
-from src.routers.query_router import RouteType, classify_query, has_legal_intent, has_rate_intent
+from src.routers.query_router import (
+    RouteType,
+    classify_query,
+    has_direct_calculation_intent,
+    has_legal_intent,
+    has_rate_intent,
+)
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "What is 5% of 100000?",
+        "If GST amount is 5000 at 5%, what is taxable value?",
+        "If I have 5000 GST credits and I charge 5%, then how much taxable amount?",
+        (
+            "કોઈ વસ્તુની કિંમત ₹20,000 છે. પહેલા કિંમત પર 10% ડિસ્કાઉન્ટ આપવામાં "
+            "આવે છે અને પછી બાકી રકમ પર 5% GST લગાવવામાં આવે છે. અંતિમ રકમ કેટલી થશે?"
+        ),
+    ],
+)
+def test_direct_calculation_queries_classified_correctly(query: str):
+    assert classify_query(query) == RouteType.DIRECT
+    assert has_direct_calculation_intent(query) is True
 
 
 @pytest.mark.parametrize(
@@ -18,6 +41,7 @@ from src.routers.query_router import RouteType, classify_query, has_legal_intent
         "What is the tax slab for restaurant services?",
         "applicable rate for hotel accommodation",
         "18% GST items",
+        "Give me full GST details for fresh milk.",
     ],
 )
 def test_rate_queries_classified_correctly(query: str):
@@ -65,3 +89,15 @@ def test_empty_and_fallback_queries():
     assert classify_query("") == RouteType.LEGAL
     assert classify_query("   ") == RouteType.LEGAL
     assert classify_query("Hello there") == RouteType.LEGAL
+
+
+def test_document_dependent_calculation_uses_rate_route():
+    query = "Using the applicable GST rate from the documents, calculate tax on 100000"
+    assert classify_query(query) == RouteType.RATE
+    assert has_direct_calculation_intent(query) is False
+
+
+def test_gujarati_applicable_rate_query_does_not_use_direct_route():
+    query = "દસ્તાવેજો મુજબ આ વસ્તુ પર લાગુ GST દર કેટલો છે?"
+    assert classify_query(query) == RouteType.RATE
+    assert has_direct_calculation_intent(query) is False

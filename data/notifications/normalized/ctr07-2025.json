@@ -1,0 +1,55 @@
+{
+  "notification_number": "07/2025-Central Tax (Rate)",
+  "file_name": "ctr07-2025.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-01-16",
+  "document_effective_date": null,
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "ctr07-2025.pdf_op_1",
+      "operation_type": "INSERT",
+      "target_notification": "13/2017-Central Tax (Rate)",
+      "target_schedule": null,
+      "target_serial_no": "4",
+      "target_column": "column (3)",
+      "target_clause_item": null,
+      "anchor_text": "against serial number 4",
+      "explicit_old_text": null,
+      "explicit_new_text": "Any person",
+      "effective_date": null,
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 1,
+      "raw_legal_text": "(A) against serial number 4, in column (3), after the words \u201cAny person\u201d, the words \n\u201cother than a body corporate\u201d shall be inserted.",
+      "table_data": null
+    },
+    {
+      "operation_id": "ctr07-2025.pdf_op_2",
+      "operation_type": "INSERT",
+      "target_notification": "13/2017-Central Tax (Rate)",
+      "target_schedule": null,
+      "target_serial_no": "5A",
+      "target_column": "column (4)",
+      "target_clause_item": null,
+      "anchor_text": "against serial number 5AB",
+      "explicit_old_text": null,
+      "explicit_new_text": "Any registered person",
+      "effective_date": null,
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 1,
+      "raw_legal_text": "(B) against serial number 5AB, in column (4), after the words \u201cAny registered person\u201d, \nthe words \u201cother than a person who has opted to pay tax under composition levy\u201d shall be \ninserted.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 2,
+    "annexures": 0
+  }
+}

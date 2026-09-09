@@ -1,0 +1,73 @@
+{
+  "notification_number": "19/2025-Central Tax (Rate)",
+  "file_name": "19-2025-CTR-Eng-1.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-12-31",
+  "document_effective_date": "2026-02-01",
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "19-2025-CTR-Eng-1.pdf_op_1",
+      "operation_type": "INSERT",
+      "target_notification": "09/2025-Central Tax (Rate)",
+      "target_schedule": "Schedule II \u2013 9%",
+      "target_serial_no": "4",
+      "target_column": null,
+      "target_clause_item": null,
+      "anchor_text": "in the Schedule II \u2013 9%",
+      "explicit_old_text": null,
+      "explicit_new_text": null,
+      "effective_date": "2026-02-01",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 2,
+      "raw_legal_text": "(a) \nin the Schedule II \u2013 9%, after S. No. 4 and the entries relating thereto, the following serial number \nand entries shall be inserted, namely: -",
+      "table_data": null
+    },
+    {
+      "operation_id": "19-2025-CTR-Eng-1.pdf_op_2",
+      "operation_type": "INSERT",
+      "target_notification": "09/2025-Central Tax (Rate)",
+      "target_schedule": "Schedule III \u2013 20%",
+      "target_serial_no": "13",
+      "target_column": null,
+      "target_clause_item": null,
+      "anchor_text": "in the Schedule III \u2013 20%",
+      "explicit_old_text": null,
+      "explicit_new_text": "4A. \n2403 19 21, 2403 19 \n29 \nBiris;",
+      "effective_date": "2026-02-01",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 2,
+      "raw_legal_text": "(b) \nin the Schedule III \u2013 20%, after S. No. 13 and the entries relating thereto, the following serial number \nand entries shall be inserted, namely: - \n\u201c4A. \n2403 19 21, 2403 19 \n29 \nBiris;\u201d; \n\u201c14. \n2106 90 20 \nPan masala; \n15. \n2401 \nUnmanufactured tobacco; tobacco refuse [other than tobacco leaves]; \n16. \n2402 \nCigars, cheroots, cigarillos and cigarettes, of tobacco or of tobacco \nsubstitutes; \n17. \n2403 (other than 2403 \n19 21, 2403 19 29) \nOther manufactured tobacco and manufactured tobacco substitutes; \nhomogenised or reconstituted tobacco; tobacco extracts and essences \n[other than biris]; \n18. \n2404 11 00 \nProducts containing tobacco or reconstituted tobacco and intended \nfor inhalation without combustion; \n19. \n2404 19 00 \nProducts containing tobacco or nicotine substitutes and intended for \ninhalation without combustion.\u201d;",
+      "table_data": null
+    },
+    {
+      "operation_id": "19-2025-CTR-Eng-1.pdf_op_3",
+      "operation_type": "OMIT",
+      "target_notification": "09/2025-Central Tax (Rate)",
+      "target_schedule": "Schedule VII \u2013 14%",
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": null,
+      "anchor_text": null,
+      "explicit_old_text": null,
+      "explicit_new_text": null,
+      "effective_date": "2026-02-01",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 2,
+      "raw_legal_text": "(c) \nthe Schedule VII \u2013 14%, and the entries relating thereto shall be omitted.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 3,
+    "annexures": 0
+  }
+}

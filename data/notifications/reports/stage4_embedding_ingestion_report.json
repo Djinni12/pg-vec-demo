@@ -1,0 +1,169 @@
+{
+  "embedding_model": "BAAI/bge-m3",
+  "total_embeddings_generated": 1495,
+  "embedding_dimension": 1024,
+  "database_row_count": 1495,
+  "time_taken_embedding_generation_seconds": 1592.48,
+  "time_taken_ingestion_seconds": 11.81,
+  "index_creation_status": {
+    "hnsw_cosine": true,
+    "notification_number": true,
+    "target_notification": true,
+    "normalized_hsn_gin": true
+  },
+  "validation_results": {
+    "expected_chunks": 1495,
+    "embedded_chunks": 1495,
+    "db_rows": 1495,
+    "duplicate_chunk_ids": 0,
+    "null_embeddings": 0,
+    "wrong_embedding_dimensions": 0,
+    "zero_token_chunks": 0,
+    "excluded_18_2025_rows": 0
+  },
+  "idempotency_verification": {
+    "second_run_inserted": 0,
+    "second_run_updated": 1495,
+    "final_row_count": 1495,
+    "idempotency_pass": true
+  },
+  "representative_rows": {
+    "09/2025": {
+      "chunk_id": "chunk-09-2025-central_tax_rate-0001",
+      "notification_number": "09/2025-Central Tax (Rate)",
+      "effective_date": "2025-09-22",
+      "target_notification": null,
+      "schedule": "Schedule I",
+      "schedule_rate_raw": "2.5%",
+      "tax_treatment": "TAXABLE",
+      "serial_numbers": [
+        "1"
+      ],
+      "classification_raw": "0101 21 00, 0101 29",
+      "normalized_hsn": [
+        "01012100",
+        "010129"
+      ],
+      "operation_type": null,
+      "source_page_start": 1,
+      "source_page_end": 1,
+      "content_snippet": "[Notification No. 09/2025-Central Tax (Rate) | Schedule I (Rate: 2.5%) | S. No. 1 | HSN 0101 21 00, 0101 29]\n\n1.\t0101 21 00, 0101 29\tLive horses",
+      "token_count": 55,
+      "embedding_dimension": 1024,
+      "has_raw_legal_text_in_metadata": true,
+      "has_inherited_header_in_metadata": true
+    },
+    "10/2025": {
+      "chunk_id": "chunk-10-2025-central_tax_rate-0001",
+      "notification_number": "10/2025-Central Tax (Rate)",
+      "effective_date": "2025-09-22",
+      "target_notification": null,
+      "schedule": "Exempt Goods Schedule",
+      "schedule_rate_raw": "Nil",
+      "tax_treatment": "EXEMPT",
+      "serial_numbers": [
+        "1"
+      ],
+      "classification_raw": "0101",
+      "normalized_hsn": [
+        "0101"
+      ],
+      "operation_type": null,
+      "source_page_start": 1,
+      "source_page_end": 1,
+      "content_snippet": "[Notification No. 10/2025-Central Tax (Rate) | Exempt Goods Schedule (Rate: Nil, EXEMPT) | S. No. 1 | HSN 0101]\n\n1.\t0101\tLive asses, mules and hinnies",
+      "token_count": 52,
+      "embedding_dimension": 1024,
+      "has_raw_legal_text_in_metadata": true,
+      "has_inherited_header_in_metadata": true
+    },
+    "13/2025": {
+      "chunk_id": "chunk-13-2025-central_tax_rate-0001",
+      "notification_number": "13/2025-Central Tax (Rate)",
+      "effective_date": "2025-09-22",
+      "target_notification": "21/2018-Central Tax (Rate)",
+      "schedule": "Table",
+      "schedule_rate_raw": "2.5 %",
+      "tax_treatment": "CONCESSIONAL",
+      "serial_numbers": [
+        "1"
+      ],
+      "classification_raw": "3406",
+      "normalized_hsn": [
+        "3406"
+      ],
+      "operation_type": "SUBSTITUTE",
+      "source_page_start": 1,
+      "source_page_end": 1,
+      "content_snippet": "[Notification No. 13/2025-Central Tax (Rate) | Amending Notification No. 21/2018-Central Tax (Rate) | Table Substitution (Rate: 2.5 %) | S. No. 1 | HS...",
+      "token_count": 94,
+      "embedding_dimension": 1024,
+      "has_raw_legal_text_in_metadata": true,
+      "has_inherited_header_in_metadata": true
+    },
+    "15/2025": {
+      "chunk_id": "chunk-15-2025-central_tax_rate-0001",
+      "notification_number": "15/2025-Central Tax (Rate)",
+      "effective_date": "2025-09-22",
+      "target_notification": "11/2017-Central Tax (Rate)",
+      "schedule": null,
+      "schedule_rate_raw": null,
+      "tax_treatment": "AMENDMENT",
+      "serial_numbers": [
+        "3"
+      ],
+      "classification_raw": null,
+      "normalized_hsn": [],
+      "operation_type": "UNKNOWN",
+      "source_page_start": 1,
+      "source_page_end": 9,
+      "content_snippet": "[Notification No. 15/2025-Central Tax (Rate) | Amending Notification No. 11/2017-Central Tax (Rate) | Operation: UNKNOWN | Target: S. No. 3, column (3...",
+      "token_count": 71,
+      "embedding_dimension": 1024,
+      "has_raw_legal_text_in_metadata": true,
+      "has_inherited_header_in_metadata": true
+    },
+    "17/2025": {
+      "chunk_id": "chunk-17-2025-central_tax_rate-0001",
+      "notification_number": "17/2025-Central Tax (Rate)",
+      "effective_date": "2025-09-22",
+      "target_notification": "17/2017-Central Tax (Rate)",
+      "schedule": null,
+      "schedule_rate_raw": null,
+      "tax_treatment": "AMENDMENT",
+      "serial_numbers": [],
+      "classification_raw": null,
+      "normalized_hsn": [],
+      "operation_type": "INSERT",
+      "source_page_start": 1,
+      "source_page_end": 1,
+      "content_snippet": "[Notification No. 17/2025-Central Tax (Rate) | Amending Notification No. 17/2017-Central Tax (Rate) | Operation: INSERT | Target: clause (iv) | Effect...",
+      "token_count": 118,
+      "embedding_dimension": 1024,
+      "has_raw_legal_text_in_metadata": true,
+      "has_inherited_header_in_metadata": true
+    },
+    "01/2026": {
+      "chunk_id": "chunk-01-2026-central_tax_rate-0001",
+      "notification_number": "01/2026-Central Tax (Rate)",
+      "effective_date": "2026-05-01",
+      "target_notification": "09/2025-Central Tax (Rate)",
+      "schedule": null,
+      "schedule_rate_raw": null,
+      "tax_treatment": "AMENDMENT",
+      "serial_numbers": [
+        "150"
+      ],
+      "classification_raw": null,
+      "normalized_hsn": [],
+      "operation_type": "SUBSTITUTE",
+      "source_page_start": 1,
+      "source_page_end": 2,
+      "content_snippet": "[Notification No. 01/2026-Central Tax (Rate) | Amending Notification No. 09/2025-Central Tax (Rate) | Operation: SUBSTITUTE | Target: S. No. 150, colu...",
+      "token_count": 93,
+      "embedding_dimension": 1024,
+      "has_raw_legal_text_in_metadata": true,
+      "has_inherited_header_in_metadata": true
+    }
+  }
+}

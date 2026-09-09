@@ -1,0 +1,37 @@
+{
+  "notification_number": "17/2025-Central Tax (Rate)",
+  "file_name": "17-2025-CTR-eng.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-09-17",
+  "document_effective_date": "2025-09-22",
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "17-2025-CTR-eng.pdf_op_1",
+      "operation_type": "INSERT",
+      "target_notification": "17/2017-Central Tax (Rate)",
+      "target_schedule": null,
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": "clause (iv)",
+      "anchor_text": "In the said notification",
+      "explicit_old_text": null,
+      "explicit_new_text": "(v) services by way of local delivery except where the person supplying such services through electronic \ncommerce operator is liable for registration under sub section (1) of section 22 of the Central Goods and \nServices Tax Act, 2017.",
+      "effective_date": "2025-09-22",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 1,
+      "raw_legal_text": "In the said notification, after clause (iv), the following clause shall be inserted, namely: -  \n \n\u201c(v) services by way of local delivery except where the person supplying such services through electronic \ncommerce operator is liable for registration under sub section (1) of section 22 of the Central Goods and \nServices Tax Act, 2017.\u201d.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 1,
+    "annexures": 0
+  }
+}

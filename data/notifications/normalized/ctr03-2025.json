@@ -1,0 +1,37 @@
+{
+  "notification_number": "03/2025-Central Tax (Rate)",
+  "file_name": "ctr03-2025.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-01-16",
+  "document_effective_date": "2025-01-16",
+  "effective_date_scopes": [],
+  "amendment_operations": [
+    {
+      "operation_id": "ctr03-2025.pdf_op_1",
+      "operation_type": "INSERT",
+      "target_notification": "39/2017-Central Tax (Rate)",
+      "target_schedule": "Table",
+      "target_serial_no": "1",
+      "target_column": null,
+      "target_clause_item": null,
+      "anchor_text": "In the said notification",
+      "explicit_old_text": null,
+      "explicit_new_text": "(b)\nFortified Rice Kernel (Premix) supply for ICDS or similar scheme duly approved by the Central\nGovernment\nor any State Government",
+      "effective_date": "2025-01-16",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 1,
+      "raw_legal_text": "In the said notification, in the Table, against S. No. 1, in column 3, after the end of words and symbols\n\u201c(b)\nFortified Rice Kernel (Premix) supply for ICDS or similar scheme duly approved by the Central\nGovernment\nor any State Government\u201d, the words and symbols, \u201c(c) food inputs for (a) above.\u201d shall be\ninserted.",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 1,
+    "annexures": 0
+  }
+}

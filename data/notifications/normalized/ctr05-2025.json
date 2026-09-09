@@ -1,0 +1,113 @@
+{
+  "notification_number": "05/2025-Central Tax (Rate)",
+  "file_name": "ctr05-2025.pdf",
+  "parser_type": "AMENDMENT_PARSER",
+  "normalization_status": "SUCCESS",
+  "notification_date": "2025-01-16",
+  "document_effective_date": null,
+  "effective_date_scopes": [
+    {
+      "scope_type": "CLAUSE_SCOPED",
+      "group_number": 1,
+      "raw_clause": "with effect from the 1st day of April, \n2025",
+      "raw_date": "1st day of April, \n2025",
+      "parsed_date": "2025-04-01",
+      "context_snippet": "- (i) in paragraph 4 relating to Explanation, with effect from the 1st day of April, 2025,- (a) clause (xxxv) shall be omitted; (b) for clause (xxxvi), the follow"
+    }
+  ],
+  "amendment_operations": [
+    {
+      "operation_id": "ctr05-2025.pdf_op_1",
+      "operation_type": "OMIT",
+      "target_notification": "11/2017-Central Tax (Rate)",
+      "target_schedule": null,
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": "clause (xxxv)",
+      "anchor_text": null,
+      "explicit_old_text": null,
+      "explicit_new_text": null,
+      "effective_date": "2025-04-01",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 5,
+      "raw_legal_text": "(a) clause (xxxv) shall be omitted;",
+      "table_data": null
+    },
+    {
+      "operation_id": "ctr05-2025.pdf_op_2",
+      "operation_type": "SUBSTITUTE",
+      "target_notification": "11/2017-Central Tax (Rate)",
+      "target_schedule": null,
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": "clause (xxxvi)",
+      "anchor_text": "for clause (xxxvi)",
+      "explicit_old_text": null,
+      "explicit_new_text": "(xxxvi) \u201cSpecified premises",
+      "effective_date": "2025-04-01",
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 5,
+      "raw_legal_text": "(b) for clause (xxxvi), the following clause shall be substituted, namely:- \n  \u201c (xxxvi) \u201cSpecified premises\u201d, for a financial year, means,- \n(a) a premises from where the supplier has provided in the preceding \nfinancial year, \u2018hotel accommodation\u2019 service having the value of supply \nof any unit of accommodation above seven thousand five hundred rupees \nper unit per day or equivalent; or  \n(b) a premises for which a registered person supplying \u2018hotel \naccommodation\u2019 service has filed a declaration, on or after the 1st of \nJanuary and not later than 31st of March of the preceding financial year, \ndeclaring the said premises to be a specified premises; or \n\n\n(c) a premises for which a person applying for registration has filed a \ndeclaration, within fifteen days of obtaining acknowledgement for the \nregistration application, declaring the said premises to be a specified \npremises;\u201d;",
+      "table_data": null
+    },
+    {
+      "operation_id": "ctr05-2025.pdf_op_3",
+      "operation_type": "INSERT",
+      "target_notification": "11/2017-Central Tax (Rate)",
+      "target_schedule": null,
+      "target_serial_no": null,
+      "target_column": null,
+      "target_clause_item": null,
+      "anchor_text": "after Annexure VI",
+      "explicit_old_text": null,
+      "explicit_new_text": null,
+      "effective_date": null,
+      "scope_group_number": null,
+      "page_start": 1,
+      "page_end": 5,
+      "raw_legal_text": "(ii) \nafter Annexure VI, the following Annexures shall be inserted, namely:\u2014 \n \n\u201cAnnexure VII  \n OPT-IN DECLARATION FOR REGISTERED PERSON \n(See para 4(xxxvi)) \nDeclaration by a registered person supplying hotel accommodation service before the \njurisdictional GST authority declaring the premises to be a \u2018specified premises\u2019. \n Reference No.-  \nDate: -  \n1. I/We \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026. (name of Person) do hereby declare that the premises at \n\u2026\u2026(address)\u2026\u2026 shall be a \u2018specified premises\u2019 for the Financial Year \u2026\u2026\u2026(yyyy-\nyy)\u2026\u2026\u2026.  \n2. Further, I/We understand the said declaration will apply to the entire Financial Year \nspecified in (1) above and will continue to apply to subsequent Financial Years also, \nunless I/We declare the premises as not a \u2018specified premises\u2019 by filing a declaration in \nthe format specified at Annexure IX.   \nLegal Name: -  \nGSTIN: -  \nPAN No.  \nName of Authorized Signatory:  \nSignature of Authorized Signatory:  \n (Dated acknowledgment)",
+      "table_data": null
+    }
+  ],
+  "schedules": {},
+  "annexures": [
+    {
+      "annexure_id": "ctr05-2025.pdf_annexure_vii",
+      "annexure_title": "Annexure VII",
+      "related_serial_no": null,
+      "content_type": "FORM_DECLARATION",
+      "raw_legal_text": "Annexure VII  \n OPT-IN DECLARATION FOR REGISTERED PERSON \n(See para 4(xxxvi)) \nDeclaration by a registered person supplying hotel accommodation service before the \njurisdictional GST authority declaring the premises to be a \u2018specified premises\u2019. \n Reference No.-  \nDate: -  \n1. I/We \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026. (name of Person) do hereby declare that the premises at \n\u2026\u2026(address)\u2026\u2026 shall be a \u2018specified premises\u2019 for the Financial Year \u2026\u2026\u2026(yyyy-\nyy)\u2026\u2026\u2026.  \n2. Further, I/We understand the said declaration will apply to the entire Financial Year \nspecified in (1) above and will continue to apply to subsequent Financial Years also, \nunless I/We declare the premises as not a \u2018specified premises\u2019 by filing a declaration in \nthe format specified at",
+      "items": [],
+      "page_start": 2,
+      "page_end": 4
+    },
+    {
+      "annexure_id": "ctr05-2025.pdf_annexure_viii",
+      "annexure_title": "Annexure VIII",
+      "related_serial_no": null,
+      "content_type": "FORM_DECLARATION",
+      "raw_legal_text": "Annexure VIII  \nOPT-IN DECLARATION FOR PERSON APPLYING FOR REGISTRATION \n(See para 4(xxxvi)) \nDeclaration by a person applying for registration before the jurisdictional GST authority \ndeclaring the premises to be a \u2018specified premises\u2019. \nReference No.-  \nDate: -  \n1. I/We \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026. (name of Person) have applied for registration vide ARN No. \n\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026. and do hereby declare that the premises at \u2026\u2026(address)\u2026\u2026 \nshall be a \u2018specified premises\u2019 from the effective date of registration till the end of the \nFinancial Year.  \n2. Further, I/We understand the said declaration will apply to the subsequent Financial \nYears also, unless I/We declare the premises as not a \u2018specified premises\u2019 by filing a \ndeclaration in the format specified at",
+      "items": [],
+      "page_start": 2,
+      "page_end": 4
+    },
+    {
+      "annexure_id": "ctr05-2025.pdf_annexure_ix",
+      "annexure_title": "Annexure IX",
+      "related_serial_no": null,
+      "content_type": "FORM_DECLARATION",
+      "raw_legal_text": "Annexure IX  \nOPT-OUT DECLARATION  \n(See para 4(xxxvi)) \n\n\nDeclaration by a registered supplier of hotel accommodation service before the \njurisdictional GST authority declaring the premises as not a \u2018specified premises\u2019. \n Reference No.-  \nDate: -  \n1. I/We \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026. (name of Person) do hereby declare that the premises at \n\u2026\u2026\u2026(address)\u2026\u2026 shall not be a \u2018specified premises\u2019 for the Financial Year \n\u2026\u2026\u2026(yyyy-yy)\u2026\u2026\u2026   \n2. Further, I/We understand the said declaration will apply to the entire Financial Year \nspecified in (1) above and will continue to apply to subsequent Financial Years also, unless \nI/We declare the premises to be a \u2018specified premises\u2019 by filing a declaration in the format \nspecified at",
+      "items": [],
+      "page_start": 2,
+      "page_end": 4
+    }
+  ],
+  "explanations": [],
+  "validation_warnings": [],
+  "counts": {
+    "amendment_operations": 3,
+    "annexures": 3
+  }
+}

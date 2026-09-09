@@ -26,7 +26,10 @@ def load_query_model(model_name: str = MODEL_NAME):
     """Load the BGE-M3 SentenceTransformer used by the legal chunk embeddings."""
     from sentence_transformers import SentenceTransformer
 
-    return SentenceTransformer(model_name)
+    try:
+        return SentenceTransformer(model_name, local_files_only=True)
+    except Exception:
+        return SentenceTransformer(model_name)
 
 
 def embed_query(query: str, model=None, model_name: str = MODEL_NAME):
@@ -189,7 +192,10 @@ def load_reranker_model(model_name: str = DEFAULT_RERANKER_MODEL):
     """Load the CrossEncoder reranker used after dense candidate retrieval."""
     from sentence_transformers import CrossEncoder
 
-    return CrossEncoder(model_name)
+    try:
+        return CrossEncoder(model_name, local_files_only=True)
+    except Exception:
+        return CrossEncoder(model_name)
 
 
 def rerank_legal_results(query: str, results: list[dict], reranker=None, model_name: str = DEFAULT_RERANKER_MODEL):
