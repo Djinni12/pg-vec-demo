@@ -15,28 +15,60 @@ import re
 from typing import Any, Optional
 
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 logger = logging.getLogger(__name__)
+
+
+def extract_json_payload(content: str) -> dict[str, Any]:
+    """Extract and parse JSON object from LLM response, handling markdown fences and preambles."""
+    if not content or not content.strip():
+        return {}
+    text = content.strip()
+    text_unfenced = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+    text_unfenced = re.sub(r"\s*```$", "", text_unfenced)
+    try:
+        parsed = json.loads(text_unfenced.strip())
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    m = re.search(r"(\{[\s\S]*\})", text)
+    if m:
+        try:
+            parsed = json.loads(m.group(1))
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            pass
+
+    return {}
+
 
 INTERPRETER_SYSTEM_PROMPT = """You are a Grounded Legal Evidence Interpreter for GST.
 Analyze the RETRIEVED LEGAL EVIDENCE and extract structured legal findings for downstream calculation.
 
 STRICT GROUNDING RULES:
-1. Every legal finding MUST be directly supported by the retrieved legal text provided.
-2. If the retrieved evidence does NOT establish which credits are usable or how they offset liability, set "status": "unresolved" and explain the gap in "unresolved_reason". Do NOT guess or use outside knowledge.
-3. If the retrieved evidence DOES establish the rule (e.g. Rule 88A / Section 49):
-   - Set "status": "resolved"
-   - Identify "supply_type" ("interstate" or "intrastate")
-   - Identify "output_tax_type" ("IGST" for interstate, "CGST+SGST" for intrastate)
-   - List "usable_credit_ledgers" (e.g. ["igst", "cgst", "sgst"] for IGST liability under Rule 88A)
-   - List "utilization_constraints" (e.g. "IGST credit must be utilized first", "CGST and SGST can be used towards remaining IGST in any order")
-   - Cite the exact reference, title, and excerpt in "legal_evidence"
+1. Grounding Requirement:
+   - Every finding MUST be explicitly supported by the RETRIEVED LEGAL EVIDENCE.
+   - If the retrieved evidence does not mention the rule or provision, set status = "unresolved" and explain in unresolved_reason.
+   - Do NOT assume rules from memory that are not in the retrieved evidence.
+2. Supply Type and ITC Utilization:
+   - For interstate supplies (IGST liability): Check if Section 49 / Rule 88A is present in the context.
+     * If Rule 88A is present: IGST credit must be used first to pay IGST. After that, CGST and SGST credit can both be used towards IGST liability in any order and proportion.
+     * Set usable_credit_ledgers = ["igst", "cgst", "sgst"].
+   - For intrastate supplies (CGST + SGST liability):
+     * CGST liability can be paid using IGST credit and CGST credit (NOT SGST credit).
+     * SGST liability can be paid using IGST credit and SGST credit (NOT CGST credit).
+3. If no relevant legal provisions were retrieved:
+   - Set status = "unresolved".
+   - Set unresolved_reason = "No statutory provisions regarding credit utilization or classification were retrieved in context."
 
-Output ONLY a JSON object matching this schema:
+Return ONLY a JSON object matching this schema:
 {
-  "status": "resolved" or "unresolved",
-  "supply_type": string or null,
+  "status": "resolved" | "unresolved",
+  "supply_type": "interstate" | "intrastate" | null,
   "output_tax_type": string or null,
   "usable_credit_ledgers": ["igst", "cgst", "sgst"],
   "utilization_constraints": [string],
@@ -52,13 +84,15 @@ Output ONLY a JSON object matching this schema:
 
 
 class LegalEvidenceItem(BaseModel):
-    reference: str
+    model_config = ConfigDict(extra="ignore")
+    reference: str = ""
     title: str = ""
     chunk_id: Optional[str] = None
     excerpt: str = ""
 
 
 class StructuredLegalFindings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     status: str = "unresolved"  # "resolved" | "unresolved"
     supply_type: Optional[str] = None  # "interstate" | "intrastate"
     output_tax_type: Optional[str] = None  # "IGST" | "CGST+SGST"
@@ -68,6 +102,20 @@ class StructuredLegalFindings(BaseModel):
     utilization_constraints: list[str] = Field(default_factory=list)
     legal_evidence: list[LegalEvidenceItem] = Field(default_factory=list)
     unresolved_reason: Optional[str] = None
+
+    @field_validator("usable_credit_ledgers", "utilization_constraints", "legal_evidence", mode="before")
+    @classmethod
+    def _ensure_list(cls, v: Any) -> list[Any]:
+        if v is None or not isinstance(v, list):
+            return []
+        return v
+
+    @field_validator("usable_credit_balances", mode="before")
+    @classmethod
+    def _ensure_dict(cls, v: Any) -> dict[str, Any]:
+        if v is None or not isinstance(v, dict):
+            return {}
+        return v
 
 
 def _find_rule88a_or_sec49_chunk(legal_chunks: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
@@ -183,7 +231,7 @@ def interpret_legal_findings(
 
     # Use LLM with fallback
     try:
-        from src.generators.answer_generator import get_default_planner_client, get_default_planner_model
+        from src.routers.planner import get_default_planner_client, get_default_planner_model
         llm_client = client or get_default_planner_client()
         if not llm_client:
             return interpret_legal_findings_deterministic(legal_chunks, user_premises)
@@ -203,20 +251,27 @@ def interpret_legal_findings(
             f"RETRIEVED LEGAL EVIDENCE:\n{context_str}"
         )
 
-        resp = llm_client.chat.completions.create(
-            model=model_name,
-            messages=[
+        if "gemma" in str(model_name).lower():
+            messages = [
+                {"role": "user", "content": f"{INTERPRETER_SYSTEM_PROMPT}\n\n---\n\n{user_msg}"}
+            ]
+        else:
+            messages = [
                 {"role": "system", "content": INTERPRETER_SYSTEM_PROMPT},
                 {"role": "user", "content": user_msg},
-            ],
+            ]
+
+        resp = llm_client.chat.completions.create(
+            model=model_name,
+            messages=messages,
             response_format={"type": "json_object"},
             temperature=0.0,
         )
         content = resp.choices[0].message.content or "{}"
-        data = json.loads(content)
+        data = extract_json_payload(content)
 
         # Populate usable balances from user premises
-        usable_ledgers = [k.lower() for k in data.get("usable_credit_ledgers", [])]
+        usable_ledgers = [k.lower() for k in data.get("usable_credit_ledgers", []) if isinstance(k, str)]
         user_b = user_premises.get("itc_balances") or {}
         usable_balances = {k: float(v) for k, v in user_b.items() if k.lower() in usable_ledgers and float(v) > 0}
         total_credit = round(sum(usable_balances.values()), 2) if usable_balances else None
@@ -225,8 +280,9 @@ def interpret_legal_findings(
         data["total_usable_credit"] = total_credit
 
         evidence_items = []
-        for item in data.get("legal_evidence", []):
-            evidence_items.append(LegalEvidenceItem(**item))
+        for item in (data.get("legal_evidence") or []):
+            if isinstance(item, dict):
+                evidence_items.append(LegalEvidenceItem(**item))
         data["legal_evidence"] = evidence_items
 
         return StructuredLegalFindings(**data)

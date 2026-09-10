@@ -16,7 +16,7 @@ import re
 from typing import Any, Optional
 
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -84,8 +84,42 @@ CAPABILITY RULES:
 """
 
 
+def extract_json_payload(content: str) -> dict[str, Any]:
+    """Extract and parse a JSON object from LLM response text.
+
+    Safely handles:
+    - Markdown code fences (```json ... ``` or ``` ... ```) commonly produced by Gemma
+    - Leading or trailing conversational preambles
+    - Plain JSON strings
+    """
+    if not content or not content.strip():
+        return {}
+    text = content.strip()
+    text_unfenced = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+    text_unfenced = re.sub(r"\s*```$", "", text_unfenced)
+    try:
+        parsed = json.loads(text_unfenced.strip())
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    m = re.search(r"(\{[\s\S]*\})", text)
+    if m:
+        try:
+            parsed = json.loads(m.group(1))
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            pass
+
+    return {}
+
+
 class GSTPlan(BaseModel):
     """Structured plan containing required capabilities, extracted premises, and clean subqueries."""
+    model_config = ConfigDict(extra="ignore")
+
     needs_direct_reasoning: bool = False
     needs_calculation: bool = False
     needs_structured_rate_lookup: bool = False
@@ -115,6 +149,13 @@ class GSTPlan(BaseModel):
     )
     clarification_prompt: Optional[str] = None
     reasoning: Optional[str] = None
+
+    @field_validator("clean_subqueries", "user_premises", mode="before")
+    @classmethod
+    def _ensure_dict(cls, v: Any) -> dict[str, Any]:
+        if v is None or not isinstance(v, dict):
+            return {}
+        return v
 
 
 def get_default_planner_client() -> OpenAI | None:
@@ -148,18 +189,26 @@ def plan_capabilities_with_llm(
 
     model_name = model or get_default_planner_model()
 
-    response = llm_client.chat.completions.create(
-        model=model_name,
-        messages=[
+    # Gemma instruction format merges system instructions into user turn
+    if "gemma" in model_name.lower():
+        messages = [
+            {"role": "user", "content": f"{PLANNER_SYSTEM_PROMPT}\n\n---\n\nUSER QUERY:\n{query.strip()}"}
+        ]
+    else:
+        messages = [
             {"role": "system", "content": PLANNER_SYSTEM_PROMPT},
             {"role": "user", "content": query.strip()},
-        ],
+        ]
+
+    response = llm_client.chat.completions.create(
+        model=model_name,
+        messages=messages,
         response_format={"type": "json_object"},
         temperature=0.0,
     )
 
     content = response.choices[0].message.content or "{}"
-    data = json.loads(content)
+    data = extract_json_payload(content)
 
     # Normalize defaults: grounded synthesis is True for any standard answerable query
     if not data.get("needs_clarification", False):

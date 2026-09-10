@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GST Bot — Developer Observability & Traces</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="/assets/styles.css?v=2" />
+    <style>
+      :root {
+        --mono-font: 'JetBrains Mono', monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas;
+      }
+      body {
+        background: #090d10;
+        color: #e6edf0;
+        overflow: hidden;
+      }
+      .debug-layout {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+      }
+      .debug-sidebar {
+        width: 380px;
+        min-width: 340px;
+        max-width: 440px;
+        background: #0f1519;
+        border-right: 1px solid #1e2830;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        flex-shrink: 0;
+      }
+      .debug-sidebar-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #1e2830;
+        background: #131b20;
+      }
+      .debug-sidebar-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 12px;
+      }
+      .debug-main {
+        flex: 1;
+        background: #0b0f12;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+      }
+      .debug-main-header {
+        padding: 16px 28px;
+        border-bottom: 1px solid #1e2830;
+        background: #11171b;
+        flex-shrink: 0;
+      }
+      .debug-tabs-bar {
+        display: flex;
+        gap: 4px;
+        padding: 0 28px;
+        background: #11171b;
+        border-bottom: 1px solid #1e2830;
+        overflow-x: auto;
+        flex-shrink: 0;
+      }
+      .debug-tab-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: #8e9fa5;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+      .debug-tab-btn:hover {
+        color: #e6edf0;
+      }
+      .debug-tab-btn.active {
+        color: #38bdf8;
+        border-bottom-color: #38bdf8;
+        font-weight: 600;
+      }
+      .debug-content-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 28px;
+      }
+      .trace-item {
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid #1b252c;
+        background: #131a1f;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .trace-item:hover {
+        background: #182229;
+        border-color: #273742;
+      }
+      .trace-item.selected {
+        background: #1b2832;
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 1px #38bdf8;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .badge-success { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+      .badge-running { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+      .badge-error { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+      .badge-route { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+      .badge-rate { background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3); }
+      .badge-legal { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+      .badge-calc { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+      .badge-direct { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+      
+      .card {
+        background: #12181d;
+        border: 1px solid #1f2b33;
+        border-radius: 8px;
+        padding: 18px;
+        margin-bottom: 20px;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+        border-bottom: 1px solid #1c262e;
+        padding-bottom: 10px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #f1f7f9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .code-block {
+        font-family: var(--mono-font);
+        background: #090d10;
+        border: 1px solid #1d262d;
+        border-radius: 6px;
+        padding: 12px;
+        font-size: 12px;
+        line-height: 1.5;
+        overflow-x: auto;
+        color: #c5d3d9;
+      }
+      .waterfall-bar-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+        font-size: 12px;
+      }
+      .waterfall-bar-label {
+        width: 140px;
+        color: #8e9fa5;
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .waterfall-bar-track {
+        flex: 1;
+        height: 20px;
+        background: #161e24;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+      }
+      .waterfall-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+      .waterfall-bar-value {
+        width: 75px;
+        color: #c5d3d9;
+        font-family: var(--mono-font);
+        font-size: 11px;
+        text-align: left;
+        flex-shrink: 0;
+      }
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .data-table th {
+        text-align: left;
+        padding: 8px 12px;
+        background: #161e24;
+        color: #8e9fa5;
+        font-weight: 600;
+        border-bottom: 1px solid #233039;
+      }
+      .data-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #182229;
+        color: #d1dcde;
+        vertical-align: top;
+      }
+      .data-table tr:hover td {
+        background: #141c22;
+      }
+      .highlight-row {
+        background: rgba(56, 189, 248, 0.08) !important;
+      }
+      .sub-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid #1e2830;
+        padding-bottom: 6px;
+      }
+      .sub-tab-btn {
+        padding: 4px 10px;
+        font-size: 12px;
+        background: transparent;
+        border: 1px solid #233039;
+        border-radius: 4px;
+        color: #8e9fa5;
+        cursor: pointer;
+      }
+      .sub-tab-btn.active {
+        background: #1e2d38;
+        border-color: #38bdf8;
+        color: #38bdf8;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel" src="/assets/debug.jsx?v=1"></script>
+  </body>
+</html>

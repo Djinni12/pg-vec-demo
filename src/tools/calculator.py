@@ -8,11 +8,13 @@ All statutory determinations must happen before calculation inputs are provided.
 from __future__ import annotations
 
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CalculationInputs(BaseModel):
     """Structured numeric calculation inputs provided to the calculator."""
+    model_config = ConfigDict(extra="ignore")
+
     operation: str  # "max_taxable_value_from_credit", "tax_on_value", "discount_and_tax", "arithmetic"
     available_eligible_credit: Optional[float] = None
     tax_rate_pct: Optional[float] = None
@@ -22,15 +24,31 @@ class CalculationInputs(BaseModel):
     credit_breakdown: dict[str, float] = Field(default_factory=dict)
     custom_values: dict[str, float] = Field(default_factory=dict)
 
+    @field_validator("credit_breakdown", "custom_values", mode="before")
+    @classmethod
+    def _ensure_dict(cls, v: Any) -> dict[str, Any]:
+        if v is None or not isinstance(v, dict):
+            return {}
+        return v
+
 
 class CalculationResult(BaseModel):
     """Deterministic calculation output with transparent arithmetic steps."""
+    model_config = ConfigDict(extra="ignore")
+
     operation: str
     status: str = "success"  # "success" | "error"
     result_value: Optional[float] = None
     formula: str = ""
     steps: list[str] = Field(default_factory=list)
     error_message: Optional[str] = None
+
+    @field_validator("steps", mode="before")
+    @classmethod
+    def _ensure_list(cls, v: Any) -> list[Any]:
+        if v is None or not isinstance(v, list):
+            return []
+        return v
 
 
 def calculate_max_taxable_value_from_credit(
@@ -169,6 +187,28 @@ def execute_calculator(inputs: CalculationInputs) -> CalculationResult:
             base_amount=inputs.base_amount,
             discount_pct=inputs.discount_pct,
             tax_rate_pct=inputs.tax_rate_pct,
+        )
+
+    if op == "discount_only":
+        if inputs.base_amount is None or inputs.discount_pct is None:
+            return CalculationResult(
+                operation=op,
+                status="error",
+                error_message="base_amount and discount_pct are required for discount_only.",
+            )
+        disc_dec = inputs.discount_pct / 100.0
+        disc_val = round(inputs.base_amount * disc_dec, 2)
+        res_val = round(inputs.base_amount - disc_val, 2)
+        return CalculationResult(
+            operation="discount_only",
+            status="success",
+            result_value=res_val,
+            formula=f"₹{inputs.base_amount:,.2f} - {inputs.discount_pct:g}% = ₹{res_val:,.2f}",
+            steps=[
+                f"Base amount: ₹{inputs.base_amount:,.2f}",
+                f"Discount ({inputs.discount_pct:g}%): ₹{inputs.base_amount:,.2f} × {disc_dec} = ₹{disc_val:,.2f}",
+                f"Discounted amount: ₹{inputs.base_amount:,.2f} - ₹{disc_val:,.2f} = ₹{res_val:,.2f}",
+            ],
         )
 
     return CalculationResult(

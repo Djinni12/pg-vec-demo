@@ -205,3 +205,24 @@ def test_chat_endpoint_rate_response(client):
     assert len(data["rate_results"]) == 1
     assert data["rate_results"][0]["code"] == "1806"
     assert data["timings_ms"]["rate_lookup"] == 12.5
+
+
+def test_chat_endpoint_calls_run_graph_chat(client):
+    with patch("app.run_graph_chat") as mock_graph:
+        mock_graph.return_value = {
+            "query": "What is GST on paneer?",
+            "answer": "Paneer attracts 0% or 5% GST.",
+            "sources": [],
+            "rate_results": [],
+            "retrieval_timing": 10.0,
+            "generation_timing": 20.0,
+            "total_timing": 30.0,
+            "model_used": "test-model",
+            "model": "test-model",
+            "timings_ms": {},
+            "retrieval_debug": {},
+        }
+        resp = client.post("/chat", json={"query": "What is GST on paneer?"})
+        assert resp.status_code == 200
+        mock_graph.assert_called_once()
+

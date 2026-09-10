@@ -6,4 +6,4 @@ PyMuPDF
 fastapi
 uvicorn
 openai
-
+langgraph

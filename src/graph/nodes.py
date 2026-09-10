@@ -1,0 +1,790 @@
+"""Node implementations for the GST LangGraph architecture.
+
+Reuses existing pipeline components:
+- Planner: src.routers.planner.plan_capabilities
+- Legal Retrieval: src.retrieval_inspector.inspect_retrieval (Dense BGE-M3 + BM25 + RRF + Reranker)
+- Rate Lookup: src.retrievers.rate_retriever.retrieve_rates (Structured Tariff Database / CSV)
+- Direct Reasoning: src.tools.calculator.execute_calculator
+- Grounded Synthesis: src.generators.answer_generator.generate_answer & extract_combined_sources
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+import time
+from typing import Any, Optional
+
+from openai import OpenAI
+
+from src.generators.answer_generator import (
+    extract_combined_sources,
+    generate_answer,
+    get_configured_model,
+)
+from src.graph.state import GSTGraphState
+from src.observability import trace_store
+from src.retrieval_inspector import LoadedModels, inspect_retrieval, load_models
+from src.retrievers.rate_retriever import retrieve_rates
+from src.routers.planner import plan_capabilities
+from src.tools.calculator import CalculationInputs, execute_calculator
+
+logger = logging.getLogger(__name__)
+
+# Module-level cache for heavy retrieval models (embedding + reranker)
+_CACHED_MODELS: Optional[LoadedModels] = None
+
+
+def get_cached_models() -> LoadedModels:
+    """Lazily load and cache embedding and reranker models."""
+    global _CACHED_MODELS
+    if _CACHED_MODELS is None:
+        _CACHED_MODELS = load_models()
+    return _CACHED_MODELS
+
+
+# -----------------------------------------------------------------------------
+# Node 1: Planner
+# -----------------------------------------------------------------------------
+def planner_node(
+    state: GSTGraphState,
+    *,
+    use_llm: bool | None = None,
+) -> dict[str, Any]:
+    """Analyzes user query and determines required capabilities.
+
+    Does not force single-intent routing. Multi-capability queries (e.g. rate + legal)
+    activate both needs_rate and needs_legal flags.
+    """
+    t0 = time.perf_counter()
+    query = state["user_query"]
+    plan = plan_capabilities(query, use_llm=use_llm)
+
+    needs_legal = bool(plan.get("needs_legal_retrieval", False))
+    needs_rate = bool(
+        plan.get("needs_structured_rate_lookup", False)
+        or plan.get("needs_hsn_lookup", False)
+    )
+    needs_calculation = bool(plan.get("needs_calculation", False))
+
+    clean_queries = plan.get("clean_subqueries", {})
+    user_premises = plan.get("user_premises", {})
+
+    # Grounded reasoning is required when retrievals are active AND reasoning/calculation is needed
+    needs_grounded = bool(
+        (needs_legal or needs_rate) and (
+            needs_calculation
+            or plan.get("needs_temporal_reasoning", False)
+            or plan.get("needs_comparison", False)
+            or plan.get("needs_exception_reasoning", False)
+            or bool(user_premises.get("itc_balances"))
+            or (bool(user_premises) and plan.get("needs_direct_reasoning", False))
+        )
+    )
+
+    # Direct reasoning is strictly for retrieval-free queries
+    needs_direct = bool(
+        not (needs_legal or needs_rate) and (
+            plan.get("needs_direct_reasoning", False)
+            or (not needs_calculation and bool(user_premises))
+        )
+    )
+
+    if not needs_rate and not needs_legal:
+        route_str = "direct"
+    elif needs_rate and needs_legal:
+        route_str = "mixed"
+    elif needs_rate:
+        route_str = "rate"
+    elif needs_legal:
+        route_str = "legal"
+    else:
+        route_str = "direct"
+
+    planner_ms = round((time.perf_counter() - t0) * 1000, 3)
+
+    execution_id = state.get("execution_id")
+    if execution_id:
+        clean_subq_with_route = dict(clean_queries)
+        clean_subq_with_route["route"] = route_str
+        trace_store.record_planner(
+            execution_id,
+            capability_flags={
+                "needs_legal": needs_legal,
+                "needs_rate": needs_rate,
+                "needs_direct_reasoning": needs_direct,
+                "needs_calculation": needs_calculation,
+                "needs_grounded_reasoning": needs_grounded,
+                "needs_clarification": bool(plan.get("needs_clarification", False)),
+            },
+            clean_subqueries=clean_subq_with_route,
+            extracted_user_premises=dict(user_premises),
+            clarification_decision={
+                "needs_clarification": bool(plan.get("needs_clarification", False)),
+                "clarification_prompt": plan.get("clarification_prompt"),
+            },
+            timing_ms=planner_ms,
+        )
+        selected_nodes = []
+        if needs_legal:
+            selected_nodes.append("legal_retrieval")
+        if needs_rate:
+            selected_nodes.append("rate_lookup")
+        if needs_grounded:
+            selected_nodes.append("grounded_reasoning")
+        if needs_direct:
+            selected_nodes.append("direct_reasoning")
+        if needs_calculation:
+            selected_nodes.append("calculation")
+        selected_nodes.append("synthesis")
+        trace_store.record_selected_nodes(execution_id, selected_nodes)
+        trace_store.record_node_execution(
+            execution_id,
+            "planner",
+            status="success",
+            timing_ms=planner_ms,
+        )
+
+    return {
+        "needs_legal": needs_legal,
+        "needs_rate": needs_rate,
+        "needs_direct_reasoning": needs_direct,
+        "needs_calculation": needs_calculation,
+        "needs_grounded_reasoning": needs_grounded,
+        "clean_queries": clean_queries,
+        "user_premises": user_premises,
+        "legal_results": [],
+        "rate_results": [],
+        "reasoning_result": None,
+        "calculation_inputs": None,
+        "calculation_result": None,
+        "route": route_str,
+        "plan": plan,
+    }
+
+
+# -----------------------------------------------------------------------------
+# Node 2: Legal Retrieval
+# -----------------------------------------------------------------------------
+def legal_retrieval_node(
+    state: GSTGraphState,
+    *,
+    models: Optional[LoadedModels] = None,
+    db_url: Optional[str] = None,
+    top_k: int = 5,
+) -> dict[str, Any]:
+    """Executes full legal hybrid retrieval (BGE-M3 + BM25 + RRF + Reranker).
+
+    Preserves document type, reference (Section/Rule/Form), content, and scores.
+    """
+    t0 = time.perf_counter()
+    legal_q = (
+        state.get("clean_queries", {}).get("legal_query")
+        or state["user_query"]
+    )
+
+    retrieval_models = models or get_cached_models()
+    data: dict[str, Any] = {}
+
+    try:
+        data = inspect_retrieval(
+            legal_q,
+            top_k=top_k,
+            models=retrieval_models,
+            db_url=db_url,
+        )
+        chunks = data.get("results", [])
+    except Exception as exc:
+        logger.warning(f"Legal retrieval error: {exc}")
+        chunks = []
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+    execution_id = state.get("execution_id")
+    if execution_id:
+        trace_store.record_legal_retrieval(
+            execution_id,
+            retrieval_query=legal_q,
+            retrieval_data=data,
+            timing_ms=elapsed_ms,
+        )
+        trace_store.record_node_execution(
+            execution_id,
+            "legal_retrieval",
+            status="success" if chunks else "empty",
+            timing_ms=elapsed_ms,
+        )
+
+    return {"legal_results": chunks}
+
+
+# -----------------------------------------------------------------------------
+# Node 3: Rate Lookup
+# -----------------------------------------------------------------------------
+def rate_lookup_node(
+    state: GSTGraphState,
+    *,
+    db_url: Optional[str] = None,
+    limit: int = 5,
+) -> dict[str, Any]:
+    """Retrieves structured GST rate records from the verified rate database/CSV.
+
+    Rates are never guessed or inferred by an LLM.
+    """
+    t0 = time.perf_counter()
+    rate_q = (
+        state.get("clean_queries", {}).get("rate_query")
+        or state["user_query"]
+    )
+
+    try:
+        rates = retrieve_rates(rate_q, db_url=db_url, limit=limit)
+    except Exception as exc:
+        logger.warning(f"Rate lookup error: {exc}")
+        rates = []
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+    selected_rate = rates[0] if rates else None
+
+    execution_id = state.get("execution_id")
+    if execution_id:
+        trace_store.record_rate_retrieval(
+            execution_id,
+            lookup_query=rate_q,
+            returned_candidates=rates,
+            selected_rate_used_downstream=selected_rate,
+            timing_ms=elapsed_ms,
+        )
+        trace_store.record_node_execution(
+            execution_id,
+            "rate_lookup",
+            status="success" if rates else "empty",
+            timing_ms=elapsed_ms,
+        )
+
+    return {"rate_results": rates}
+
+
+# -----------------------------------------------------------------------------
+# Node 4: Grounded Reasoning
+# -----------------------------------------------------------------------------
+def grounded_reasoning_node(state: GSTGraphState) -> dict[str, Any]:
+    """Reasons over retrieved legal and rate evidence.
+
+    Determines how retrieved facts apply to the user scenario and prepares
+    structured inputs for the calculation_node.
+    Does NOT perform arithmetic itself.
+    """
+    t0 = time.perf_counter()
+    user_premises = state.get("user_premises", {}) or {}
+    rate_results = state.get("rate_results", [])
+    legal_results = state.get("legal_results", [])
+
+    # Resolve applicable rate from rate_results or user premise (never invent)
+    from src.generators.answer_generator import extract_rate_pct
+    assumed_rate = user_premises.get("assumed_rate")
+    rate_source: Optional[str] = None
+
+    if assumed_rate is not None:
+        rate_source = "User query premise"
+    elif rate_results:
+        calc_rate = extract_rate_pct(rate_results)
+        if calc_rate is not None:
+            assumed_rate = calc_rate
+            r0 = rate_results[0]
+            hsn = r0.get("code") or ""
+            desc = r0.get("description") or "Tariff item"
+            rate_source = f"Tariff HSN {hsn} ({desc}) - {calc_rate}%"
+
+    taxable_amount = user_premises.get("taxable_amount") or user_premises.get("base_amount")
+    discount_pct = float(user_premises.get("discount_pct") or 0.0)
+    itc_balances = user_premises.get("itc_balances") or {}
+    supply_type = user_premises.get("supply_type") or "interstate"
+
+    reasoning_parts: list[str] = []
+    calc_inputs: Optional[dict[str, Any]] = None
+
+    # Case A: Input Tax Credit balance query (e.g. Butter + interstate + CGST/SGST/IGST)
+    if itc_balances:
+        total_credit = sum(float(v) for v in itc_balances.values())
+        breakdown_str = ", ".join(f"{k.upper()}: ₹{float(v):,.2f}" for k, v in itc_balances.items())
+
+        legal_ref = "Section 49 and Rule 88A of the CGST Act"
+        for chunk in legal_results:
+            ref = chunk.get("reference") or chunk.get("doc_reference") or ""
+            if "49" in ref or "88" in ref:
+                legal_ref = ref
+                break
+
+        if supply_type == "interstate":
+            rule_text = (
+                f"Under {legal_ref}, input tax credit of IGST must first be completely exhausted towards payment of IGST liability. "
+                "Thereafter, input tax credit of CGST and SGST can be utilized towards payment of IGST in any order and in any proportion. "
+                f"Therefore, the entire accumulated credit of ₹{total_credit:,.2f} ({breakdown_str}) is fully eligible to discharge outward IGST liability."
+            )
+        else:
+            rule_text = (
+                f"Under {legal_ref}, IGST credit is first utilized towards IGST, then CGST and SGST. "
+                "CGST credit cannot be cross-utilized to pay SGST liability, and SGST credit cannot be cross-utilized to pay CGST liability. "
+                f"Available credit balances: {breakdown_str}."
+            )
+        reasoning_parts.append(rule_text)
+
+        if assumed_rate is not None and assumed_rate > 0:
+            reasoning_parts.append(
+                f"For the outward supply ({rate_source}), the applicable GST rate is {assumed_rate}%. "
+                f"The maximum outward taxable supply value that can be discharged without cash payment is: Total Eligible Credit (₹{total_credit:,.2f}) divided by the GST rate ({assumed_rate}%)."
+            )
+            calc_inputs = {
+                "operation": "max_taxable_value_from_credit",
+                "available_eligible_credit": total_credit,
+                "tax_rate_pct": float(assumed_rate),
+                "credit_breakdown": itc_balances,
+            }
+        else:
+            reasoning_parts.append(
+                f"Available input tax credit is ₹{total_credit:,.2f}. Applicable GST rate must be confirmed from official tariff records."
+            )
+
+    # Case B: Taxable Amount with discount and/or verified rate
+    elif taxable_amount is not None:
+        amt = float(taxable_amount)
+        if discount_pct > 0 and assumed_rate is not None:
+            reasoning_parts.append(
+                f"A discount of {discount_pct}% applies to base amount ₹{amt:,.2f}, followed by {assumed_rate}% GST ({rate_source})."
+            )
+            calc_inputs = {
+                "operation": "discount_and_tax",
+                "base_amount": amt,
+                "discount_pct": discount_pct,
+                "tax_rate_pct": float(assumed_rate),
+            }
+        elif discount_pct > 0:
+            reasoning_parts.append(f"A discount of {discount_pct}% applies to base amount ₹{amt:,.2f}.")
+            calc_inputs = {
+                "operation": "discount_only",
+                "base_amount": amt,
+                "discount_pct": discount_pct,
+            }
+        elif assumed_rate is not None:
+            reasoning_parts.append(
+                f"Taxable value of ₹{amt:,.2f} is subject to GST at {assumed_rate}% ({rate_source})."
+            )
+            calc_inputs = {
+                "operation": "tax_on_value",
+                "taxable_value": amt,
+                "tax_rate_pct": float(assumed_rate),
+            }
+        else:
+            reasoning_parts.append(
+                f"Taxable value is ₹{amt:,.2f}, but no GST rate was specified or found in tariff records."
+            )
+    else:
+        reasoning_parts.append("Evaluated statutory provisions and tariff classifications for user scenario.")
+
+    reasoning_text = "\n\n".join(reasoning_parts)
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+
+    execution_id = state.get("execution_id")
+    if execution_id:
+        trace_store.record_grounded_reasoning(
+            execution_id,
+            reasoning_output=reasoning_text,
+            calculation_inputs=calc_inputs,
+            timing_ms=elapsed_ms,
+        )
+        trace_store.record_node_execution(
+            execution_id,
+            "grounded_reasoning",
+            status="success",
+            timing_ms=elapsed_ms,
+        )
+
+    return {
+        "reasoning_result": reasoning_text,
+        "calculation_inputs": calc_inputs,
+    }
+
+
+# -----------------------------------------------------------------------------
+# Node 5: Direct Reasoning (Retrieval-Free)
+# -----------------------------------------------------------------------------
+def direct_reasoning_node(state: GSTGraphState) -> dict[str, Any]:
+    """Retrieval-free reasoning node for pure logic / direct premises queries.
+
+    Prepares structured calculation inputs when user premises provide direct numbers.
+    Does NOT perform arithmetic itself.
+    """
+    t0 = time.perf_counter()
+    user_premises = state.get("user_premises", {}) or {}
+    taxable_amount = user_premises.get("taxable_amount") or user_premises.get("base_amount")
+    discount_pct = float(user_premises.get("discount_pct") or 0.0)
+    assumed_rate = user_premises.get("assumed_rate")
+    rate_source: Optional[str] = None
+
+    if assumed_rate is not None:
+        rate_source = "User query premise"
+    else:
+        m_rate = re.search(
+            r"\b(\d+(?:\.\d+)?)\s*%\s*(?:gst|tax)\b",
+            state.get("user_query", ""),
+            re.IGNORECASE,
+        )
+        if m_rate:
+            try:
+                assumed_rate = float(m_rate.group(1))
+                rate_source = f"Extracted from query ({assumed_rate}%)"
+            except ValueError:
+                assumed_rate = None
+
+    calc_inputs: Optional[dict[str, Any]] = None
+    reasoning_parts: list[str] = []
+
+    if taxable_amount is not None:
+        amt = float(taxable_amount)
+        if discount_pct > 0 and assumed_rate is not None:
+            reasoning_parts.append(
+                f"Base amount: ₹{amt:,.2f}, Discount: {discount_pct}%, Assumed GST rate: {assumed_rate}% ({rate_source})."
+            )
+            calc_inputs = {
+                "operation": "discount_and_tax",
+                "base_amount": amt,
+                "discount_pct": discount_pct,
+                "tax_rate_pct": float(assumed_rate),
+            }
+        elif discount_pct > 0:
+            reasoning_parts.append(f"Base amount: ₹{amt:,.2f}, Discount: {discount_pct}%.")
+            calc_inputs = {
+                "operation": "discount_only",
+                "base_amount": amt,
+                "discount_pct": discount_pct,
+            }
+        elif assumed_rate is not None:
+            reasoning_parts.append(
+                f"Taxable value: ₹{amt:,.2f}, Assumed GST rate: {assumed_rate}% ({rate_source})."
+            )
+            calc_inputs = {
+                "operation": "tax_on_value",
+                "taxable_value": amt,
+                "tax_rate_pct": float(assumed_rate),
+            }
+        else:
+            reasoning_parts.append(f"Taxable amount: ₹{amt:,.2f} (no GST rate provided).")
+    else:
+        reasoning_parts.append("Direct logical reasoning verified without external retrieval.")
+
+    reasoning_text = "\n\n".join(reasoning_parts)
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+
+    execution_id = state.get("execution_id")
+    if execution_id:
+        trace_store.record_direct_reasoning(
+            execution_id,
+            reasoning_output=reasoning_text,
+            calculation_inputs=calc_inputs,
+            timing_ms=elapsed_ms,
+        )
+        trace_store.record_node_execution(
+            execution_id,
+            "direct_reasoning",
+            status="success",
+            timing_ms=elapsed_ms,
+        )
+
+    return {
+        "reasoning_result": reasoning_text,
+        "calculation_inputs": calc_inputs,
+    }
+
+
+# -----------------------------------------------------------------------------
+# Node 6: Deterministic Calculation
+# -----------------------------------------------------------------------------
+def calculation_node(state: GSTGraphState) -> dict[str, Any]:
+    """Dedicated deterministic calculation node.
+
+    - Uses structured calculation inputs (from state or built from user premises and rate).
+    - Calls execute_calculator().
+    - Never invents/defaults a GST rate.
+    - Uses either user-provided rate or verified rate from rate_results.
+    - Stores structured calculation_result in state.
+    """
+    t0 = time.perf_counter()
+    raw_inputs = state.get("calculation_inputs")
+    user_premises = state.get("user_premises", {}) or {}
+    rate_results = state.get("rate_results", [])
+    query = state.get("user_query", "")
+
+    # If calculation_inputs was not pre-built by a reasoning node, construct it now
+    if not raw_inputs:
+        assumed_rate = user_premises.get("assumed_rate")
+        rate_source: Optional[str] = None
+        if assumed_rate is not None:
+            rate_source = "User query premise"
+        else:
+            m_rate = re.search(
+                r"\b(\d+(?:\.\d+)?)\s*%\s*(?:gst|tax)\b",
+                query,
+                re.IGNORECASE,
+            )
+            if m_rate:
+                try:
+                    assumed_rate = float(m_rate.group(1))
+                    rate_source = f"Extracted from query ({assumed_rate}%)"
+                except ValueError:
+                    assumed_rate = None
+
+        if assumed_rate is None and rate_results:
+            from src.generators.answer_generator import extract_rate_pct
+            calc_rate = extract_rate_pct(rate_results)
+            if calc_rate is not None:
+                assumed_rate = calc_rate
+                r0 = rate_results[0]
+                hsn = r0.get("code") or ""
+                desc = r0.get("description") or "Tariff item"
+                rate_source = f"Tariff HSN {hsn} ({desc}) - {calc_rate}%"
+
+        taxable_amount = user_premises.get("taxable_amount") or user_premises.get("base_amount")
+        discount_pct = float(user_premises.get("discount_pct") or 0.0)
+        itc_balances = user_premises.get("itc_balances") or {}
+
+        if itc_balances and assumed_rate is not None and assumed_rate > 0:
+            total_credit = sum(float(v) for v in itc_balances.values())
+            raw_inputs = {
+                "operation": "max_taxable_value_from_credit",
+                "available_eligible_credit": total_credit,
+                "tax_rate_pct": float(assumed_rate),
+                "credit_breakdown": itc_balances,
+            }
+        elif taxable_amount is not None:
+            amt = float(taxable_amount)
+            if discount_pct > 0 and assumed_rate is not None:
+                raw_inputs = {
+                    "operation": "discount_and_tax",
+                    "base_amount": amt,
+                    "discount_pct": discount_pct,
+                    "tax_rate_pct": float(assumed_rate),
+                }
+            elif discount_pct > 0:
+                raw_inputs = {
+                    "operation": "discount_only",
+                    "base_amount": amt,
+                    "discount_pct": discount_pct,
+                }
+            elif assumed_rate is not None:
+                raw_inputs = {
+                    "operation": "tax_on_value",
+                    "taxable_value": amt,
+                    "tax_rate_pct": float(assumed_rate),
+                }
+
+    calc_dict: Optional[dict[str, Any]] = None
+    calc_in: Optional[CalculationInputs] = None
+    rate_used: Optional[float] = None
+    rate_source_resolved: Optional[str] = None
+
+    if raw_inputs:
+        try:
+            calc_in = CalculationInputs(**raw_inputs)
+            rate_used = calc_in.tax_rate_pct
+            if rate_used is not None:
+                if user_premises.get("assumed_rate") == rate_used:
+                    rate_source_resolved = "User query premise"
+                elif rate_results:
+                    r0 = rate_results[0]
+                    hsn = r0.get("code") or ""
+                    desc = r0.get("description") or "Tariff item"
+                    rate_source_resolved = f"Tariff HSN {hsn} ({desc}) - {rate_used}%"
+                else:
+                    rate_source_resolved = f"Extracted from query ({rate_used}%)"
+
+            calc_res = execute_calculator(calc_in)
+            if calc_res.status == "success":
+                calc_dict = calc_res.model_dump()
+        except Exception as exc:
+            logger.warning(f"Deterministic calculator error: {exc}")
+            calc_dict = None
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+
+    execution_id = state.get("execution_id")
+    if execution_id:
+        trace_store.record_calculation(
+            execution_id,
+            calculation_inputs=raw_inputs,
+            rate_used=rate_used,
+            source_of_rate=rate_source_resolved,
+            operation=calc_in.operation if calc_in else (raw_inputs.get("operation") if raw_inputs else None),
+            deterministic_result=calc_dict,
+            timing_ms=elapsed_ms,
+        )
+        trace_store.record_node_execution(
+            execution_id,
+            "calculation",
+            status="success" if calc_dict else "skipped",
+            timing_ms=elapsed_ms,
+        )
+
+    return {
+        "calculation_inputs": raw_inputs,
+        "calculation_result": calc_dict,
+    }
+
+
+# -----------------------------------------------------------------------------
+# Node 5: Grounded Synthesis
+# -----------------------------------------------------------------------------
+def synthesis_node(
+    state: GSTGraphState,
+    *,
+    client: Optional[OpenAI] = None,
+    model: Optional[str] = None,
+) -> dict[str, Any]:
+    """Synthesizes final grounded response using whatever evidence is present in state.
+
+    Integrates:
+    - legal_results (if present)
+    - rate_results (if present)
+    - reasoning_result & calculation_result (if present)
+    Preserves full source metadata and citations.
+    """
+    t0 = time.perf_counter()
+    query = state["user_query"]
+    legal_results = state.get("legal_results", [])
+    rate_results = state.get("rate_results", [])
+    reasoning_res = state.get("reasoning_result")
+    calc_res = state.get("calculation_result")
+    user_premises = state.get("user_premises")
+
+    is_direct = (
+        state.get("needs_direct_reasoning", False)
+        and not state.get("needs_legal", False)
+        and not state.get("needs_rate", False)
+    )
+
+    # Extract unified citations
+    all_chunks = list(legal_results)
+    sources = extract_combined_sources(chunks=all_chunks, rate_results=rate_results)
+    model_name = get_configured_model(model)
+
+    # Attempt LLM generation
+    try:
+        gen = generate_answer(
+            query=query,
+            chunks=legal_results if legal_results else None,
+            rate_results=rate_results if rate_results else None,
+            user_premises=user_premises,
+            calculation_result=calc_res,
+            client=client,
+            model=model,
+            direct_reasoning=is_direct,
+        )
+        answer = gen.get("answer", "")
+        if gen.get("sources"):
+            sources = gen["sources"]
+        model_name = gen.get("model_used", model_name)
+    except Exception as exc:
+        logger.info(f"LLM generation unavailable or failed ({exc}), using deterministic grounded synthesis.")
+        answer = _build_deterministic_synthesis(
+            query=query,
+            rate_results=rate_results,
+            legal_results=legal_results,
+            reasoning_result=reasoning_res,
+            calculation_result=calc_res,
+        )
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+    execution_id = state.get("execution_id")
+    if execution_id:
+        trace_store.record_synthesis(
+            execution_id,
+            sources_provided=sources,
+            model_name=model_name,
+            generation_timing_ms=elapsed_ms,
+            final_answer=answer,
+        )
+        trace_store.record_node_execution(
+            execution_id,
+            "synthesis",
+            status="success",
+            timing_ms=elapsed_ms,
+        )
+
+    return {
+        "final_answer": answer,
+        "sources": sources,
+        "model_used": model_name,
+    }
+
+
+def _build_deterministic_synthesis(
+    query: str,
+    rate_results: list[dict[str, Any]],
+    legal_results: list[dict[str, Any]],
+    reasoning_result: Optional[str] = None,
+    calculation_result: Optional[dict[str, Any]] = None,
+) -> str:
+    """Generates a structured, grounded answer directly from retrieved evidence.
+
+    Used when an LLM endpoint is offline or in mock testing environments.
+    """
+    sections: list[str] = []
+
+    # 1. Rate Details
+    if rate_results:
+        r0 = rate_results[0]
+        desc = r0.get("description", "Item")
+        hsn = r0.get("code") or r0.get("hsn_code", "N/A")
+        rate_cat = r0.get("rate_category", "")
+        source_rate = r0.get("source_rate") or r0.get("gst_rate") or "N/A"
+        total_gst = r0.get("total_gst_rate")
+        cgst = r0.get("cgst_rate")
+        sgst = r0.get("sgst_rate")
+        notif = r0.get("notification_number") or r0.get("notification_no", "N/A")
+
+        if rate_cat == "EXEMPTION" or total_gst in ("0%", "Nil") or source_rate in ("Nil", "0%"):
+            rate_line = f"{desc} is exempt from GST, so no GST is charged (0%) under HSN {hsn}."
+        elif total_gst and cgst and sgst:
+            rate_line = f"{desc} attracts {total_gst} GST under HSN {hsn}. For an intra-state supply, this consists of {cgst} CGST and {sgst} SGST."
+        else:
+            rate_line = f"{desc} attracts {source_rate} GST under HSN {hsn}."
+
+        rate_sec = [
+            rate_line,
+            "",
+            "Details:",
+            f"- HSN / Tariff Code: {hsn}",
+            f"- Description: {desc}",
+            f"- Total GST Rate: {total_gst or source_rate}",
+            f"- Notification: {notif}",
+        ]
+        if cgst and sgst:
+            rate_sec.append(f"- CGST Rate: {cgst} | SGST Rate: {sgst}")
+        sections.append("\n".join(rate_sec))
+
+    # 2. Legal Findings
+    if legal_results:
+        legal_lines = ["Applicable Legal Provisions:"]
+        for idx, chunk in enumerate(legal_results[:3], 1):
+            ref = chunk.get("reference") or "Statutory Provision"
+            title = chunk.get("title") or ""
+            content = (chunk.get("content") or chunk.get("snippet") or "").strip()
+            first_sentence = content.split("\n")[0] if content else ""
+            legal_lines.append(f"{idx}. {ref} ({title}):\n   {first_sentence}")
+        sections.append("\n\n".join(legal_lines))
+
+    # 3. Direct Reasoning / Calculations
+    if calculation_result and calculation_result.get("status") == "success":
+        calc_lines = [
+            f"Verified Calculation: ₹{calculation_result.get('result_value', 0.0):,.2f}",
+            f"Formula: {calculation_result.get('formula')}",
+        ]
+        for step in calculation_result.get("steps", []):
+            calc_lines.append(f"- {step}")
+        sections.append("\n".join(calc_lines))
+    elif reasoning_result:
+        sections.append(f"Calculation Breakdown:\n{reasoning_result}")
+
+    if not sections:
+        return "No specific rate or legal records matching your query were found in the database."
+
+    return "\n\n".join(sections)

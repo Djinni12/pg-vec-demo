@@ -297,14 +297,14 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
 
     # 6. Calculation Intent
     has_math_words = bool(
-        re.search(r"\b(?:calculate|compute|how\s+much|taxable\s+(?:amount|value)|what\s+is\s+\d|final\s+amount)\b", lower)
+        re.search(r"\b(?:calculate|compute|how\s+much|taxable\s+(?:amount|value)|what\s+is\s+\d|final\s+amount|maximum\s+(?:value|amount)|what\s+(?:maximum|max)\s+value|value\s+can\s+i|what\s+value\s+can\s+i)\b", lower)
         or re.search(r"(?:કિંમત|રકમ|ડિસ્કાઉન્ટ|બાકી|અંતિમ|કેટલી|ગણતરી)", query)
         or re.search(r"(?:मूल्य|रकम|राशि|छूट|डिस्काउंट|शेष|बाकी|अंतिम|कितनी|गणना)", query)
     )
     needs_calculation = bool(
         has_math_words
         or (taxable_amount is not None and ("gst" in lower or "tax" in lower))
-        or bool(itc_balances and "what taxable value" in lower)
+        or bool(itc_balances and ("what taxable value" in lower or "value can i" in lower or "maximum value" in lower or "what value" in lower or "without making" in lower or "without" in lower))
     )
 
     # 7. Pure Direct Reasoning
@@ -332,13 +332,19 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
     rate_query = None
 
     if not is_pure_direct and not needs_clarification:
-        if "butter" in lower:
+        if "butter" in lower or "માખણ" in query:
             needs_structured_rate = True
             needs_hsn = True
             rate_query = "butter"
+        elif "દૂધ" in query or "milk" in lower:
+            needs_structured_rate = True
+            rate_query = "fresh milk"
+        elif "motorcycle" in lower:
+            needs_structured_rate = True
+            rate_query = "motorcycles"
         elif not needs_temporal:
             valid_codes = [m.group(0) for m in re.finditer(r"\b\d{4,8}\b", query) if is_hsn_candidate(m.group(0), query)]
-            has_rate_vocab = bool(re.search(r"\b(?:hsn|sac|rate|slab|tariff|gst\s+on)\b", lower))
+            has_rate_vocab = bool(re.search(r"\b(?:hsn|sac|rate|slab|tariff|gst\s+on)\b", lower) or "કેટલો છે" in query or "દર" in query)
             if valid_codes or has_rate_vocab:
                 needs_structured_rate = True
                 if "hsn" in lower or valid_codes:
@@ -350,7 +356,7 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
     legal_query = None
     if not is_pure_direct and not needs_clarification:
         if (
-            bool(re.search(r"\b(?:section|rule|form|itc|credit|utilization|order\s+of\s+utilization|interstate|intrastate|cancellation|revocation|penalty|procedure|registration|send|parcel|supply|sell)\b", lower))
+            bool(re.search(r"\b(?:section|rule|form|itc|credit|utilization|order\s+of\s+utilization|interstate|intrastate|cancellation|revocation|penalty|procedure|registration|send|parcel|supply|sell|law|legal|act|statute|provision|provisions)\b", lower))
             or needs_exception
         ):
             needs_legal = True
@@ -365,6 +371,12 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
                 legal_query = "order of utilization of input tax credit across IGST, CGST and SGST"
             else:
                 legal_query = cleaned
+
+    # For mixed queries, strip trailing legal phrasing from rate_query
+    if needs_structured_rate and needs_legal and rate_query:
+        cleaned_rq = re.sub(r"\b(?:and\s+)?what\s+(?:law|section|rule|provision|act)\s+applies.*$", "", rate_query, flags=re.IGNORECASE).strip()
+        if cleaned_rq:
+            rate_query = cleaned_rq
 
     needs_direct_reasoning = bool(is_pure_direct or itc_balances or needs_calculation)
     needs_grounded_synthesis = not needs_clarification
