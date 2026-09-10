@@ -209,7 +209,7 @@ def rerank_legal_results(query: str, results: list[dict], reranker=None, model_n
     if reranker is None:
         reranker = load_reranker_model(model_name)
 
-    pairs = [(query, result.get("content") or "") for result in results]
+    pairs = [(query, (result.get("content") or "")[:500]) for result in results]
     scores = reranker.predict(pairs)
     reranked = []
     for result, score in zip(results, scores):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import os
 import time
 from dataclasses import dataclass
@@ -57,6 +58,9 @@ def load_models() -> LoadedModels:
     )
 
 
+DEFAULT_RERANK_CANDIDATE_LIMIT = 10
+
+
 def inspect_retrieval(
     query: str,
     top_k: int = DEFAULT_TOP_K,
@@ -65,6 +69,7 @@ def inspect_retrieval(
     db_url: str | None = None,
     retrieve_limit: int = DEFAULT_RETRIEVE_LIMIT,
     rrf_k: int = DEFAULT_RRF_K,
+    rerank_candidate_limit: int = DEFAULT_RERANK_CANDIDATE_LIMIT,
 ) -> dict[str, Any]:
     """Run dense, BM25, RRF, and reranker stages with per-query timings."""
     if top_k < 1:
@@ -80,21 +85,29 @@ def inspect_retrieval(
     conn_params = conninfo_to_dict(db_url)
     total_start = time.perf_counter()
 
-    with psycopg.connect(db_url) as conn:
-        dense_start = time.perf_counter()
-        dense_results, dense_counts = dense_search_legal_corpus(
-            conn,
-            query,
-            top_k=retrieve_limit,
-            per_table_limit=retrieve_limit,
-            model=models.embedding_model,
-            rerank=False,
-        )
-        dense_ms = _elapsed_ms(dense_start)
+    def _run_dense():
+        d_start = time.perf_counter()
+        with psycopg.connect(db_url) as conn:
+            d_res, d_counts = dense_search_legal_corpus(
+                conn,
+                query,
+                top_k=retrieve_limit,
+                per_table_limit=retrieve_limit,
+                model=models.embedding_model,
+                rerank=False,
+            )
+        return d_res, d_counts, _elapsed_ms(d_start)
 
-    bm25_start = time.perf_counter()
-    bm25_results, bm25_stats = BM25Retriever(conn_params).retrieve(query, top_k=retrieve_limit)
-    bm25_ms = _elapsed_ms(bm25_start)
+    def _run_bm25():
+        b_start = time.perf_counter()
+        b_res, b_stats = BM25Retriever(conn_params).retrieve(query, top_k=retrieve_limit)
+        return b_res, b_stats, _elapsed_ms(b_start)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        fut_dense = executor.submit(_run_dense)
+        fut_bm25 = executor.submit(_run_bm25)
+        dense_results, dense_counts, dense_ms = fut_dense.result()
+        bm25_results, bm25_stats, bm25_ms = fut_bm25.result()
 
     rrf_start = time.perf_counter()
     hybrid_candidates = fuse_legal_results(
@@ -106,7 +119,8 @@ def inspect_retrieval(
     rrf_ms = _elapsed_ms(rrf_start)
 
     reranker_start = time.perf_counter()
-    reranked_results = rerank_legal_results(query, hybrid_candidates, reranker=models.reranker)[:top_k]
+    candidates_to_rerank = hybrid_candidates[:rerank_candidate_limit]
+    reranked_results = rerank_legal_results(query, candidates_to_rerank, reranker=models.reranker)[:top_k]
     reranker_ms = _elapsed_ms(reranker_start)
 
     ranked_final = [_normalize_result(result, index) for index, result in enumerate(reranked_results, 1)]

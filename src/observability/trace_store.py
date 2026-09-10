@@ -92,6 +92,14 @@ class ExecutionTrace:
         "timing_ms": 0.0,
     })
 
+    # 4b. Supporting Notification Retrieval
+    notification_retrieval: dict[str, Any] = field(default_factory=lambda: {
+        "semantic_query": "",
+        "returned_chunks": [],
+        "timing_ms": 0.0,
+        "support_metadata": {},
+    })
+
     # 5. Reasoning Stages
     reasoning: dict[str, Any] = field(default_factory=lambda: {
         "grounded_reasoning_output": None,
@@ -127,6 +135,7 @@ class ExecutionTrace:
         "rrf_ms": 0.0,
         "reranker_ms": 0.0,
         "rate_lookup_ms": 0.0,
+        "notification_support_ms": 0.0,
         "grounded_reasoning_ms": 0.0,
         "direct_reasoning_ms": 0.0,
         "calculation_ms": 0.0,
@@ -323,6 +332,28 @@ class TraceStore:
                 "timing_ms": round(timing_ms, 3),
             }
             trace.timings["rate_lookup_ms"] = round(timing_ms, 3)
+
+    def record_notification_retrieval(
+        self,
+        execution_id: str,
+        *,
+        query: str,
+        chunks: list[dict[str, Any]],
+        timing_ms: float,
+        support_metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """Record supporting notification retrieval results."""
+        with self._lock:
+            trace = self._traces.get(execution_id)
+            if not trace:
+                return
+            trace.notification_retrieval = {
+                "semantic_query": query,
+                "returned_chunks": list(chunks),
+                "timing_ms": round(timing_ms, 3),
+                "support_metadata": dict(support_metadata) if support_metadata else {},
+            }
+            trace.timings["notification_support_ms"] = round(timing_ms, 3)
 
     def record_grounded_reasoning(
         self,

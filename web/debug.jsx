@@ -322,6 +322,12 @@ function DebugApp() {
                 🏷 Rate Lookup ({selectedTrace.rate_retrieval?.returned_candidates?.length || 0})
               </button>
               <button
+                className={`debug-tab-btn ${activeTab === "notifications" ? "active" : ""}`}
+                onClick={() => setActiveTab("notifications")}
+              >
+                📜 Gazette Notifications ({selectedTrace.notification_retrieval?.returned_chunks?.length || 0})
+              </button>
+              <button
                 className={`debug-tab-btn ${activeTab === "reasoning" ? "active" : ""}`}
                 onClick={() => setActiveTab("reasoning")}
               >
@@ -358,6 +364,9 @@ function DebugApp() {
               {activeTab === "rate" && (
                 <RateRetrievalView trace={selectedTrace} />
               )}
+              {activeTab === "notifications" && (
+                <NotificationRetrievalView trace={selectedTrace} />
+              )}
               {activeTab === "reasoning" && (
                 <ReasoningView trace={selectedTrace} />
               )}
@@ -393,6 +402,7 @@ function WaterfallView({ trace }) {
     { key: "rrf_ms", label: "RRF Score Fusion", val: timings.rrf_ms || 0, color: "#818cf8" },
     { key: "reranker_ms", label: "Cross-Encoder Reranker", val: timings.reranker_ms || 0, color: "#a78bfa" },
     { key: "rate_lookup_ms", label: "Tariff Rate Lookup", val: timings.rate_lookup_ms || 0, color: "#fb923c" },
+    { key: "notification_support_ms", label: "Supporting Gazette Notifications", val: timings.notification_support_ms || trace.graph_execution?.node_timings_ms?.["notification_support"] || 0, color: "#eab308" },
     { key: "grounded_reasoning_ms", label: "Grounded Reasoning", val: timings.grounded_reasoning_ms || 0, color: "#f472b6" },
     { key: "direct_reasoning_ms", label: "Direct Reasoning", val: timings.direct_reasoning_ms || 0, color: "#e879f9" },
     { key: "calculation_ms", label: "Deterministic Calculator", val: timings.calculation_ms || 0, color: "#facc15" },
@@ -442,6 +452,13 @@ function WaterfallView({ trace }) {
               ms={nodeTimings["rate_lookup"]}
             />
           </div>
+          <ArrowRight />
+          <FlowStepNode
+            title="notification_support"
+            executed={executedNodes.includes("notification_support")}
+            status={nodeStatuses["notification_support"]}
+            ms={nodeTimings["notification_support"]}
+          />
           <ArrowRight />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <FlowStepNode
@@ -702,7 +719,7 @@ function GraphExecutionView({ trace }) {
             </tr>
           </thead>
           <tbody>
-            {["planner", "legal_retrieval", "rate_lookup", "grounded_reasoning", "direct_reasoning", "calculation", "synthesis"].map((node) => {
+            {["planner", "rate_lookup", "legal_retrieval", "notification_support", "grounded_reasoning", "direct_reasoning", "calculation", "synthesis"].map((node) => {
               const isSelected = selectedNodes.includes(node) || node === "planner";
               const isExecuted = actualNodes.includes(node);
               const status = statusMap[node] || (isExecuted ? "success" : "skipped");
@@ -998,6 +1015,111 @@ function RateRetrievalView({ trace }) {
               })}
             </tbody>
           </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// 5b. Supporting Notification Retrieval View (Gazette Records)
+// -----------------------------------------------------------------------------
+function NotificationRetrievalView({ trace }) {
+  const n = trace.notification_retrieval || {};
+  const query = n.semantic_query || "";
+  const chunks = n.returned_chunks || [];
+  const meta = n.support_metadata || {};
+  const ms = n.timing_ms || trace.timings?.notification_support_ms || trace.graph_execution?.node_timings_ms?.["notification_support"] || 0;
+
+  return (
+    <div>
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">Supporting Gazette Notification Vector Retrieval</div>
+          <span style={{ fontSize: 12, color: "#8e9fa5" }}>
+            Retrieval Latency: {formatMs(ms)}
+          </span>
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <span style={{ color: "#8e9fa5", fontSize: 12 }}>Semantic Gazette Query: </span>
+          <code style={{ color: "#eab308", fontWeight: 600 }}>{query || "(None)"}</code>
+        </div>
+        {Object.keys(meta).length > 0 && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+            {meta.target_notification && (
+              <span className="badge badge-route">Target: {meta.target_notification}</span>
+            )}
+            {meta.hsn_code && (
+              <span className="badge badge-rate">HSN: {meta.hsn_code}</span>
+            )}
+            {meta.serial_no && (
+              <span className="badge badge-calc">Entry S.No: {meta.serial_no}</span>
+            )}
+            {meta.schedule && (
+              <span className="badge badge-legal">{meta.schedule}</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            Retrieved Gazette Notification Chunks ({chunks.length})
+          </div>
+        </div>
+        {chunks.length === 0 ? (
+          <div style={{ padding: 14, color: "#8e9fa5" }}>No supporting notification chunks retrieved or deemed material.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {chunks.map((c, i) => {
+              const notifNo = c.notification_number || c.source_metadata?.notification_number || "";
+              const targetNotif = c.source_metadata?.target_notification;
+              const opType = c.source_metadata?.operation_type;
+              const taxTreat = c.source_metadata?.tax_treatment;
+              const effDate = c.source_metadata?.effective_date;
+              const score = c.reranker_score !== undefined ? c.reranker_score : c.score;
+
+              return (
+                <div key={i} style={{ padding: 16, background: "#0e1418", border: "1px solid #1f2b33", borderRadius: 6 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span className="badge badge-rate">#{c.rank || i + 1}</span>
+                      <strong style={{ fontSize: 14, color: "#f1f7f9" }}>{notifNo}</strong>
+                      {targetNotif && (
+                        <span className="badge badge-route" style={{ fontSize: 11 }}>Amends {targetNotif}</span>
+                      )}
+                      {opType && (
+                        <span className="badge badge-legal" style={{ fontSize: 11 }}>{opType}</span>
+                      )}
+                      {taxTreat && (
+                        <span className="badge badge-calc" style={{ fontSize: 11 }}>{taxTreat}</span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {effDate && (
+                        <span style={{ fontSize: 11, color: "#34d399", fontFamily: "var(--mono-font)" }}>
+                          Effective: {effDate}
+                        </span>
+                      )}
+                      {score !== undefined && (
+                        <span style={{ fontSize: 12, fontFamily: "var(--mono-font)", color: "#eab308", fontWeight: 600 }}>
+                          Score: {Number(score).toFixed(4)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#8e9fa5", marginBottom: 8 }}>
+                    Reference: <code>{c.reference || c.title || "Gazette Notification"}</code>
+                    {c.chunk_id && <span style={{ marginLeft: 10, color: "#475569" }}>({c.chunk_id})</span>}
+                  </div>
+                  <div style={{ fontSize: 12, lineHeight: 1.6, color: "#cbd5e1", whiteSpace: "pre-wrap", maxHeight: 220, overflowY: "auto", background: "#080b0e", padding: 10, borderRadius: 4, border: "1px solid #141c22" }}>
+                    {c.content || c.snippet}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

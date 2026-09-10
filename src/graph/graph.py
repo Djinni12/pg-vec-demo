@@ -13,11 +13,14 @@ conditional routing (route_capabilities)
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
+import re
 import time
 from typing import Any, Generator, Optional
 import uuid
 
+from langgraph.checkpoint.memory import InMemorySaver, MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from openai import OpenAI
@@ -33,6 +36,7 @@ from src.graph.nodes import (
     get_cached_models,
     grounded_reasoning_node,
     legal_retrieval_node,
+    notification_support_node,
     planner_node,
     rate_lookup_node,
     synthesis_node,
@@ -41,6 +45,7 @@ from src.graph.routing import (
     route_capabilities,
     route_post_direct_reasoning,
     route_post_grounded_reasoning,
+    route_post_notification_support,
     route_post_retrieval,
 )
 from src.graph.state import GSTGraphState
@@ -51,6 +56,9 @@ from src.routers.planner import plan_capabilities
 from src.tools.calculator import CalculationInputs, execute_calculator
 
 logger = logging.getLogger(__name__)
+
+# Shared in-memory checkpointer instance for state persistence across graph executions
+shared_checkpointer = MemorySaver()
 
 
 def build_gst_graph(
@@ -86,6 +94,10 @@ def build_gst_graph(
         lambda state: rate_lookup_node(state, db_url=db_url),
     )
     builder.add_node(
+        "notification_support",
+        lambda state: notification_support_node(state, models=models, db_url=db_url),
+    )
+    builder.add_node(
         "grounded_reasoning",
         lambda state: grounded_reasoning_node(state),
     )
@@ -109,18 +121,17 @@ def build_gst_graph(
     builder.add_conditional_edges(
         "planner",
         route_capabilities,
-        ["legal_retrieval", "rate_lookup", "direct_reasoning", "calculation", "synthesis"],
+        ["legal_retrieval", "rate_lookup", "notification_support", "direct_reasoning", "calculation", "synthesis"],
     )
 
-    # 4. Multi-capability dependency: retrieval nodes route to grounded_reasoning if needed, else calculation, else synthesis
+    # 4. Primary retrieval nodes route to notification_support for supporting Gazette evidence
+    builder.add_edge("legal_retrieval", "notification_support")
+    builder.add_edge("rate_lookup", "notification_support")
+
+    # 5. Notification support routes to grounded_reasoning, calculation, or synthesis
     builder.add_conditional_edges(
-        "legal_retrieval",
-        route_post_retrieval,
-        ["grounded_reasoning", "calculation", "synthesis"],
-    )
-    builder.add_conditional_edges(
-        "rate_lookup",
-        route_post_retrieval,
+        "notification_support",
+        route_post_notification_support,
         ["grounded_reasoning", "calculation", "synthesis"],
     )
 
@@ -167,13 +178,14 @@ def compile_gst_graph(
         db_url=db_url,
         use_llm_planner=use_llm_planner,
     )
-    return builder.compile()
+    return builder.compile(checkpointer=shared_checkpointer)
 
 
 def invoke_gst_graph(
     query: str,
     *,
     execution_id: Optional[str] = None,
+    thread_id: Optional[str] = None,
     models: Optional[LoadedModels] = None,
     openai_client: Optional[OpenAI] = None,
     openai_model: Optional[str] = None,
@@ -186,6 +198,8 @@ def invoke_gst_graph(
     """
     if not execution_id:
         execution_id = str(uuid.uuid4())
+    if not thread_id:
+        thread_id = str(uuid.uuid4())
 
     trace_store.create_trace(execution_id, query)
 
@@ -200,8 +214,10 @@ def invoke_gst_graph(
     initial_state: GSTGraphState = {
         "user_query": query,
         "execution_id": execution_id,
+        "thread_id": thread_id,
         "needs_legal": False,
         "needs_rate": False,
+        "needs_notification": False,
         "needs_direct_reasoning": False,
         "needs_calculation": False,
         "needs_grounded_reasoning": False,
@@ -209,6 +225,7 @@ def invoke_gst_graph(
         "user_premises": {},
         "legal_results": [],
         "rate_results": [],
+        "notification_results": [],
         "reasoning_result": None,
         "calculation_inputs": None,
         "calculation_result": None,
@@ -224,8 +241,12 @@ def invoke_gst_graph(
     t0 = time.perf_counter()
     err_msg: Optional[str] = None
     try:
-        res = graph.invoke(initial_state)
+        res = graph.invoke(
+            initial_state,
+            config={"configurable": {"thread_id": thread_id}},
+        )
         res["execution_id"] = execution_id
+        res["thread_id"] = thread_id
         return res
     except Exception as exc:
         err_msg = str(exc)
@@ -242,9 +263,10 @@ def invoke_gst_graph(
 
 def run_graph_chat(
     query: str,
-    top_k: int = 5,
+    top_k: int = 10,
     *,
     execution_id: Optional[str] = None,
+    thread_id: Optional[str] = None,
     models: Optional[LoadedModels] = None,
     openai_model: Optional[str] = None,
     openai_client: Optional[OpenAI] = None,
@@ -252,15 +274,18 @@ def run_graph_chat(
 ) -> dict[str, Any]:
     """Production runtime entry point for /chat and /answer endpoints via LangGraph.
 
-    Returns the standard response payload expected by the API and Web UI, including execution_id.
+    Returns the standard response payload expected by the API and Web UI, including execution_id and thread_id.
     """
     if not execution_id:
         execution_id = str(uuid.uuid4())
+    if not thread_id:
+        thread_id = str(uuid.uuid4())
 
     start_time = time.perf_counter()
     output_state = invoke_gst_graph(
         query=query,
         execution_id=execution_id,
+        thread_id=thread_id,
         models=models,
         openai_client=openai_client,
         openai_model=openai_model,
@@ -278,6 +303,7 @@ def run_graph_chat(
 
     return {
         "execution_id": execution_id,
+        "thread_id": thread_id,
         "query": query,
         "route": route_str,
         "answer": final_answer,
@@ -307,9 +333,10 @@ def run_graph_chat(
 
 def stream_graph_chat(
     query: str,
-    top_k: int = 5,
+    top_k: int = 10,
     *,
     execution_id: Optional[str] = None,
+    thread_id: Optional[str] = None,
     models: Optional[LoadedModels] = None,
     openai_model: Optional[str] = None,
     openai_client: Optional[OpenAI] = None,
@@ -323,13 +350,24 @@ def stream_graph_chat(
     """
     if not execution_id:
         execution_id = str(uuid.uuid4())
+    if not thread_id:
+        thread_id = str(uuid.uuid4())
 
     total_start = time.perf_counter()
     trace_store.create_trace(execution_id, query)
 
     # 1. Planner
     t_plan0 = time.perf_counter()
-    plan = plan_capabilities(query)
+    compiled_g = compile_gst_graph(
+        models=models,
+        openai_client=openai_client,
+        openai_model=openai_model,
+        db_url=db_url,
+    )
+    thread_state = compiled_g.get_state({"configurable": {"thread_id": thread_id}})
+    prior_messages = thread_state.values.get("messages", []) if thread_state and thread_state.values else []
+
+    plan = plan_capabilities(query, history=prior_messages)
     plan_ms = round((time.perf_counter() - t_plan0) * 1000, 3)
     model_name = get_configured_model(openai_model)
 
@@ -391,11 +429,14 @@ def stream_graph_chat(
         },
         timing_ms=plan_ms,
     )
+    needs_notification = bool(plan.get("needs_notification_retrieval", False))
     selected_nodes = []
     if needs_legal:
         selected_nodes.append("legal_retrieval")
     if needs_rate:
         selected_nodes.append("rate_lookup")
+    if needs_legal or needs_rate or needs_notification:
+        selected_nodes.append("notification_support")
     if needs_grounded:
         selected_nodes.append("grounded_reasoning")
     if needs_direct:
@@ -416,6 +457,7 @@ def stream_graph_chat(
         "execution_id": execution_id,
         "needs_legal": needs_legal,
         "needs_rate": needs_rate,
+        "needs_notification": needs_notification,
         "needs_direct_reasoning": needs_direct,
         "needs_calculation": needs_calculation,
         "needs_grounded_reasoning": needs_grounded,
@@ -423,6 +465,7 @@ def stream_graph_chat(
         "user_premises": user_premises,
         "legal_results": [],
         "rate_results": [],
+        "notification_results": [],
         "reasoning_result": None,
         "calculation_inputs": None,
         "calculation_result": None,
@@ -432,16 +475,27 @@ def stream_graph_chat(
         "plan": plan,
     }
 
-    # 2. Rate lookup
-    if needs_rate:
+    # 2. Primary retrievals (rate lookup & legal retrieval)
+    if needs_rate and needs_legal:
+        retrieval_models = models or get_cached_models()
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            fut_rate = executor.submit(rate_lookup_node, current_state, db_url=db_url, limit=top_k)
+            fut_legal = executor.submit(legal_retrieval_node, current_state, models=retrieval_models, db_url=db_url, top_k=top_k)
+            current_state.update(fut_rate.result())
+            current_state.update(fut_legal.result())
+    elif needs_rate:
         rate_out = rate_lookup_node(current_state, db_url=db_url, limit=top_k)
         current_state.update(rate_out)
-
-    # 3. Legal retrieval
-    if needs_legal:
+    elif needs_legal:
         retrieval_models = models or get_cached_models()
         legal_out = legal_retrieval_node(current_state, models=retrieval_models, db_url=db_url, top_k=top_k)
         current_state.update(legal_out)
+
+    # 3b. Notification support lookup (automatic for rate/legal or explicit notification query)
+    if needs_rate or needs_legal or needs_notification:
+        retrieval_models = models or get_cached_models()
+        notif_out = notification_support_node(current_state, models=retrieval_models, db_url=db_url, top_k=2)
+        current_state.update(notif_out)
 
     # 4. Grounded reasoning (dependent on retrievals)
     if needs_grounded:
@@ -460,19 +514,23 @@ def stream_graph_chat(
 
     legal_results = current_state.get("legal_results", [])
     rate_results = current_state.get("rate_results", [])
+    notification_results = current_state.get("notification_results", [])
     calc_res = current_state.get("calculation_result")
     reasoning_res = current_state.get("reasoning_result")
 
-    sources = extract_combined_sources(legal_results, rate_results)
+    all_chunks = list(legal_results) + list(notification_results)
+    sources = extract_combined_sources(all_chunks, rate_results)
     retrieval_ms = round((time.perf_counter() - total_start) * 1000, 2)
 
     # 1. Yield metadata event
     yield {
         "type": "meta",
         "execution_id": execution_id,
+        "thread_id": thread_id,
         "query": query,
         "route": route_str,
         "rate_results": rate_results,
+        "notification_results": notification_results,
         "sources": sources,
         "sources_used": sources,
         "retrieval_timing": retrieval_ms,
@@ -494,17 +552,23 @@ def stream_graph_chat(
             query=query,
             chunks=legal_results if legal_results else None,
             rate_results=rate_results if rate_results else None,
+            notification_chunks=notification_results if notification_results else None,
             user_premises=plan.get("user_premises"),
             calculation_result=calc_res,
             model=openai_model,
             client=openai_client,
             direct_reasoning=is_direct,
+            history=prior_messages,
         ):
             full_answer_parts.append(delta)
-            yield {
-                "type": "token",
-                "delta": delta,
-            }
+            # Break large incoming deltas into word-level pieces with calm pacing
+            pieces = re.findall(r"\S+|\s+", delta)
+            for p in pieces:
+                yield {
+                    "type": "token",
+                    "delta": p,
+                }
+                time.sleep(0.015)
         full_answer = "".join(full_answer_parts).strip()
     except Exception:
         # Offline or mock fallback synthesis
@@ -514,16 +578,30 @@ def stream_graph_chat(
             query=query,
             rate_results=rate_results,
             legal_results=legal_results,
+            notification_results=notification_results,
             reasoning_result=reasoning_res,
             calculation_result=calc_res,
         )
-        yield {
-            "type": "token",
-            "delta": full_answer,
-        }
+        pieces = re.findall(r"\S+|\s+", full_answer)
+        for p in pieces:
+            yield {
+                "type": "token",
+                "delta": p,
+            }
+            time.sleep(0.015)
 
     gen_ms = round((time.perf_counter() - gen_start) * 1000, 2)
     total_ms = round(retrieval_ms + gen_ms, 2)
+
+    # Commit messages to checkpointer for subsequent turns
+    try:
+        from langchain_core.messages import AIMessage, HumanMessage
+        compiled_g.update_state(
+            {"configurable": {"thread_id": thread_id}},
+            {"messages": [HumanMessage(content=query), AIMessage(content=full_answer)]},
+        )
+    except Exception:
+        pass
 
     trace_store.record_synthesis(
         execution_id,
@@ -548,6 +626,7 @@ def stream_graph_chat(
     yield {
         "type": "done",
         "execution_id": execution_id,
+        "thread_id": thread_id,
         "answer": full_answer,
         "route": route_str,
         "rate_results": rate_results,

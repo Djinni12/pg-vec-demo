@@ -12,6 +12,7 @@ from .rrf import reciprocal_rank_fusion_by_key
 DEFAULT_RETRIEVE_LIMIT = 30
 DEFAULT_TOP_K = 10
 DEFAULT_RRF_K = 60
+DEFAULT_RERANK_CANDIDATE_LIMIT = 10
 
 
 def chunk_key(result: dict[str, Any]) -> str:
@@ -95,7 +96,7 @@ def hybrid_search_legal_corpus(
     if not query.strip():
         return [], {"dense_count": 0, "bm25_count": 0}
     if rerank_candidate_limit is None:
-        rerank_candidate_limit = retrieve_limit
+        rerank_candidate_limit = DEFAULT_RERANK_CANDIDATE_LIMIT
     if rerank_candidate_limit < 1:
         raise ValueError("rerank_candidate_limit must be positive")
 

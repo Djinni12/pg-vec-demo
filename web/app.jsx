@@ -298,19 +298,46 @@ function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [threadId, setThreadId] = useState(null);
+  const threadIdRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const typingTimerRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]);
 
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
+      }
+    };
+  }, []);
+
+  function handleClearChat() {
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+    setMessages([]);
+    setThreadId(null);
+    threadIdRef.current = null;
+    setLoading(false);
+  }
+
   async function sendMessage(textToSend) {
     const query = (textToSend || input).trim();
     if (!query || loading) return;
+
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
 
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const userMsg = { id: Date.now(), sender: "user", text: query, time };
@@ -329,12 +356,70 @@ function App() {
     setLoading(true);
     setError("");
 
+    let targetText = "";
+    let displayedText = "";
+    let messageData = null;
+    let sseDone = false;
+
+    // Smooth typewriter pacing ticker (cadence inspired by ChatGPT and Claude)
+    typingTimerRef.current = setInterval(() => {
+      if (displayedText.length < targetText.length) {
+        const remaining = targetText.length - displayedText.length;
+        // Adaptive step size:
+        // - Single character cadence for short deltas (~50 chars/sec, human-like typing)
+        // - Smooth acceleration for longer bursts to maintain responsive flow
+        let step = 1;
+        if (remaining > 180) {
+          step = Math.min(Math.ceil(remaining / 20), 12);
+        } else if (remaining > 80) {
+          step = 4;
+        } else if (remaining > 25) {
+          step = 2;
+        } else {
+          step = 1;
+        }
+
+        displayedText = targetText.slice(0, displayedText.length + step);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === botMsgId
+              ? { ...m, text: displayedText, data: messageData, isStreaming: true }
+              : m
+          )
+        );
+      } else if (sseDone) {
+        // Entire stream has been smoothly typed out to the end
+        if (typingTimerRef.current) {
+          clearInterval(typingTimerRef.current);
+          typingTimerRef.current = null;
+        }
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === botMsgId
+              ? {
+                  ...m,
+                  text: targetText,
+                  data: messageData,
+                  isStreaming: false,
+                }
+              : m
+          )
+        );
+        setLoading(false);
+      }
+    }, 20);
+
     try {
+      const payload = { query, top_k: 10 };
+      if (threadIdRef.current) {
+        payload.thread_id = threadIdRef.current;
+      }
+
       // Stream tokens in real-time over SSE
       const response = await fetch("/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, top_k: 5 }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -345,8 +430,6 @@ function App() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let accumulatedText = "";
-      let messageData = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -364,32 +447,28 @@ function App() {
             const event = jsonStr ? JSON.parse(jsonStr) : null;
             if (!event) continue;
 
+            if (event.thread_id && !threadIdRef.current) {
+              threadIdRef.current = event.thread_id;
+              setThreadId(event.thread_id);
+            }
+
             if (event.type === "meta") {
               messageData = { ...event };
               setMessages((prev) =>
                 prev.map((m) => (m.id === botMsgId ? { ...m, data: messageData } : m))
               );
             } else if (event.type === "token") {
-              accumulatedText += event.delta;
-              setMessages((prev) =>
-                prev.map((m) => (m.id === botMsgId ? { ...m, text: accumulatedText } : m))
-              );
+              targetText += event.delta;
             } else if (event.type === "done") {
-              accumulatedText = event.answer || accumulatedText;
+              targetText = event.answer || targetText;
               messageData = {
                 ...(messageData || {}),
                 generation_timing: event.generation_timing,
                 total_timing: event.total_timing,
                 timings_ms: event.timings_ms,
-                answer: accumulatedText,
+                answer: targetText,
               };
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === botMsgId
-                    ? { ...m, text: accumulatedText, data: messageData, isStreaming: false }
-                    : m
-                )
-              );
+              sseDone = true;
             } else if (event.type === "error") {
               throw new Error(event.error);
             }
@@ -399,15 +478,12 @@ function App() {
         }
       }
 
-      // Mark stream finished
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === botMsgId
-            ? { ...m, isStreaming: false, text: accumulatedText }
-            : m
-        )
-      );
+      sseDone = true;
     } catch (err) {
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
       setError(err.message);
       setMessages((prev) =>
         prev.map((m) =>
@@ -420,8 +496,11 @@ function App() {
             : m
         )
       );
-    } finally {
       setLoading(false);
+    } finally {
+      if (!typingTimerRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -446,7 +525,7 @@ function App() {
           </div>
         </div>
         {messages.length > 0 && (
-          <button type="button" className="btn-clear" onClick={() => setMessages([])}>
+          <button type="button" className="btn-clear" onClick={handleClearChat}>
             Clear Chat
           </button>
         )}

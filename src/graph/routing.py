@@ -22,6 +22,8 @@ def route_capabilities(state: GSTGraphState) -> Sequence[str]:
     Supports multi-capability queries:
     - If needs_legal is True: includes 'legal_retrieval'
     - If needs_rate is True: includes 'rate_lookup'
+    - If needs_notification is True and neither legal nor rate is required:
+      includes 'notification_support'
     - If no retrievals are required:
       - If needs_calculation is True: routes to 'calculation'
       - If needs_direct_reasoning is True: routes to 'direct_reasoning'
@@ -39,6 +41,9 @@ def route_capabilities(state: GSTGraphState) -> Sequence[str]:
 
     if state.get("needs_rate"):
         targets.append("rate_lookup")
+
+    if not targets and state.get("needs_notification"):
+        targets.append("notification_support")
 
     if not targets:
         if state.get("needs_direct_reasoning"):
@@ -63,6 +68,10 @@ def route_post_retrieval(state: GSTGraphState) -> str:
     if state.get("needs_calculation"):
         return "calculation"
     return "synthesis"
+
+
+# Notification support uses the same post-retrieval routing logic to evaluate next stage
+route_post_notification_support = route_post_retrieval
 
 
 def route_post_grounded_reasoning(state: GSTGraphState) -> str:

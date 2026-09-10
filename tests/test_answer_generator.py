@@ -1,6 +1,11 @@
 from unittest.mock import MagicMock, patch
+import os
 import pytest
 import openai
+
+@pytest.fixture(autouse=True)
+def disable_llm_planner_in_unit_tests(monkeypatch):
+    monkeypatch.setenv("USE_LLM_PLANNER", "false")
 
 from src.generators.answer_generator import (
     DIRECT_REASONING_SYSTEM_PROMPT,

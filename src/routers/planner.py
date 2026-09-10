@@ -47,6 +47,7 @@ Return ONLY a JSON object matching this schema:
   },
   "user_premises": {
     "assumed_rate": float or null,
+    "rate_is_user_assumed": boolean,
     "taxable_amount": float or null,
     "discount_pct": float or null,
     "itc_balances": object with float balances e.g. {"cgst": 2500.0, "sgst": 2500.0, "igst": 2500.0} or null,
@@ -59,19 +60,21 @@ Return ONLY a JSON object matching this schema:
 CAPABILITY RULES:
 1. Multiple capabilities MUST be selected simultaneously if the query requires them. Never force queries into a single route.
 2. Structured Rate & HSN:
-   - needs_structured_rate_lookup = true if the query asks about GST rate, slab, cess, or tax liability on any product, service, or commodity.
+   - needs_structured_rate_lookup = true if the query asks about GST rate, slab, cess, or tax liability on any specific, identifiable product, service, or commodity.
+   - Do NOT trigger rate lookup (needs_structured_rate_lookup = false) if the user merely states as a premise that an unnamed product is exempt (e.g. 'a product is exempt', 'Ek product actually GST exempt che') without identifying a specific commodity to look up. Rate searches on generic words ('product', 'item') return arbitrary irrelevant goods.
    - needs_hsn_lookup = true if specifically asking for or supplying an HSN or SAC code. When needs_hsn_lookup is true, always also set needs_structured_rate_lookup = true.
    - clean_subqueries.rate_query MUST be the clean commodity/product name in English (e.g. "butter", "fresh milk", "motorcycles", "chocolate").
 3. Legal Retrieval:
-   - needs_legal_retrieval = true for statutory questions, procedural rules, registration, cancellation, revocation, appeals, legal definitions, or ITC utilization principles.
-   - clean_subqueries.legal_query MUST be a neutral concept/topic search query describing the legal subject matter (e.g., "ITC utilization order for interstate supply and discharge of IGST liability using IGST, CGST and SGST input tax credits", "cancellation of GST registration procedure").
-   - DO NOT inject or assume specific statutory Sections, Rules, or Forms (e.g. "Section 49", "Rule 88A") unless explicitly mentioned in the user's question. Preserve statutory references explicitly supplied by the user (e.g. "Section 29"), but let the legal retrieval layer discover unstated statutory provisions.
+   - needs_legal_retrieval = true for statutory questions, procedural rules, registration, cancellation, revocation, appeals, legal definitions, tax collected on exempt supplies / without authority, credit notes, or ITC utilization principles.
+   - clean_subqueries.legal_query MUST be a focused search query describing the legal subject matter (e.g., "tax collected on exempt supply but not paid to Government Section 76 credit note Section 34", "ITC utilization order for interstate supply and discharge of IGST liability using IGST, CGST and SGST input tax credits", "cancellation of GST registration procedure").
+   - When the question concerns tax mistakenly collected on exempt supplies, tax collected without authority, or refund/adjustment thereof: formulate clean_subqueries.legal_query around "tax collected on exempt supply but not paid to Government Section 76 credit note Section 34".
 4. Notification Retrieval:
    - needs_notification_retrieval = true when specific notifications (e.g. "09/2025", "01/2017"), amending notifications, or rate notifications are mentioned or inquired about.
    - clean_subqueries.notification_query should specify the notification number or context.
 5. Calculation & Direct Reasoning:
    - needs_calculation = true whenever mathematical computation is required (e.g. tax on ₹50,000, 10% discount + 5% GST, maximum taxable value given ITC balances).
    - needs_direct_reasoning = true whenever reasoning over user facts, hypothetical scenarios, or multi-step logic is needed.
+   - user_premises.rate_is_user_assumed MUST be true ONLY if the user explicitly provided or assumed a hypothetical rate in their prompt (e.g. 'Assume GST is 12%', 'Suppose 18% GST'). Set to false if the rate was retrieved from official tariff records, derived from a commodity name, or carried over from a prior turn's statutory rate.
 6. Comparison & Exceptions:
    - needs_comparison = true when comparing tax treatment across goods, engine capacities, or slabs (e.g. "motorcycles below and above 350cc").
    - needs_exception_reasoning = true for exceptions, special conditions, conditional rates, or ITC restrictions.
@@ -79,8 +82,12 @@ CAPABILITY RULES:
 8. Grounded Synthesis:
    - needs_grounded_synthesis = true for all standard queries requiring an answer synthesized from retrieved documents, rates, or facts (always true unless needs_clarification is true).
 9. Multilingual Understanding:
-   - Understand queries in Gujarati (e.g. "માખણ" -> butter, "તાજા દૂધ" -> fresh milk, "નોંધણી રદ" -> cancellation of registration, "કેટલો છે" -> how much is), Hindi, and English.
+   - Understand queries in Gujarati (e.g. "માખણ" -> butter, "તાજા દૂધ" -> fresh milk, "નોંધણી રદ" -> cancellation of registration, "કેટલો છે" -> how much is, "ભૂલથી ટેક્સ લીધો" -> mistakenly collected tax), Hindi, and English.
    - Translate clean_subqueries into standard English search terms for the downstream retrieval tools.
+10. LEGAL APPLICABILITY & FACTUAL SCOPE RULE:
+    - Distinguish between similar but legally different scenarios:
+      * Tax collected on an exempt supply (governed by Section 76 / Section 34 / Section 54) vs IGST paid instead of CGST/SGST (governed by Section 77 CGST Act / Section 19 IGST Act).
+      * Never confuse tax collected on an exempt supply with an inter-State vs intra-State supply classification mismatch.
 """
 
 
@@ -141,6 +148,7 @@ class GSTPlan(BaseModel):
     user_premises: dict[str, Any] = Field(
         default_factory=lambda: {
             "assumed_rate": None,
+            "rate_is_user_assumed": False,
             "taxable_amount": None,
             "discount_pct": None,
             "itc_balances": None,
@@ -181,6 +189,7 @@ def plan_capabilities_with_llm(
     query: str,
     client: OpenAI | None = None,
     model: str | None = None,
+    history: list[Any] | None = None,
 ) -> dict[str, Any]:
     """Generate structured multi-capability plan using LLM."""
     llm_client = client or get_default_planner_client()
@@ -189,15 +198,35 @@ def plan_capabilities_with_llm(
 
     model_name = model or get_default_planner_model()
 
+    # Format recent history for resolving follow-ups, pronouns, and references
+    hist_context = ""
+    if history:
+        lines = []
+        for m in history[-6:]:
+            if isinstance(m, dict):
+                role = "User" if m.get("role") in ("human", "user") else "Assistant"
+                c = (m.get("content") or "").strip()
+            else:
+                role = "User" if getattr(m, "type", "") in ("human", "user") else "Assistant"
+                c = (getattr(m, "content", "") or "").strip()
+            if c:
+                if len(c) > 250:
+                    c = c[:250] + "..."
+                lines.append(f"{role}: {c}")
+        if lines:
+            hist_context = "PRIOR CONVERSATION CONTEXT:\n" + "\n".join(lines) + "\n\n"
+
+    user_query_content = f"{hist_context}CURRENT USER QUERY:\n{query.strip()}" if hist_context else query.strip()
+
     # Gemma instruction format merges system instructions into user turn
     if "gemma" in model_name.lower():
         messages = [
-            {"role": "user", "content": f"{PLANNER_SYSTEM_PROMPT}\n\n---\n\nUSER QUERY:\n{query.strip()}"}
+            {"role": "user", "content": f"{PLANNER_SYSTEM_PROMPT}\n\n---\n\n{user_query_content}"}
         ]
     else:
         messages = [
             {"role": "system", "content": PLANNER_SYSTEM_PROMPT},
-            {"role": "user", "content": query.strip()},
+            {"role": "user", "content": user_query_content},
         ]
 
     response = llm_client.chat.completions.create(
@@ -236,14 +265,15 @@ def plan_capabilities(
     client: OpenAI | None = None,
     model: str | None = None,
     use_llm: bool | None = None,
+    history: list[Any] | None = None,
 ) -> dict[str, Any]:
     """Entrypoint: Generate capability plan with LLM if enabled/available, fallback to heuristics."""
     should_use_llm = use_llm if use_llm is not None else (
-        os.environ.get("USE_LLM_PLANNER", "false").lower() in ("true", "1")
+        os.environ.get("USE_LLM_PLANNER", "true").lower() in ("true", "1")
     )
     if should_use_llm:
         try:
-            return plan_capabilities_with_llm(query, client=client, model=model)
+            return plan_capabilities_with_llm(query, client=client, model=model, history=history)
         except Exception as exc:
             logger.warning(f"LLM planner failed ({exc}), falling back to heuristic planner.")
             return plan_capabilities_heuristic(query)

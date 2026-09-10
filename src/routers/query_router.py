@@ -395,6 +395,7 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
         "needs_grounded_synthesis": needs_grounded_synthesis,
         "user_premises": {
             "assumed_rate": assumed_rate,
+            "rate_is_user_assumed": bool(assumed_rate is not None and m_assume),
             "taxable_amount": taxable_amount,
             "discount_pct": discount_pct,
             "itc_balances": itc_balances,

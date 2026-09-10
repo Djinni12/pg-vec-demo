@@ -64,6 +64,10 @@ STRICT GROUNDING RULES:
 3. If no relevant legal provisions were retrieved:
    - Set status = "unresolved".
    - Set unresolved_reason = "No statutory provisions regarding credit utilization or classification were retrieved in context."
+4. Legal Applicability & Factual Scope Rule:
+   - Do not use a retrieved Section, Rule, Notification, Form, exception, refund mechanism, or procedure merely because it is related to the topic.
+   - Before relying on legal evidence, verify that its factual scope matches the user's situation.
+   - Distinguish between similar but legally different scenarios (e.g. tax collected on an exempt supply vs IGST paid instead of CGST/SGST). A provision governing one must not be applied to the other unless the retrieved text explicitly supports that application.
 
 Return ONLY a JSON object matching this schema:
 {

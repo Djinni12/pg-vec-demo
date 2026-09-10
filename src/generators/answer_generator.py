@@ -120,6 +120,28 @@ Suspension and revocation should only be mentioned when relevant to explaining t
 
 - Never invent a procedural step. Every step must be supported by the provided legal context.
 
+LEGAL APPLICABILITY & FACTUAL SCOPE RULE:
+- Do not use a retrieved Section, Rule, Notification, Form, exception, refund mechanism, or procedure merely because it is related to the topic.
+- Before relying on legal evidence, verify that its factual scope matches the user's situation.
+- Distinguish between similar but legally different scenarios:
+  * Example:
+    - tax collected on an exempt supply
+    - IGST paid instead of CGST/SGST
+    are different situations.
+  * A provision governing one must not be applied to the other unless the retrieved text explicitly supports that application.
+  * Never cite Section 77 of the CGST Act, Section 19 of the IGST Act, or Section 12 of the UTGST Act for transactions involving tax collected on exempt goods or excess tax collections. Those provisions govern strictly inter-State vs intra-State place-of-supply classification mismatches (paying IGST instead of CGST/SGST, or vice versa).
+- For every material legal conclusion:
+  1. identify the retrieved provision supporting it;
+  2. verify that its conditions match the user's facts;
+  3. only then use it in the answer.
+- If retrieval does not establish the applicable procedure, say that the retrieved evidence is insufficient rather than constructing a procedure from general GST knowledge.
+- Application to Tax Collected in Error on Exempt Supplies:
+  * Amount to return/adjust: Calculate and state the exact tax amount collected (e.g., ₹50,000 × 18% = ₹9,000.00) that must be refunded or adjusted with the customer.
+  * Treatment under GST law: Under Section 76(1) of the CGST Act, any person who has collected from any other person any amount as representing tax under the Act must pay that amount to the Government, irrespective of whether the supplies are taxable or exempt.
+  * Adjustment & Credit Note: Under Section 34 of the CGST Act, the supplier can issue a Credit Note to the customer to rectify the excess tax charged, adjust the invoice value, and reduce output tax liability (if within the allowable time limit).
+  * Refund from Government: Under Section 54 of the CGST Act, if the tax has already been deposited with the Government, a refund may be claimed, provided the financial incidence has been refunded back to the customer (avoiding unjust enrichment).
+  * Never apply Section 77 / 19 / 12 to an exempt supply scenario.
+
 GROUNDING:
 - Use only information supported by the retrieved context.
 - Do not invent legal requirements, Sections, Rules, Forms, dates, rates, or procedures.
@@ -132,6 +154,37 @@ GROUNDING:
   - The maximum taxable value that can be supplied without cash payment is: (Total Available Eligible ITC across all heads) / (Applicable IGST Rate).
   - Explicitly present the step-by-step credit utilization (exhausting IGST credit first, then applying CGST and SGST credits to clear the remaining IGST liability) confirming ₹0 cash payable.
 - User-provided assumptions/numbers are hypothetical inputs for calculation; clearly state them as user assumptions and do not present them as verified statutory law.
+- SOURCE ATTRIBUTION RULES:
+  - Correctly distinguish between:
+    1. User-provided values: taxable amounts, discounts, available ITC credit balances, and any hypothetical rates explicitly assumed by the user (e.g. 'Assume GST is 12%').
+    2. Retrieved GST and legal facts: statutory GST rates from tariff records (e.g. 5% on butter under HSN 0405), legal classifications (inter-state vs intra-state), Section/Rule provisions, and procedural requirements (e-way bill threshold).
+    3. Calculated values: deterministic arithmetic outputs (GST amount, invoice total, remaining cash payable).
+  - NEVER state that a GST rate was 'provided in the user's input' or 'user-assumed' when that rate was retrieved from structured rate records or established from earlier conversation context. Attribute retrieved rates to the statutory tariff / commodity records.
+  - ONLY describe a rate as user-assumed or hypothetical if the user explicitly provided that hypothetical rate in their query (e.g., 'Assume 12% GST').
+
+SOURCE HIERARCHY & NOTIFICATION INTERPRETATION RULES:
+1. Source Hierarchy:
+   - Structured GST Rate Data is the primary structured source for classification, HSN codes, and current tabulated rates.
+   - Acts and Rules (CGST/IGST Act, CGST Rules) are authoritative statutory and procedural law.
+   - Relevant Gazette Notifications are authoritative legal evidence for rate enactments, exemptions, amendments, substitutions, omissions, conditions/provisos, effective dates, and supersession of earlier notifications.
+2. Mandatory Consideration of Material Notifications:
+   - When a relevant Notification modifies, qualifies, supersedes, exempts, or changes a rate or legal position found in another retrieved source, the Notification MUST be considered during reasoning.
+   - Do NOT ignore a relevant Notification merely because a structured rate record or older legal chunk already provides an answer.
+3. Conflict Resolution & Legal Scope:
+   - Resolve conflicts using legal scope, target provision/notification, amendment operation, and explicit effective dates.
+   - A Notification operates within delegated statutory authority and must NOT override an Act/Rule outside its legal scope.
+   - Apply amendments/supersessions only to the specific provision, schedule, or entry they target.
+   - Respect explicit effective dates: prefer the later applicable notification when it validly amends an earlier one on or after its effective date.
+4. Transparent Conflict Reconciliation:
+   - If notification evidence is relevant but conflicts with the structured dataset, do NOT silently choose one or discard either source.
+   - Reconcile using scope and effective date where possible; otherwise, clearly explain the conflict and ground the conclusion in the authoritative source and effective timeline.
+5. Citation Lineage:
+   - Any rate, condition, exemption, or conclusion based on a Notification must be explicitly cited to that Notification (number, date, and effective date).
+6. Exemption Notifications vs Generic Statutory Powers:
+   - When a specific exemption or rate notification is retrieved in the context (such as Entry 36C of Notification No. 12/2017-Central Tax (Rate) as inserted/amended by Notification No. 16/2025-Central Tax (Rate)), prioritize it and explain the specific exemption (e.g., Services of life insurance business provided by an insurer to an individual or family are exempt from GST with Nil rate) along with any applicable conditions or effective date.
+   - Do NOT stop at Section 11 (the generic statutory power to grant exemption) or claim that the database lacks exemption details when an actual Gazette notification granting or amending that exemption is present in the retrieved notification context.
+   - NEVER claim that information is absent from notifications unless notification retrieval actually ran and returned zero chunks.
+
 - If no rate record matches the requested product or service, clearly state that the rate is not found in the available rate database.
 - Clearly distinguish related concepts such as cancellation, suspension, and revocation of cancellation.
 - Include only information relevant to the user's question.
@@ -149,6 +202,7 @@ Answer directly using only the numbers, rates, discounts, and facts supplied in 
 
 You may perform arithmetic and explain the formula step-by-step.
 If the user provides an assumed or hypothetical GST rate (e.g., 'Assume GST is 12%'), use that rate directly to calculate the tax and total amounts. Clearly state that the calculation is based on the user's assumed rate and is not a verified statutory GST rate.
+However, if the rate was derived from official tariff records or prior conversation context about a commodity/service, attribute the rate to the commodity/tariff, NOT as a user-assumed rate.
 
 Do not look up, invent, estimate, or assume any GST law, statutory rate, threshold, exemption, eligibility rule, date, form, section, notification, or procedure.
 
@@ -309,39 +363,44 @@ def extract_rate_pct(
     user_premises: dict[str, Any] | None = None,
 ) -> float | None:
     """Extract applicable total tax rate percentage from user premises or rate results."""
-    if user_premises and user_premises.get("assumed_rate") is not None:
+    # Prioritize user_premises only if the user explicitly provided a hypothetical assumed rate
+    if user_premises and user_premises.get("rate_is_user_assumed") and user_premises.get("assumed_rate") is not None:
         try:
             return float(user_premises["assumed_rate"])
         except (ValueError, TypeError):
             pass
 
-    if not rate_results:
-        return None
+    if rate_results:
+        r0 = rate_results[0]
+        if r0.get("igst_rate_pct") is not None:
+            try:
+                val = float(r0["igst_rate_pct"])
+                if val > 0:
+                    return val
+            except (ValueError, TypeError):
+                pass
 
-    r0 = rate_results[0]
-    if r0.get("igst_rate_pct") is not None:
+        if r0.get("cgst_rate_pct") is not None:
+            try:
+                cgst = float(r0["cgst_rate_pct"])
+                sgst = float(r0.get("sgst_utgst_rate_pct") or cgst)
+                if cgst + sgst > 0:
+                    return cgst + sgst
+            except (ValueError, TypeError):
+                pass
+
+        tot_str = str(r0.get("total_gst_rate") or r0.get("source_rate") or "")
+        m = re.search(r"(\d+(?:\.\d+)?)%", tot_str)
+        if m:
+            try:
+                return float(m.group(1))
+            except ValueError:
+                pass
+
+    if user_premises and user_premises.get("assumed_rate") is not None:
         try:
-            val = float(r0["igst_rate_pct"])
-            if val > 0:
-                return val
+            return float(user_premises["assumed_rate"])
         except (ValueError, TypeError):
-            pass
-
-    if r0.get("cgst_rate_pct") is not None:
-        try:
-            cgst = float(r0["cgst_rate_pct"])
-            sgst = float(r0.get("sgst_utgst_rate_pct") or cgst)
-            if cgst + sgst > 0:
-                return cgst + sgst
-        except (ValueError, TypeError):
-            pass
-
-    tot_str = str(r0.get("total_gst_rate") or r0.get("source_rate") or "")
-    m = re.search(r"(\d+(?:\.\d+)?)%", tot_str)
-    if m:
-        try:
-            return float(m.group(1))
-        except ValueError:
             pass
 
     return None
@@ -371,8 +430,22 @@ def build_user_prompt(
 
     if user_premises:
         premise_lines = []
-        if user_premises.get("assumed_rate") is not None:
-            premise_lines.append(f"- User-Assumed Hypothetical GST Rate: {user_premises['assumed_rate']}% (Note: Use directly for calculation; state that it is user-assumed, not verified statutory law).")
+        assumed_rate = user_premises.get("assumed_rate")
+        is_user_assumed = user_premises.get("rate_is_user_assumed", False)
+
+        # Do not label as user-assumed if official rate records are present in rate_context
+        if rate_context and rate_context.strip():
+            pass
+        elif assumed_rate is not None:
+            if is_user_assumed:
+                premise_lines.append(
+                    f"- User-Assumed Hypothetical GST Rate: {assumed_rate}% (Note: Use directly for calculation; state that it is a hypothetical user assumption, not verified statutory law)."
+                )
+            else:
+                premise_lines.append(
+                    f"- Applicable Statutory GST Rate (from conversation context / tariff): {assumed_rate}% (Note: This rate was retrieved from official tariff records for the commodity discussed; attribute it to the commodity/tariff, NOT as user input)."
+                )
+
         if user_premises.get("taxable_amount") is not None:
             premise_lines.append(f"- User Taxable / Base Amount: ₹{user_premises['taxable_amount']:,.2f}")
         if user_premises.get("discount_pct") is not None:
@@ -387,7 +460,12 @@ def build_user_prompt(
             st = user_premises["supply_type"].capitalize()
             premise_lines.append(f"- Supply Type: {st} Supply")
         if premise_lines:
-            sections.append("USER-PROVIDED PREMISES & INPUTS (HYPOTHETICAL / FACTUAL)\n\n" + "\n".join(premise_lines))
+            header_title = (
+                "USER-PROVIDED PREMISES & INPUTS (HYPOTHETICAL / FACTUAL)"
+                if is_user_assumed
+                else "USER TRANSACTION DETAILS & CONTEXT"
+            )
+            sections.append(f"{header_title}\n\n" + "\n".join(premise_lines))
 
     if legal_findings:
         lf_dict = (
@@ -672,6 +750,7 @@ def generate_answer(
     temperature: float = 0.1,
     max_tokens: int = 1500,
     direct_reasoning: bool = False,
+    history: list[Any] | None = None,
 ) -> dict[str, Any]:
     """Send grounded context to OpenAI and return the clean answer with timings and sources."""
     if not query.strip():
@@ -697,10 +776,20 @@ def generate_answer(
             legal_findings=legal_findings,
             calculation_result=calculation_result,
         )
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        for msg in history[-6:]:
+            if isinstance(msg, dict):
+                r = "user" if msg.get("role") in ("human", "user") else "assistant"
+                c = (msg.get("content") or "").strip()
+            else:
+                r = "user" if getattr(msg, "type", "") in ("human", "user") else "assistant"
+                c = (getattr(msg, "content", "") or "").strip()
+            if c:
+                if len(c) > 600:
+                    c = c[:600] + "..."
+                messages.append({"role": r, "content": c})
+    messages.append({"role": "user", "content": user_prompt})
 
     gen_start = time.perf_counter()
     try:
@@ -739,7 +828,7 @@ def generate_answer(
     }
 
 
-DEFAULT_ANSWER_TOP_K = 5
+DEFAULT_ANSWER_TOP_K = 10
 
 
 def run_gst_answer_flow(
@@ -1146,6 +1235,7 @@ def stream_answer(
     temperature: float = 0.1,
     max_tokens: int = 1500,
     direct_reasoning: bool = False,
+    history: list[Any] | None = None,
 ):
     """Stream response tokens from OpenAI, yielding (event_type, delta)."""
     if not query.strip():
@@ -1171,10 +1261,20 @@ def stream_answer(
             legal_findings=legal_findings,
             calculation_result=calculation_result,
         )
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        for msg in history[-6:]:
+            if isinstance(msg, dict):
+                r = "user" if msg.get("role") in ("human", "user") else "assistant"
+                c = (msg.get("content") or "").strip()
+            else:
+                r = "user" if getattr(msg, "type", "") in ("human", "user") else "assistant"
+                c = (getattr(msg, "content", "") or "").strip()
+            if c:
+                if len(c) > 600:
+                    c = c[:600] + "..."
+                messages.append({"role": r, "content": c})
+    messages.append({"role": "user", "content": user_prompt})
 
     try:
         stream = client.chat.completions.create(

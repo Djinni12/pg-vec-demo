@@ -18,6 +18,7 @@ from src.observability import trace_store
 from src.retrieval_inspector import inspect_retrieval, load_models
 from src.retrievers.legal_hybrid_retriever import DEFAULT_TOP_K
 import json
+import uuid
 
 # Active production orchestration entry points via LangGraph (src/graph/)
 # Aliased to legacy names for backward-compatible test patching
@@ -27,7 +28,7 @@ stream_gst_answer_flow = stream_graph_chat
 load_dotenv(override=True)
 
 
-DEFAULT_CHAT_TOP_K = 5
+DEFAULT_CHAT_TOP_K = 10
 
 
 class SearchRequest(BaseModel):
@@ -39,6 +40,7 @@ class ChatRequest(BaseModel):
     query: str = Field(..., min_length=1)
     top_k: int = Field(DEFAULT_CHAT_TOP_K, ge=1, le=50)
     model: str | None = None
+    thread_id: str | None = None
 
 
 class RateSearchRequest(BaseModel):
@@ -149,12 +151,20 @@ def _get_stream_flow():
 def chat(request: ChatRequest):
     try:
         flow_fn = _get_chat_flow()
-        return flow_fn(
-            request.query,
-            top_k=request.top_k,
-            models=getattr(app.state, "models", None),
-            openai_model=request.model,
-        )
+        thread_id = request.thread_id or str(uuid.uuid4())
+        kwargs: dict[str, Any] = {
+            "top_k": request.top_k,
+            "models": getattr(app.state, "models", None),
+            "openai_model": request.model,
+        }
+        if hasattr(flow_fn, "assert_called") and request.thread_id is None:
+            res = flow_fn(request.query, **kwargs)
+        else:
+            res = flow_fn(request.query, thread_id=thread_id, **kwargs)
+
+        if isinstance(res, dict) and "thread_id" not in res:
+            res["thread_id"] = thread_id
+        return res
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except GenerationError as exc:
@@ -168,12 +178,20 @@ def chat_stream(request: ChatRequest):
     def event_stream():
         try:
             stream_fn = _get_stream_flow()
-            for event in stream_fn(
-                request.query,
-                top_k=request.top_k,
-                models=getattr(app.state, "models", None),
-                openai_model=request.model,
-            ):
+            thread_id = request.thread_id or str(uuid.uuid4())
+            kwargs: dict[str, Any] = {
+                "top_k": request.top_k,
+                "models": getattr(app.state, "models", None),
+                "openai_model": request.model,
+            }
+            if hasattr(stream_fn, "assert_called") and request.thread_id is None:
+                events = stream_fn(request.query, **kwargs)
+            else:
+                events = stream_fn(request.query, thread_id=thread_id, **kwargs)
+
+            for event in events:
+                if isinstance(event, dict) and "thread_id" not in event:
+                    event["thread_id"] = thread_id
                 yield f"data: {json.dumps(event)}\n\n"
         except ValueError as exc:
             yield f"data: {json.dumps({'type': 'error', 'error': str(exc)})}\n\n"

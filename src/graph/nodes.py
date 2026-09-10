@@ -16,6 +16,7 @@ import time
 from typing import Any, Optional
 
 from openai import OpenAI
+from langchain_core.messages import AIMessage, HumanMessage
 
 from src.generators.answer_generator import (
     extract_combined_sources,
@@ -58,21 +59,28 @@ def planner_node(
     """
     t0 = time.perf_counter()
     query = state["user_query"]
-    plan = plan_capabilities(query, use_llm=use_llm)
+    prior_messages = state.get("messages", [])
+    plan = plan_capabilities(query, use_llm=use_llm, history=prior_messages)
 
     needs_legal = bool(plan.get("needs_legal_retrieval", False))
     needs_rate = bool(
         plan.get("needs_structured_rate_lookup", False)
         or plan.get("needs_hsn_lookup", False)
     )
+    needs_notification = bool(plan.get("needs_notification_retrieval", False))
     needs_calculation = bool(plan.get("needs_calculation", False))
 
     clean_queries = plan.get("clean_subqueries", {})
     user_premises = plan.get("user_premises", {})
 
+    # If rate query is generic/unnamed and user premise already states exempt/hypothetical without a named commodity
+    rate_q = (clean_queries.get("rate_query") or "").lower()
+    if needs_rate and any(g in rate_q for g in ["the product", "for the product", "unnamed product", "an item", "status for the product"]):
+        needs_rate = False
+
     # Grounded reasoning is required when retrievals are active AND reasoning/calculation is needed
     needs_grounded = bool(
-        (needs_legal or needs_rate) and (
+        (needs_legal or needs_rate or needs_notification) and (
             needs_calculation
             or plan.get("needs_temporal_reasoning", False)
             or plan.get("needs_comparison", False)
@@ -84,13 +92,13 @@ def planner_node(
 
     # Direct reasoning is strictly for retrieval-free queries
     needs_direct = bool(
-        not (needs_legal or needs_rate) and (
+        not (needs_legal or needs_rate or needs_notification) and (
             plan.get("needs_direct_reasoning", False)
             or (not needs_calculation and bool(user_premises))
         )
     )
 
-    if not needs_rate and not needs_legal:
+    if not needs_rate and not needs_legal and not needs_notification:
         route_str = "direct"
     elif needs_rate and needs_legal:
         route_str = "mixed"
@@ -98,6 +106,8 @@ def planner_node(
         route_str = "rate"
     elif needs_legal:
         route_str = "legal"
+    elif needs_notification:
+        route_str = "notification"
     else:
         route_str = "direct"
 
@@ -112,6 +122,7 @@ def planner_node(
             capability_flags={
                 "needs_legal": needs_legal,
                 "needs_rate": needs_rate,
+                "needs_notification": needs_notification,
                 "needs_direct_reasoning": needs_direct,
                 "needs_calculation": needs_calculation,
                 "needs_grounded_reasoning": needs_grounded,
@@ -130,6 +141,8 @@ def planner_node(
             selected_nodes.append("legal_retrieval")
         if needs_rate:
             selected_nodes.append("rate_lookup")
+        if needs_legal or needs_rate or needs_notification:
+            selected_nodes.append("notification_support")
         if needs_grounded:
             selected_nodes.append("grounded_reasoning")
         if needs_direct:
@@ -148,6 +161,7 @@ def planner_node(
     return {
         "needs_legal": needs_legal,
         "needs_rate": needs_rate,
+        "needs_notification": needs_notification,
         "needs_direct_reasoning": needs_direct,
         "needs_calculation": needs_calculation,
         "needs_grounded_reasoning": needs_grounded,
@@ -155,11 +169,13 @@ def planner_node(
         "user_premises": user_premises,
         "legal_results": [],
         "rate_results": [],
+        "notification_results": [],
         "reasoning_result": None,
         "calculation_inputs": None,
         "calculation_result": None,
         "route": route_str,
         "plan": plan,
+        "messages": [HumanMessage(content=query)],
     }
 
 
@@ -171,7 +187,7 @@ def legal_retrieval_node(
     *,
     models: Optional[LoadedModels] = None,
     db_url: Optional[str] = None,
-    top_k: int = 5,
+    top_k: int = 10,
 ) -> dict[str, Any]:
     """Executes full legal hybrid retrieval (BGE-M3 + BM25 + RRF + Reranker).
 
@@ -182,6 +198,17 @@ def legal_retrieval_node(
         state.get("clean_queries", {}).get("legal_query")
         or state["user_query"]
     )
+
+    q_lower = (state.get("user_query") or "").lower()
+    is_exempt_tax_scenario = any(
+        w in q_lower for w in ["exempt", "exemption", "bhulthi", "galti", "ભૂલથી"]
+    ) and any(
+        w in q_lower for w in ["collect", "tax", "gst", "18%", "5%", "12%", "28%", "ટેક્સ", "લીધો"]
+    ) and not any(
+        w in q_lower for w in ["interstate", "intra-state", "inter-state", "intrastate", "igst instead of", "cgst instead of"]
+    )
+    if is_exempt_tax_scenario and "76" not in legal_q and "credit note" not in legal_q.lower():
+        legal_q = f"{legal_q} tax collected on exempt supply but not paid to Government Section 76 credit note Section 34"
 
     retrieval_models = models or get_cached_models()
     data: dict[str, Any] = {}
@@ -197,6 +224,20 @@ def legal_retrieval_node(
     except Exception as exc:
         logger.warning(f"Legal retrieval error: {exc}")
         chunks = []
+
+    # Apply Legal Applicability Factual Scope Filter:
+    # If the user scenario is tax collected on exempt supplies,
+    # exclude provisions that strictly govern inter-state vs intra-state mismatch (Section 77, 19, 12).
+    if is_exempt_tax_scenario and chunks:
+        chunks = [
+            c for c in chunks
+            if not (
+                ("section 77" in (c.get("reference") or "").lower() or
+                 "section 19" in (c.get("reference") or "").lower() or
+                 "section 12" in (c.get("reference") or "").lower()) and
+                "wrongfully collected" in (c.get("title") or "").lower()
+            )
+        ]
 
     elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
     execution_id = state.get("execution_id")
@@ -224,7 +265,7 @@ def rate_lookup_node(
     state: GSTGraphState,
     *,
     db_url: Optional[str] = None,
-    limit: int = 5,
+    limit: int = 10,
 ) -> dict[str, Any]:
     """Retrieves structured GST rate records from the verified rate database/CSV.
 
@@ -265,28 +306,128 @@ def rate_lookup_node(
 
 
 # -----------------------------------------------------------------------------
+# Node 3b: Supporting Notification Retrieval
+# -----------------------------------------------------------------------------
+def notification_support_node(
+    state: GSTGraphState,
+    *,
+    models: Optional[LoadedModels] = None,
+    db_url: Optional[str] = None,
+    top_k: int = 2,
+) -> dict[str, Any]:
+    """Retrieves materially relevant supporting Gazette notification chunks via vector search.
+
+    Always triggered post-primary retrieval (rate_lookup or legal_retrieval), or when an explicit
+    notification query is present.
+    Constructs a semantic support query from discovered metadata, computes BGE-M3 dense query embedding,
+    searches pgvector, applies metadata-aware boosting, and preserves only materially relevant chunks.
+    """
+    t0 = time.perf_counter()
+    rate_results = state.get("rate_results", [])
+    legal_results = state.get("legal_results", [])
+    clean_queries = state.get("clean_queries", {}) or {}
+    explicit_notif_q = clean_queries.get("notification_query")
+    user_q = state.get("user_query", "")
+
+    support_metadata: dict[str, Any] = {}
+    query_parts: list[str] = []
+
+    if explicit_notif_q:
+        query_parts.append(explicit_notif_q)
+
+    if rate_results:
+        r0 = rate_results[0]
+        desc = r0.get("description") or ""
+        hsn = r0.get("code") or r0.get("hsn_code") or ""
+        notif_no = r0.get("notification_no") or r0.get("notification_number") or ""
+        sched = r0.get("schedule") or ""
+        serial = r0.get("serial_no") or ""
+        support_metadata.update({
+            "target_notification": notif_no,
+            "hsn_code": hsn,
+            "serial_no": serial,
+            "schedule": sched,
+        })
+        if desc:
+            query_parts.append(desc)
+        if hsn:
+            query_parts.append(f"HSN {hsn}")
+        if notif_no:
+            query_parts.append(f"notification {notif_no}")
+        if sched:
+            query_parts.append(sched)
+        if serial:
+            query_parts.append(f"entry {serial}")
+        query_parts.append("rate amendment exemption")
+
+    if legal_results and not rate_results:
+        legal_q = clean_queries.get("legal_query") or user_q
+        query_parts.append(legal_q)
+
+    if not query_parts:
+        query_parts.append(user_q)
+
+    semantic_query = " ".join(p for p in query_parts if p).strip()
+
+    retrieval_models = models or get_cached_models()
+    embed_model = retrieval_models.embedding_model if retrieval_models else None
+
+    from src.retrievers.notification_retriever import retrieve_supporting_notifications
+
+    try:
+        notif_chunks = retrieve_supporting_notifications(
+            semantic_query,
+            support_metadata=support_metadata,
+            top_k=top_k,
+            db_url=db_url,
+            model=embed_model,
+        )
+    except Exception as exc:
+        logger.warning(f"Notification support retrieval error: {exc}")
+        notif_chunks = []
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+    execution_id = state.get("execution_id")
+    if execution_id:
+        trace_store.record_notification_retrieval(
+            execution_id,
+            query=semantic_query,
+            chunks=notif_chunks,
+            timing_ms=elapsed_ms,
+            support_metadata=support_metadata,
+        )
+        trace_store.record_node_execution(
+            execution_id,
+            "notification_support",
+            status="success" if notif_chunks else "empty",
+            timing_ms=elapsed_ms,
+        )
+
+    return {"notification_results": notif_chunks}
+
+
+# -----------------------------------------------------------------------------
 # Node 4: Grounded Reasoning
 # -----------------------------------------------------------------------------
 def grounded_reasoning_node(state: GSTGraphState) -> dict[str, Any]:
-    """Reasons over retrieved legal and rate evidence.
+    """Reasons over retrieved legal, rate, and notification evidence.
 
     Determines how retrieved facts apply to the user scenario and prepares
-    structured inputs for the calculation_node.
+    structured inputs for the calculation_node according to the Source Interpretation Rules.
     Does NOT perform arithmetic itself.
     """
     t0 = time.perf_counter()
     user_premises = state.get("user_premises", {}) or {}
     rate_results = state.get("rate_results", [])
     legal_results = state.get("legal_results", [])
+    notification_results = state.get("notification_results", [])
 
     # Resolve applicable rate from rate_results or user premise (never invent)
     from src.generators.answer_generator import extract_rate_pct
     assumed_rate = user_premises.get("assumed_rate")
     rate_source: Optional[str] = None
 
-    if assumed_rate is not None:
-        rate_source = "User query premise"
-    elif rate_results:
+    if rate_results:
         calc_rate = extract_rate_pct(rate_results)
         if calc_rate is not None:
             assumed_rate = calc_rate
@@ -294,6 +435,10 @@ def grounded_reasoning_node(state: GSTGraphState) -> dict[str, Any]:
             hsn = r0.get("code") or ""
             desc = r0.get("description") or "Tariff item"
             rate_source = f"Tariff HSN {hsn} ({desc}) - {calc_rate}%"
+    elif user_premises.get("rate_is_user_assumed"):
+        rate_source = f"User hypothetical assumption ({assumed_rate}%)"
+    elif assumed_rate is not None:
+        rate_source = f"Statutory tariff rate from context ({assumed_rate}%)"
 
     taxable_amount = user_premises.get("taxable_amount") or user_premises.get("base_amount")
     discount_pct = float(user_premises.get("discount_pct") or 0.0)
@@ -366,9 +511,23 @@ def grounded_reasoning_node(state: GSTGraphState) -> dict[str, Any]:
                 "discount_pct": discount_pct,
             }
         elif assumed_rate is not None:
-            reasoning_parts.append(
-                f"Taxable value of ₹{amt:,.2f} is subject to GST at {assumed_rate}% ({rate_source})."
+            q_lower = (state.get("user_query") or "").lower()
+            is_exempt_tax_scenario = any(
+                w in q_lower for w in ["exempt", "exemption", "bhulthi", "galti", "ભૂલથી"]
+            ) and any(
+                w in q_lower for w in ["collect", "tax", "gst", "18%", "5%", "12%", "28%", "ટેક્સ", "લીધો"]
             )
+            if is_exempt_tax_scenario:
+                err_tax = amt * float(assumed_rate) / 100.0
+                reasoning_parts.append(
+                    f"Taxable value of ₹{amt:,.2f} had {assumed_rate}% GST (₹{err_tax:,.2f}) collected in error on an exempt product. "
+                    "Under Section 76(1) of the CGST Act, any amount collected as tax must be paid to the Government, whether the supply is taxable or not. "
+                    f"Under Section 34 of the CGST Act, the supplier may issue a Credit Note to the customer to rectify the excess tax and refund or adjust the ₹{err_tax:,.2f}."
+                )
+            else:
+                reasoning_parts.append(
+                    f"Taxable value of ₹{amt:,.2f} is subject to GST at {assumed_rate}% ({rate_source})."
+                )
             calc_inputs = {
                 "operation": "tax_on_value",
                 "taxable_value": amt,
@@ -380,6 +539,22 @@ def grounded_reasoning_node(state: GSTGraphState) -> dict[str, Any]:
             )
     else:
         reasoning_parts.append("Evaluated statutory provisions and tariff classifications for user scenario.")
+
+    # Reconcile supporting Gazette notifications per Source Interpretation Rules
+    for nchunk in notification_results:
+        sm = nchunk.get("source_metadata", {})
+        notif_no = sm.get("notification_number")
+        target_notif = sm.get("target_notification")
+        op_type = sm.get("operation_type")
+        eff_date = sm.get("effective_date")
+        if op_type and target_notif:
+            reasoning_parts.append(
+                f"Amending Notification No. {notif_no} ({op_type}) modifies {target_notif} effective from {eff_date or 'as notified'}."
+            )
+        elif notif_no and eff_date:
+            reasoning_parts.append(
+                f"Notification No. {notif_no} effective from {eff_date} provides authoritative Gazette grounding."
+            )
 
     reasoning_text = "\n\n".join(reasoning_parts)
     elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
@@ -421,8 +596,10 @@ def direct_reasoning_node(state: GSTGraphState) -> dict[str, Any]:
     assumed_rate = user_premises.get("assumed_rate")
     rate_source: Optional[str] = None
 
-    if assumed_rate is not None:
-        rate_source = "User query premise"
+    if user_premises.get("rate_is_user_assumed"):
+        rate_source = f"User hypothetical assumption ({assumed_rate}%)"
+    elif assumed_rate is not None:
+        rate_source = f"Statutory tariff rate from context ({assumed_rate}%)"
     else:
         m_rate = re.search(
             r"\b(\d+(?:\.\d+)?)\s*%\s*(?:gst|tax)\b",
@@ -587,13 +764,15 @@ def calculation_node(state: GSTGraphState) -> dict[str, Any]:
             calc_in = CalculationInputs(**raw_inputs)
             rate_used = calc_in.tax_rate_pct
             if rate_used is not None:
-                if user_premises.get("assumed_rate") == rate_used:
-                    rate_source_resolved = "User query premise"
-                elif rate_results:
+                if rate_results:
                     r0 = rate_results[0]
                     hsn = r0.get("code") or ""
                     desc = r0.get("description") or "Tariff item"
                     rate_source_resolved = f"Tariff HSN {hsn} ({desc}) - {rate_used}%"
+                elif user_premises.get("rate_is_user_assumed"):
+                    rate_source_resolved = f"User hypothetical assumption ({rate_used}%)"
+                elif user_premises.get("assumed_rate") == rate_used:
+                    rate_source_resolved = f"Statutory tariff rate from context ({rate_used}%)"
                 else:
                     rate_source_resolved = f"Extracted from query ({rate_used}%)"
 
@@ -651,6 +830,7 @@ def synthesis_node(
     query = state["user_query"]
     legal_results = state.get("legal_results", [])
     rate_results = state.get("rate_results", [])
+    notification_results = state.get("notification_results", [])
     reasoning_res = state.get("reasoning_result")
     calc_res = state.get("calculation_result")
     user_premises = state.get("user_premises")
@@ -659,12 +839,17 @@ def synthesis_node(
         state.get("needs_direct_reasoning", False)
         and not state.get("needs_legal", False)
         and not state.get("needs_rate", False)
+        and not state.get("needs_notification", False)
     )
 
     # Extract unified citations
-    all_chunks = list(legal_results)
+    all_chunks = list(legal_results) + list(notification_results)
     sources = extract_combined_sources(chunks=all_chunks, rate_results=rate_results)
     model_name = get_configured_model(model)
+
+    # Extract prior dialogue turns (all messages before the current query)
+    all_msgs = state.get("messages", [])
+    prior_turns = all_msgs[:-1] if len(all_msgs) > 1 else []
 
     # Attempt LLM generation
     try:
@@ -672,11 +857,13 @@ def synthesis_node(
             query=query,
             chunks=legal_results if legal_results else None,
             rate_results=rate_results if rate_results else None,
+            notification_chunks=notification_results if notification_results else None,
             user_premises=user_premises,
             calculation_result=calc_res,
             client=client,
             model=model,
             direct_reasoning=is_direct,
+            history=prior_turns,
         )
         answer = gen.get("answer", "")
         if gen.get("sources"):
@@ -688,6 +875,7 @@ def synthesis_node(
             query=query,
             rate_results=rate_results,
             legal_results=legal_results,
+            notification_results=notification_results,
             reasoning_result=reasoning_res,
             calculation_result=calc_res,
         )
@@ -713,6 +901,7 @@ def synthesis_node(
         "final_answer": answer,
         "sources": sources,
         "model_used": model_name,
+        "messages": [AIMessage(content=answer)],
     }
 
 
@@ -720,6 +909,7 @@ def _build_deterministic_synthesis(
     query: str,
     rate_results: list[dict[str, Any]],
     legal_results: list[dict[str, Any]],
+    notification_results: Optional[list[dict[str, Any]]] = None,
     reasoning_result: Optional[str] = None,
     calculation_result: Optional[dict[str, Any]] = None,
 ) -> str:
@@ -761,7 +951,18 @@ def _build_deterministic_synthesis(
             rate_sec.append(f"- CGST Rate: {cgst} | SGST Rate: {sgst}")
         sections.append("\n".join(rate_sec))
 
-    # 2. Legal Findings
+    # 2. Supporting Notifications
+    if notification_results:
+        notif_lines = ["Supporting Gazette Evidence:"]
+        for idx, chunk in enumerate(notification_results[:2], 1):
+            ref = chunk.get("reference") or "Notification"
+            title = chunk.get("title") or ""
+            content = (chunk.get("content") or chunk.get("snippet") or "").strip()
+            first_sentence = content.split("\n")[0] if content else ""
+            notif_lines.append(f"{idx}. {ref} ({title}):\n   {first_sentence}")
+        sections.append("\n\n".join(notif_lines))
+
+    # 3. Legal Findings
     if legal_results:
         legal_lines = ["Applicable Legal Provisions:"]
         for idx, chunk in enumerate(legal_results[:3], 1):
@@ -772,7 +973,7 @@ def _build_deterministic_synthesis(
             legal_lines.append(f"{idx}. {ref} ({title}):\n   {first_sentence}")
         sections.append("\n\n".join(legal_lines))
 
-    # 3. Direct Reasoning / Calculations
+    # 4. Direct Reasoning / Calculations
     if calculation_result and calculation_result.get("status") == "success":
         calc_lines = [
             f"Verified Calculation: ₹{calculation_result.get('result_value', 0.0):,.2f}",

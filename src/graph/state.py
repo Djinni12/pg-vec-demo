@@ -5,13 +5,17 @@ Defines the shared state dictionary passed across all nodes in the graph.
 
 from __future__ import annotations
 
-from typing import Any, Optional, TypedDict
+from typing import Annotated, Any, Optional, TypedDict
+
+from langchain_core.messages import BaseMessage
+from langgraph.graph.message import add_messages
 
 
 class GSTGraphState(TypedDict, total=False):
     """Shared state dictionary passed across all nodes in the GST LangGraph.
 
     Attributes:
+        messages: LangGraph-managed conversation message history.
         user_query: The incoming user query or question.
         needs_legal: Planner flag indicating statutory/legal RAG retrieval is needed.
         needs_rate: Planner flag indicating structured GST rate lookup is needed.
@@ -31,9 +35,11 @@ class GSTGraphState(TypedDict, total=False):
         error: Optional error message if any node encountered an error.
     """
 
+    messages: Annotated[list[BaseMessage], add_messages]
     user_query: str
     needs_legal: bool
     needs_rate: bool
+    needs_notification: bool
     needs_direct_reasoning: bool
     needs_calculation: bool
     needs_grounded_reasoning: bool
@@ -41,6 +47,7 @@ class GSTGraphState(TypedDict, total=False):
     user_premises: dict[str, Any]
     legal_results: list[dict[str, Any]]
     rate_results: list[dict[str, Any]]
+    notification_results: list[dict[str, Any]]
     reasoning_result: Optional[str]
     calculation_inputs: Optional[dict[str, Any]]
     calculation_result: Optional[dict[str, Any]]
@@ -52,4 +59,5 @@ class GSTGraphState(TypedDict, total=False):
     model_used: Optional[str]
     error: Optional[str]
     execution_id: Optional[str]
+    thread_id: Optional[str]
 
