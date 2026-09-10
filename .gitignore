@@ -1,6 +1,48 @@
-```
+# Environment files
+.env
+.env.local
+*.env.*
+*.env
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled Python files
+*.cpython-*.pyc
+*.pyc.*
+
+# Test cache
+.pytest_cache/
+.coverage
+coverage/
+
+# Logs
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Build artifacts
+dist/
+build/
+target/
+
+# Dependencies
+.venv/
+venv/
+node_modules/
+.mypy_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
 # Patch files
 *.patch
-
-
-```
