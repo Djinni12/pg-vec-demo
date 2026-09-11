@@ -137,6 +137,58 @@ def test_trace_store_records_all_trace_dimensions():
     assert "thinking" not in trace["synthesis"]
 
 
+def test_trace_store_records_query_decomposition():
+    store = TraceStore(max_size=10)
+    eid = "test-decomp-trace-1"
+    store.create_trace(eid, "I gave a discount after invoicing. Can I reduce GST liability and how do I adjust it?")
+
+    decomp_payload = {
+        "needs_query_decomposition": True,
+        "retrieval_subqueries": [
+            {"id": "legal_1", "type": "legal", "query": "conditions for post-supply discount to reduce taxable value"},
+            {"id": "legal_2", "type": "legal", "query": "procedure for credit note adjustment of tax liability"},
+        ],
+        "legal_subqueries": [
+            {"id": "legal_1", "type": "legal", "query": "conditions for post-supply discount to reduce taxable value"},
+            {"id": "legal_2", "type": "legal", "query": "procedure for credit note adjustment of tax liability"},
+        ],
+        "rate_subqueries": [],
+        "subqueries_count": 2,
+        "legal_subqueries_count": 2,
+        "rate_subqueries_count": 0,
+    }
+
+    store.record_planner(
+        eid,
+        capability_flags={
+            "needs_legal": True,
+            "needs_rate": False,
+            "needs_direct_reasoning": False,
+            "needs_calculation": False,
+            "needs_clarification": False,
+            "needs_query_decomposition": True,
+        },
+        clean_subqueries={"rate_query": None, "legal_query": "conditions for post-supply discount to reduce taxable value", "route": "legal"},
+        extracted_user_premises={},
+        clarification_decision={"needs_clarification": False, "clarification_prompt": None},
+        query_decomposition=decomp_payload,
+        timing_ms=5.0,
+    )
+
+    # Check list_traces includes has_decomposition
+    summaries = store.list_traces()
+    assert len(summaries) == 1
+    assert summaries[0]["execution_id"] == eid
+    assert summaries[0]["has_decomposition"] is True
+
+    # Check full trace content
+    trace = store.get_trace(eid)
+    assert trace["planner"]["capability_flags"]["needs_query_decomposition"] is True
+    assert trace["planner"]["query_decomposition"]["subqueries_count"] == 2
+    assert trace["planner"]["query_decomposition"]["legal_subqueries_count"] == 2
+    assert len(trace["planner"]["query_decomposition"]["retrieval_subqueries"]) == 2
+
+
 def test_trace_store_concurrent_thread_safety():
     store = TraceStore(max_size=100)
     errors = []

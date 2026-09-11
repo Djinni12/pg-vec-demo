@@ -12,10 +12,13 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Any, Optional
 
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from src.observability.llm_usage_tracker import record_llm_call
 
 logger = logging.getLogger(__name__)
 
@@ -265,12 +268,23 @@ def interpret_legal_findings(
                 {"role": "user", "content": user_msg},
             ]
 
+        t_start = time.perf_counter()
         resp = llm_client.chat.completions.create(
             model=model_name,
             messages=messages,
             response_format={"type": "json_object"},
             temperature=0.0,
         )
+        latency_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+        try:
+            record_llm_call(
+                stage="grounded_reasoning",
+                model=model_name,
+                response=resp,
+                latency_ms=latency_ms,
+            )
+        except Exception:
+            pass
         content = resp.choices[0].message.content or "{}"
         data = extract_json_payload(content)
 

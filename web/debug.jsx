@@ -32,6 +32,11 @@ function RouteBadge({ route }) {
   return <span className="badge badge-direct">⚙ Direct / Calc</span>;
 }
 
+function DecompBadge({ active }) {
+  if (!active) return null;
+  return <span className="badge badge-decomp" title="Query Decomposition Active">🔀 Decomposed</span>;
+}
+
 // -----------------------------------------------------------------------------
 // Main Application Component
 // -----------------------------------------------------------------------------
@@ -227,7 +232,10 @@ function DebugApp() {
                   className={`trace-item ${isSelected ? "selected" : ""}`}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <RouteBadge route={t.route} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <RouteBadge route={t.route} />
+                      {t.has_decomposition && <DecompBadge active={true} />}
+                    </div>
                     <span style={{ fontSize: 11, color: "#8e9fa5", fontFamily: "var(--mono-font)" }}>
                       {formatTimestamp(t.timestamp)}
                     </span>
@@ -236,10 +244,24 @@ function DebugApp() {
                     {t.query || "(Empty query)"}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11 }}>
-                    <StatusBadge status={t.status} />
-                    <span style={{ color: "#38bdf8", fontFamily: "var(--mono-font)", fontWeight: 500 }}>
-                      {formatMs(t.total_timing_ms)}
-                    </span>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <StatusBadge status={t.status} />
+                      {t.total_tokens > 0 && (
+                        <span style={{ color: "#a78bfa", fontFamily: "var(--mono-font)", fontSize: 10 }}>
+                          {t.total_tokens} tok
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      {t.estimated_cost_usd !== null && t.estimated_cost_usd !== undefined && (
+                        <span style={{ color: "#4ade80", fontFamily: "var(--mono-font)", fontSize: 10 }}>
+                          ${Number(t.estimated_cost_usd).toFixed(4)}
+                        </span>
+                      )}
+                      <span style={{ color: "#38bdf8", fontFamily: "var(--mono-font)", fontWeight: 500 }}>
+                        {formatMs(t.total_timing_ms)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -278,7 +300,18 @@ function DebugApp() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <RouteBadge route={selectedTrace.planner?.clean_subqueries?.route || "direct"} />
+                  {Boolean(selectedTrace.planner?.query_decomposition?.needs_query_decomposition || selectedTrace.planner?.capability_flags?.needs_query_decomposition) && (
+                    <DecompBadge active={true} />
+                  )}
                   <StatusBadge status={selectedTrace.status} />
+                  {selectedTrace.llm_usage?.total_cost_usd !== null && selectedTrace.llm_usage?.total_cost_usd !== undefined && (
+                    <div style={{ textAlign: "right", padding: "6px 12px", background: "#161e24", border: "1px solid #233039", borderRadius: 6 }}>
+                      <div style={{ fontSize: 10, textTransform: "uppercase", color: "#8e9fa5", fontWeight: 600 }}>LLM Cost</div>
+                      <div style={{ fontSize: 15, fontFamily: "var(--mono-font)", color: "#4ade80", fontWeight: 600 }}>
+                        ${Number(selectedTrace.llm_usage.total_cost_usd).toFixed(6)}
+                      </div>
+                    </div>
+                  )}
                   <div style={{ textAlign: "right", padding: "6px 12px", background: "#161e24", border: "1px solid #233039", borderRadius: 6 }}>
                     <div style={{ fontSize: 10, textTransform: "uppercase", color: "#8e9fa5", fontWeight: 600 }}>Total Latency</div>
                     <div style={{ fontSize: 15, fontFamily: "var(--mono-font)", color: "#38bdf8", fontWeight: 600 }}>
@@ -328,6 +361,12 @@ function DebugApp() {
                 📜 Gazette Notifications ({selectedTrace.notification_retrieval?.returned_chunks?.length || 0})
               </button>
               <button
+                className={`debug-tab-btn ${activeTab === "web" ? "active" : ""}`}
+                onClick={() => setActiveTab("web")}
+              >
+                🌐 Web Search ({selectedTrace.web_search_retrieval?.returned_chunks?.length || 0})
+              </button>
+              <button
                 className={`debug-tab-btn ${activeTab === "reasoning" ? "active" : ""}`}
                 onClick={() => setActiveTab("reasoning")}
               >
@@ -344,6 +383,12 @@ function DebugApp() {
                 onClick={() => setActiveTab("synthesis")}
               >
                 📝 Synthesis & Sources
+              </button>
+              <button
+                className={`debug-tab-btn ${activeTab === "llm_usage" ? "active" : ""}`}
+                onClick={() => setActiveTab("llm_usage")}
+              >
+                🪙 LLM Usage & Cost {selectedTrace.llm_usage?.total_calls > 0 ? `(${selectedTrace.llm_usage.total_calls})` : ""}
               </button>
             </div>
 
@@ -367,6 +412,9 @@ function DebugApp() {
               {activeTab === "notifications" && (
                 <NotificationRetrievalView trace={selectedTrace} />
               )}
+              {activeTab === "web" && (
+                <WebSearchView trace={selectedTrace} />
+              )}
               {activeTab === "reasoning" && (
                 <ReasoningView trace={selectedTrace} />
               )}
@@ -375,6 +423,9 @@ function DebugApp() {
               )}
               {activeTab === "synthesis" && (
                 <SynthesisView trace={selectedTrace} />
+              )}
+              {activeTab === "llm_usage" && (
+                <LLMUsageView trace={selectedTrace} />
               )}
             </div>
           </>
@@ -403,6 +454,7 @@ function WaterfallView({ trace }) {
     { key: "reranker_ms", label: "Cross-Encoder Reranker", val: timings.reranker_ms || 0, color: "#a78bfa" },
     { key: "rate_lookup_ms", label: "Tariff Rate Lookup", val: timings.rate_lookup_ms || 0, color: "#fb923c" },
     { key: "notification_support_ms", label: "Supporting Gazette Notifications", val: timings.notification_support_ms || trace.graph_execution?.node_timings_ms?.["notification_support"] || 0, color: "#eab308" },
+    { key: "web_search_ms", label: "Fallback Web Search", val: timings.web_search_ms || trace.graph_execution?.node_timings_ms?.["web_search"] || 0, color: "#38bdf8" },
     { key: "grounded_reasoning_ms", label: "Grounded Reasoning", val: timings.grounded_reasoning_ms || 0, color: "#f472b6" },
     { key: "direct_reasoning_ms", label: "Direct Reasoning", val: timings.direct_reasoning_ms || 0, color: "#e879f9" },
     { key: "calculation_ms", label: "Deterministic Calculator", val: timings.calculation_ms || 0, color: "#facc15" },
@@ -423,6 +475,14 @@ function WaterfallView({ trace }) {
             Single-pass execution observed live (no rerun)
           </span>
         </div>
+        {Boolean(trace.planner?.query_decomposition?.needs_query_decomposition || trace.planner?.capability_flags?.needs_query_decomposition) && (
+          <div style={{ padding: "10px 14px", background: "rgba(168, 85, 247, 0.08)", border: "1px solid rgba(168, 85, 247, 0.3)", borderRadius: 6, marginBottom: 14, display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#e9d5ff" }}>
+            <span style={{ fontSize: 16 }}>🔀</span>
+            <div>
+              <strong>Query Decomposition Active:</strong> {trace.planner?.query_decomposition?.retrieval_subqueries?.length || "Multiple"} standalone subqueries dispatched and executed concurrently through the retrieval pipeline, deduplicated, and bounded before notification support.
+            </div>
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 12, overflowX: "auto", padding: "10px 0" }}>
           <FlowStepNode
             title="START"
@@ -459,6 +519,17 @@ function WaterfallView({ trace }) {
             status={nodeStatuses["notification_support"]}
             ms={nodeTimings["notification_support"]}
           />
+          {executedNodes.includes("web_search") && (
+            <>
+              <ArrowRight />
+              <FlowStepNode
+                title="web_search"
+                executed={true}
+                status={nodeStatuses["web_search"]}
+                ms={nodeTimings["web_search"]}
+              />
+            </>
+          )}
           <ArrowRight />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <FlowStepNode
@@ -611,6 +682,7 @@ function PlannerView({ trace }) {
           <FlagCard label="needs_direct_reasoning" value={flags.needs_direct_reasoning} desc="Direct calculation / arithmetic" />
           <FlagCard label="needs_calculation" value={flags.needs_calculation} desc="Mathematical tax / discount formula" />
           <FlagCard label="needs_clarification" value={flags.needs_clarification} desc="Query requires user clarification" />
+          <FlagCard label="needs_query_decomposition" value={flags.needs_query_decomposition} desc="Multi-intent query decomposed into standalone subqueries" />
         </div>
       </div>
 
@@ -641,6 +713,55 @@ function PlannerView({ trace }) {
           </tbody>
         </table>
       </div>
+
+      {p.query_decomposition && p.query_decomposition.retrieval_subqueries && p.query_decomposition.retrieval_subqueries.length > 0 && (
+        <div className="card" style={{ borderColor: "#a855f7", background: "rgba(168, 85, 247, 0.04)" }}>
+          <div className="card-header">
+            <div className="card-title" style={{ color: "#c084fc" }}>
+              🔀 Decomposed Retrieval Subqueries (Independent Parallel Execution)
+            </div>
+            <span style={{ fontSize: 12, color: "#8e9fa5" }}>
+              {p.query_decomposition.retrieval_subqueries.length} standalone subqueries generated & dispatched concurrently
+            </span>
+          </div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: 110 }}>Subquery ID</th>
+                <th style={{ width: 100 }}>Type</th>
+                <th>Subquery Text</th>
+                <th style={{ width: 180 }}>Target Retriever</th>
+              </tr>
+            </thead>
+            <tbody>
+              {p.query_decomposition.retrieval_subqueries.map((sq, idx) => {
+                const isRate = (sq.type || "").toLowerCase() === "rate";
+                const sqId = sq.id || `${sq.type || "legal"}_${idx + 1}`;
+                return (
+                  <tr key={idx}>
+                    <td>
+                      <code style={{ color: "#cbd5e1", fontFamily: "var(--mono-font)", fontWeight: 600 }}>{sqId}</code>
+                    </td>
+                    <td>
+                      <span className={`badge ${isRate ? "badge-rate" : "badge-legal"}`}>
+                        {isRate ? "🏷 rate" : "§ legal"}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: 13, color: isRate ? "#fb923c" : "#38bdf8", fontWeight: 500 }}>
+                      "{sq.query}"
+                    </td>
+                    <td>
+                      <code style={{ fontSize: 11, color: "#8e9fa5" }}>
+                        {isRate ? "retrieve_rates()" : "inspect_retrieval()"}
+                      </code>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="card">
         <div className="card-header">
@@ -784,6 +905,21 @@ function LegalRetrievalView({ trace, subTab, setSubTab }) {
           <span style={{ color: "#8e9fa5", fontSize: 12 }}>Retrieval Query: </span>
           <code style={{ color: "#38bdf8", fontWeight: 600 }}>{query || "(None)"}</code>
         </div>
+        {trace.planner?.query_decomposition?.legal_subqueries && trace.planner.query_decomposition.legal_subqueries.length > 0 && (
+          <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(168, 85, 247, 0.05)", border: "1px solid rgba(168, 85, 247, 0.2)", borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: "#c084fc", fontWeight: 600, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>🔀 Decomposed Legal Subqueries Executed Concurrently ({trace.planner.query_decomposition.legal_subqueries.length}):</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {trace.planner.query_decomposition.legal_subqueries.map((sq, idx) => (
+                <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                  <span className="badge badge-decomp" style={{ fontSize: 10 }}>🎯 {sq.id || `legal_${idx + 1}`}</span>
+                  <code style={{ color: "#38bdf8" }}>"{sq.query}"</code>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
           <div style={{ padding: 10, background: "#0e1418", border: "1px solid #1f2b33", borderRadius: 4 }}>
             <div style={{ fontSize: 11, color: "#8e9fa5" }}>Dense (BGE-M3)</div>
@@ -861,10 +997,20 @@ function ChunksTable({ chunks, showScore }) {
         return (
           <div key={i} style={{ padding: 14, background: "#0e1418", border: "1px solid #1f2b33", borderRadius: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span className="badge badge-legal">{docType}</span>
                 <strong style={{ fontSize: 13, color: "#f1f7f9" }}>{docRef}</strong>
                 {c.title && <span style={{ fontSize: 12, color: "#8e9fa5" }}>— {c.title}</span>}
+                {c.subquery_ids && c.subquery_ids.length > 0 && (
+                  <span className="badge badge-decomp" title="Originating Subquery IDs">
+                    🎯 Matched: {c.subquery_ids.join(", ")}
+                  </span>
+                )}
+                {c.subquery_id && (!c.subquery_ids || c.subquery_ids.length === 0) && (
+                  <span className="badge badge-decomp" title="Originating Subquery ID">
+                    🎯 {c.subquery_id}
+                  </span>
+                )}
               </div>
               {showScore && score !== undefined && (
                 <span style={{ fontSize: 11, fontFamily: "var(--mono-font)", color: "#38bdf8" }}>
@@ -872,6 +1018,11 @@ function ChunksTable({ chunks, showScore }) {
                 </span>
               )}
             </div>
+            {c.retrieval_subquery && (
+              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, marginBottom: 8, fontStyle: "italic" }}>
+                Provenance Subquery: <span style={{ color: "#38bdf8" }}>"{c.retrieval_subquery}"</span>
+              </div>
+            )}
             <div style={{ fontSize: 12, lineHeight: 1.6, color: "#cbd5e1", whiteSpace: "pre-wrap", maxHeight: 200, overflowY: "auto" }}>
               {c.content || c.chunk_text || c.text}
             </div>
@@ -928,6 +1079,8 @@ function RateRetrievalView({ trace }) {
   const query = r.lookup_query || "";
   const candidates = r.returned_candidates || [];
   const selected = r.selected_rate_used_downstream;
+  const decomp = trace.planner?.query_decomposition;
+  const rateSubqueries = decomp?.rate_subqueries || [];
 
   return (
     <div>
@@ -942,6 +1095,21 @@ function RateRetrievalView({ trace }) {
           <span style={{ color: "#8e9fa5", fontSize: 12 }}>Tariff Query: </span>
           <code style={{ color: "#fb923c", fontWeight: 600 }}>{query || "(None)"}</code>
         </div>
+        {rateSubqueries.length > 0 && (
+          <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(168, 85, 247, 0.05)", border: "1px solid rgba(168, 85, 247, 0.2)", borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: "#c084fc", fontWeight: 600, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>🔀 Decomposed Rate Subqueries Executed Concurrently ({rateSubqueries.length}):</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {rateSubqueries.map((sq, idx) => (
+                <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                  <span className="badge badge-decomp" style={{ fontSize: 10 }}>🎯 {sq.id || `rate_${idx + 1}`}</span>
+                  <code style={{ color: "#fb923c" }}>"{sq.query}"</code>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {selected && (
@@ -991,6 +1159,7 @@ function RateRetrievalView({ trace }) {
                 <th>SGST</th>
                 <th>Cess</th>
                 <th>Notification / Condition</th>
+                <th>Provenance</th>
               </tr>
             </thead>
             <tbody>
@@ -1010,6 +1179,33 @@ function RateRetrievalView({ trace }) {
                     <td style={{ fontFamily: "var(--mono-font)" }}>{item.sgst_rate_pct ?? "—"}%</td>
                     <td style={{ fontFamily: "var(--mono-font)" }}>{item.cess ?? "0%"}</td>
                     <td style={{ fontSize: 11, color: "#8e9fa5" }}>{item.condition || item.notification || "—"}</td>
+                    <td>
+                      {item.subquery_ids && item.subquery_ids.length > 0 ? (
+                        <div>
+                          <span className="badge badge-decomp" title={item.retrieval_subquery ? `Query: ${item.retrieval_subquery}` : ""}>
+                            🎯 {item.subquery_ids.join(", ")}
+                          </span>
+                          {item.retrieval_subquery && (
+                            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4, maxWidth: 200, fontStyle: "italic" }}>
+                              "{item.retrieval_subquery}"
+                            </div>
+                          )}
+                        </div>
+                      ) : item.subquery_id ? (
+                        <div>
+                          <span className="badge badge-decomp" title={item.retrieval_subquery ? `Query: ${item.retrieval_subquery}` : ""}>
+                            🎯 {item.subquery_id}
+                          </span>
+                          {item.retrieval_subquery && (
+                            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4, maxWidth: 200, fontStyle: "italic" }}>
+                              "{item.retrieval_subquery}"
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "#64748b" }}>—</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -1119,6 +1315,83 @@ function NotificationRetrievalView({ trace }) {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// 5c. Fallback Web Search View
+// -----------------------------------------------------------------------------
+function WebSearchView({ trace }) {
+  const webData = trace.web_search_retrieval || {};
+  const chunks = webData.returned_chunks || [];
+  const discoveredHsn = webData.discovered_hsn;
+  const q = webData.query;
+  const timing = webData.timing_ms;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">🌐 Fallback Web Search Retrieval</div>
+          <span style={{ fontSize: 12, color: "#8e9fa5" }}>
+            Latency: {formatMs(timing)}
+          </span>
+        </div>
+        <div style={{ fontSize: 12, color: "#8e9fa5", marginBottom: 14 }}>
+          Triggered strictly as a fallback when local structured rate/HSN or legal knowledge sources reported missing evidence. Official and authoritative GST sources are prioritized.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+          <div className="metric-box">
+            <div className="metric-label">Search Query</div>
+            <div className="metric-value" style={{ fontSize: 13, wordBreak: "break-all" }}>{q || "None"}</div>
+          </div>
+          <div className="metric-box">
+            <div className="metric-label">Discovered Identifier (HSN)</div>
+            <div className="metric-value" style={{ color: discoveredHsn ? "#34d399" : "#94a3b8" }}>
+              {discoveredHsn ? `HSN ${discoveredHsn}` : "None detected"}
+            </div>
+          </div>
+          <div className="metric-box">
+            <div className="metric-label">Identifier Feedback Loop</div>
+            <div className="metric-value" style={{ fontSize: 12, color: discoveredHsn ? "#38bdf8" : "#94a3b8" }}>
+              {discoveredHsn ? `Fed ${discoveredHsn} back into local rate lookup` : "Direct web evidence"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">Web Chunks & Provenance ({chunks.length})</div>
+        </div>
+        {chunks.length === 0 ? (
+          <div style={{ color: "#8e9fa5", fontSize: 13, padding: "12px 0" }}>
+            No web search results were retrieved for this execution.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
+            {chunks.map((c, i) => (
+              <div key={i} style={{ background: "#0e1418", border: "1px solid #1f2b33", borderRadius: 6, padding: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontWeight: 600, color: "#e2e8f0", fontSize: 13 }}>#{c.rank || i + 1} {c.title || "Web Source"}</span>
+                  <span className="badge badge-rate">{c.domain || "web"}</span>
+                </div>
+                {c.url && (
+                  <div style={{ marginBottom: 8 }}>
+                    <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8", fontSize: 12, textDecoration: "underline" }}>
+                      🔗 {c.url}
+                    </a>
+                  </div>
+                )}
+                <div style={{ fontSize: 12, lineHeight: 1.6, color: "#cbd5e1", whiteSpace: "pre-wrap", background: "#080b0e", padding: 10, borderRadius: 4, border: "1px solid #141c22" }}>
+                  {c.snippet || c.content}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -1330,6 +1603,126 @@ function SynthesisView({ trace }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function LLMUsageView({ trace }) {
+  const usage = trace.llm_usage || {};
+  const calls = usage.calls || [];
+  const [copied, setCopied] = useState(false);
+
+  const copyDebug = () => {
+    if (usage.formatted_debug) {
+      navigator.clipboard.writeText(usage.formatted_debug);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 16 }}>
+        <div className="card" style={{ margin: 0 }}>
+          <div style={{ fontSize: 11, color: "#8e9fa5", textTransform: "uppercase" }}>Total Estimated Cost</div>
+          <div style={{ fontSize: 20, color: "#4ade80", fontFamily: "var(--mono-font)", fontWeight: 700, marginTop: 4 }}>
+            {usage.total_cost_usd !== null && usage.total_cost_usd !== undefined ? `$${Number(usage.total_cost_usd).toFixed(6)}` : "N/A"}
+          </div>
+        </div>
+        <div className="card" style={{ margin: 0 }}>
+          <div style={{ fontSize: 11, color: "#8e9fa5", textTransform: "uppercase" }}>Total Tokens</div>
+          <div style={{ fontSize: 20, color: "#38bdf8", fontFamily: "var(--mono-font)", fontWeight: 700, marginTop: 4 }}>
+            {usage.total_tokens?.toLocaleString() || 0}
+          </div>
+        </div>
+        <div className="card" style={{ margin: 0 }}>
+          <div style={{ fontSize: 11, color: "#8e9fa5", textTransform: "uppercase" }}>Input (Cached)</div>
+          <div style={{ fontSize: 16, color: "#f8fafc", fontFamily: "var(--mono-font)", fontWeight: 600, marginTop: 4 }}>
+            {usage.total_input_tokens?.toLocaleString() || 0} <span style={{ fontSize: 12, color: "#a78bfa" }}>({usage.total_cached_input_tokens?.toLocaleString() || 0} cached)</span>
+          </div>
+        </div>
+        <div className="card" style={{ margin: 0 }}>
+          <div style={{ fontSize: 11, color: "#8e9fa5", textTransform: "uppercase" }}>Output Tokens</div>
+          <div style={{ fontSize: 16, color: "#f8fafc", fontFamily: "var(--mono-font)", fontWeight: 600, marginTop: 4 }}>
+            {usage.total_output_tokens?.toLocaleString() || 0}
+          </div>
+        </div>
+        <div className="card" style={{ margin: 0 }}>
+          <div style={{ fontSize: 11, color: "#8e9fa5", textTransform: "uppercase" }}>Total LLM Latency</div>
+          <div style={{ fontSize: 16, color: "#f59e0b", fontFamily: "var(--mono-font)", fontWeight: 600, marginTop: 4 }}>
+            {formatMs(usage.total_latency_ms)}
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">LLM Calls Breakdown by Stage ({calls.length})</div>
+        </div>
+        {calls.length === 0 ? (
+          <div style={{ color: "#8e9fa5", fontSize: 13 }}>
+            No LLM calls recorded for this request (local/deterministic retrieval and fallback).
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #233039", textAlign: "left", color: "#8e9fa5" }}>
+                  <th style={{ padding: "8px 10px" }}>Stage</th>
+                  <th style={{ padding: "8px 10px" }}>Model</th>
+                  <th style={{ padding: "8px 10px" }}>Input</th>
+                  <th style={{ padding: "8px 10px" }}>Cached Input</th>
+                  <th style={{ padding: "8px 10px" }}>Output</th>
+                  <th style={{ padding: "8px 10px" }}>Total</th>
+                  <th style={{ padding: "8px 10px" }}>Latency</th>
+                  <th style={{ padding: "8px 10px" }}>Est. Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {calls.map((c, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #161e24" }}>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#e2e8f0" }}>{c.stage}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--mono-font)", color: "#38bdf8" }}>{c.model}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--mono-font)" }}>{c.input_tokens?.toLocaleString()}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--mono-font)", color: "#a78bfa" }}>{c.cached_input_tokens?.toLocaleString()}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--mono-font)" }}>{c.output_tokens?.toLocaleString()}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--mono-font)", fontWeight: 600 }}>{c.total_tokens?.toLocaleString()}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--mono-font)", color: "#f59e0b" }}>{formatMs(c.latency_ms)}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--mono-font)", color: "#4ade80", fontWeight: 600 }}>
+                      {c.estimated_cost_usd !== null && c.estimated_cost_usd !== undefined ? `$${Number(c.estimated_cost_usd).toFixed(6)}` : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {usage.formatted_debug && (
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">Console / Log Format</div>
+            <button className="sub-tab-btn" onClick={copyDebug} style={{ padding: "4px 8px", fontSize: 11 }}>
+              {copied ? "✓ Copied" : "Copy Log"}
+            </button>
+          </div>
+          <pre style={{
+            background: "#090d10",
+            padding: 12,
+            borderRadius: 6,
+            border: "1px solid #1f2b33",
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: "#38bdf8",
+            overflowX: "auto",
+            margin: 0,
+            fontFamily: "var(--mono-font)",
+          }}>
+            {usage.formatted_debug}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }

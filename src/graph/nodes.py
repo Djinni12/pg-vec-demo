@@ -26,6 +26,7 @@ from src.generators.answer_generator import (
 from src.graph.state import GSTGraphState
 from src.observability import trace_store
 from src.retrieval_inspector import LoadedModels, inspect_retrieval, load_models
+from src.retrievers.decomposed_executor import execute_decomposed_subqueries
 from src.retrievers.rate_retriever import retrieve_rates
 from src.routers.planner import plan_capabilities
 from src.tools.calculator import CalculationInputs, execute_calculator
@@ -60,13 +61,21 @@ def planner_node(
     t0 = time.perf_counter()
     query = state["user_query"]
     prior_messages = state.get("messages", [])
-    plan = plan_capabilities(query, use_llm=use_llm, history=prior_messages)
+    execution_id = state.get("execution_id")
+    plan = plan_capabilities(query, use_llm=use_llm, history=prior_messages, request_id=execution_id)
 
     needs_legal = bool(plan.get("needs_legal_retrieval", False))
     needs_rate = bool(
         plan.get("needs_structured_rate_lookup", False)
         or plan.get("needs_hsn_lookup", False)
     )
+    if plan.get("needs_query_decomposition"):
+        for sq in plan.get("retrieval_subqueries", []):
+            sq_t = sq.get("type") if isinstance(sq, dict) else getattr(sq, "type", "")
+            if sq_t == "legal":
+                needs_legal = True
+            elif sq_t == "rate":
+                needs_rate = True
     needs_notification = bool(plan.get("needs_notification_retrieval", False))
     needs_calculation = bool(plan.get("needs_calculation", False))
 
@@ -127,12 +136,20 @@ def planner_node(
                 "needs_calculation": needs_calculation,
                 "needs_grounded_reasoning": needs_grounded,
                 "needs_clarification": bool(plan.get("needs_clarification", False)),
+                "needs_query_decomposition": bool(plan.get("needs_query_decomposition", False)),
             },
             clean_subqueries=clean_subq_with_route,
             extracted_user_premises=dict(user_premises),
             clarification_decision={
                 "needs_clarification": bool(plan.get("needs_clarification", False)),
                 "clarification_prompt": plan.get("clarification_prompt"),
+            },
+            query_decomposition={
+                "needs_query_decomposition": bool(plan.get("needs_query_decomposition", False)),
+                "retrieval_subqueries": [
+                    (sq if isinstance(sq, dict) else (sq.model_dump() if hasattr(sq, "model_dump") else dict(sq)))
+                    for sq in plan.get("retrieval_subqueries", [])
+                ],
             },
             timing_ms=planner_ms,
         )
@@ -194,6 +211,45 @@ def legal_retrieval_node(
     Preserves document type, reference (Section/Rule/Form), content, and scores.
     """
     t0 = time.perf_counter()
+    plan = state.get("plan") or {}
+    needs_decomp = bool(plan.get("needs_query_decomposition", False))
+    retrieval_subqueries = plan.get("retrieval_subqueries", [])
+    legal_subqueries = [
+        sq for sq in retrieval_subqueries
+        if (isinstance(sq, dict) and sq.get("type") == "legal")
+        or (hasattr(sq, "type") and getattr(sq, "type", "") == "legal")
+    ]
+
+    if needs_decomp and legal_subqueries:
+        retrieval_models = models or get_cached_models()
+        decomp_data = execute_decomposed_subqueries(
+            legal_subqueries,
+            models=retrieval_models,
+            db_url=db_url,
+            top_k=top_k,
+        )
+        chunks = decomp_data.get("legal_results", [])
+        elapsed_ms = decomp_data.get("timings_ms", {}).get("total", round((time.perf_counter() - t0) * 1000, 3))
+        execution_id = state.get("execution_id")
+        if execution_id:
+            subquery_texts = [
+                (sq.get("query") if isinstance(sq, dict) else getattr(sq, "query", ""))
+                for sq in legal_subqueries
+            ]
+            trace_store.record_legal_retrieval(
+                execution_id,
+                retrieval_query="; ".join(subquery_texts),
+                retrieval_data={"results": chunks, "timings_ms": decomp_data.get("timings_ms", {})},
+                timing_ms=elapsed_ms,
+            )
+            trace_store.record_node_execution(
+                execution_id,
+                "legal_retrieval",
+                status="success" if chunks else "empty",
+                timing_ms=elapsed_ms,
+            )
+        return {"legal_results": chunks}
+
     legal_q = (
         state.get("clean_queries", {}).get("legal_query")
         or state["user_query"]
@@ -247,6 +303,7 @@ def legal_retrieval_node(
             retrieval_query=legal_q,
             retrieval_data=data,
             timing_ms=elapsed_ms,
+            final_chunks=chunks,
         )
         trace_store.record_node_execution(
             execution_id,
@@ -272,6 +329,45 @@ def rate_lookup_node(
     Rates are never guessed or inferred by an LLM.
     """
     t0 = time.perf_counter()
+    plan = state.get("plan") or {}
+    needs_decomp = bool(plan.get("needs_query_decomposition", False))
+    retrieval_subqueries = plan.get("retrieval_subqueries", [])
+    rate_subqueries = [
+        sq for sq in retrieval_subqueries
+        if (isinstance(sq, dict) and sq.get("type") == "rate")
+        or (hasattr(sq, "type") and getattr(sq, "type", "") == "rate")
+    ]
+
+    if needs_decomp and rate_subqueries:
+        decomp_data = execute_decomposed_subqueries(
+            rate_subqueries,
+            db_url=db_url,
+            rate_limit=limit,
+        )
+        rates = decomp_data.get("rate_results", [])
+        elapsed_ms = decomp_data.get("timings_ms", {}).get("total", round((time.perf_counter() - t0) * 1000, 3))
+        selected_rate = rates[0] if rates else None
+        execution_id = state.get("execution_id")
+        if execution_id:
+            subquery_texts = [
+                (sq.get("query") if isinstance(sq, dict) else getattr(sq, "query", ""))
+                for sq in rate_subqueries
+            ]
+            trace_store.record_rate_retrieval(
+                execution_id,
+                lookup_query="; ".join(subquery_texts),
+                returned_candidates=rates,
+                selected_rate_used_downstream=selected_rate,
+                timing_ms=elapsed_ms,
+            )
+            trace_store.record_node_execution(
+                execution_id,
+                "rate_lookup",
+                status="success" if rates else "empty",
+                timing_ms=elapsed_ms,
+            )
+        return {"rate_results": rates}
+
     rate_q = (
         state.get("clean_queries", {}).get("rate_query")
         or state["user_query"]
@@ -404,6 +500,84 @@ def notification_support_node(
         )
 
     return {"notification_results": notif_chunks}
+
+
+# -----------------------------------------------------------------------------
+# Node 3c: Fallback Web Search Retrieval
+# -----------------------------------------------------------------------------
+def web_search_node(
+    state: GSTGraphState,
+    *,
+    db_url: Optional[str] = None,
+    limit: int = 5,
+) -> dict[str, Any]:
+    """Executes fallback web search when local retrievals report missing evidence.
+
+    1. Searches authoritative official GST sources.
+    2. Extracts missing identifiers (e.g. HSN/SAC codes) and feeds them back
+       into local retrieve_rates() to preserve verified local rate records.
+    3. Preserves web source URLs and snippets for grounded synthesis citations.
+    """
+    t0 = time.perf_counter()
+    from src.retrievers.web_search_retriever import search_web_fallback
+
+    clean_queries = state.get("clean_queries", {}) or {}
+    rate_q = clean_queries.get("rate_query")
+    legal_q = clean_queries.get("legal_query")
+    user_q = state.get("user_query", "")
+
+    if state.get("needs_rate") and not state.get("rate_results"):
+        search_q = rate_q or user_q
+        search_type = "rate"
+    elif state.get("needs_legal") and not state.get("legal_results"):
+        search_q = legal_q or user_q
+        search_type = "legal"
+    else:
+        search_q = user_q
+        search_type = "general"
+
+    search_data = search_web_fallback(
+        search_q,
+        search_type=search_type,
+        db_url=db_url,
+        limit=limit,
+    )
+
+    new_rate_results = list(state.get("rate_results", []))
+    if search_data.get("rate_results"):
+        for r in search_data["rate_results"]:
+            if not any(
+                existing.get("hsn_code") == r.get("hsn_code")
+                and existing.get("serial_no") == r.get("serial_no")
+                for existing in new_rate_results
+            ):
+                new_rate_results.append(r)
+
+    web_chunks = search_data.get("web_results", [])
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 3)
+
+    execution_id = state.get("execution_id")
+    if execution_id:
+        if hasattr(trace_store, "record_web_search"):
+            trace_store.record_web_search(
+                execution_id,
+                query=search_q,
+                discovered_hsn=search_data.get("discovered_hsn"),
+                web_results=web_chunks,
+                timing_ms=elapsed_ms,
+            )
+        trace_store.record_node_execution(
+            execution_id,
+            "web_search",
+            status="success" if (web_chunks or new_rate_results) else "empty",
+            timing_ms=elapsed_ms,
+        )
+
+    return {
+        "web_results": web_chunks,
+        "rate_results": new_rate_results,
+        "web_search_attempted": True,
+    }
 
 
 # -----------------------------------------------------------------------------
@@ -843,9 +1017,12 @@ def synthesis_node(
     )
 
     # Extract unified citations
-    all_chunks = list(legal_results) + list(notification_results)
+    web_results = state.get("web_results") or []
+    all_chunks = list(legal_results) + list(notification_results) + list(web_results)
     sources = extract_combined_sources(chunks=all_chunks, rate_results=rate_results)
     model_name = get_configured_model(model)
+
+    combined_chunks = list(legal_results) + list(web_results)
 
     # Extract prior dialogue turns (all messages before the current query)
     all_msgs = state.get("messages", [])
@@ -855,7 +1032,7 @@ def synthesis_node(
     try:
         gen = generate_answer(
             query=query,
-            chunks=legal_results if legal_results else None,
+            chunks=combined_chunks if combined_chunks else None,
             rate_results=rate_results if rate_results else None,
             notification_chunks=notification_results if notification_results else None,
             user_premises=user_premises,
@@ -864,6 +1041,7 @@ def synthesis_node(
             model=model,
             direct_reasoning=is_direct,
             history=prior_turns,
+            request_id=state.get("execution_id"),
         )
         answer = gen.get("answer", "")
         if gen.get("sources"):
@@ -876,6 +1054,7 @@ def synthesis_node(
             rate_results=rate_results,
             legal_results=legal_results,
             notification_results=notification_results,
+            web_results=web_results,
             reasoning_result=reasoning_res,
             calculation_result=calc_res,
         )
@@ -910,6 +1089,7 @@ def _build_deterministic_synthesis(
     rate_results: list[dict[str, Any]],
     legal_results: list[dict[str, Any]],
     notification_results: Optional[list[dict[str, Any]]] = None,
+    web_results: Optional[list[dict[str, Any]]] = None,
     reasoning_result: Optional[str] = None,
     calculation_result: Optional[dict[str, Any]] = None,
 ) -> str:
@@ -962,7 +1142,18 @@ def _build_deterministic_synthesis(
             notif_lines.append(f"{idx}. {ref} ({title}):\n   {first_sentence}")
         sections.append("\n\n".join(notif_lines))
 
-    # 3. Legal Findings
+    # 3. Web Verification Sources (Fallback)
+    if web_results and not legal_results:
+        web_lines = ["Official Web Verification Sources:"]
+        for idx, chunk in enumerate(web_results[:3], 1):
+            title = chunk.get("title") or "Web Source"
+            url = chunk.get("url") or chunk.get("reference") or ""
+            snip = chunk.get("snippet") or ""
+            first_sentence = snip.split("\n")[0] if snip else ""
+            web_lines.append(f"{idx}. {title} ({url}):\n   {first_sentence}")
+        sections.append("\n\n".join(web_lines))
+
+    # 4. Legal Findings
     if legal_results:
         legal_lines = ["Applicable Legal Provisions:"]
         for idx, chunk in enumerate(legal_results[:3], 1):

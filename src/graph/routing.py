@@ -70,8 +70,57 @@ def route_post_retrieval(state: GSTGraphState) -> str:
     return "synthesis"
 
 
-# Notification support uses the same post-retrieval routing logic to evaluate next stage
-route_post_notification_support = route_post_retrieval
+def should_fallback_to_web_search(state: GSTGraphState) -> bool:
+    """Evaluates whether local retrievals reported missing or insufficient evidence.
+
+    Web search runs only as a fallback for retrieval queries (rate, legal, or notification)
+    when local sources yield no results. Never runs for pure calculation or direct reasoning.
+    Runs at most once per graph execution.
+    """
+    if state.get("web_search_attempted"):
+        return False
+
+    is_retrieval_query = (
+        bool(state.get("needs_rate"))
+        or bool(state.get("needs_legal"))
+        or bool(state.get("needs_notification"))
+    )
+    if not is_retrieval_query:
+        return False
+
+    rate_missing = bool(state.get("needs_rate")) and not bool(state.get("rate_results"))
+    legal_missing = (
+        bool(state.get("needs_legal"))
+        and not bool(state.get("legal_results"))
+        and not bool(state.get("notification_results"))
+    )
+    notif_missing = (
+        bool(state.get("needs_notification"))
+        and not bool(state.get("notification_results"))
+        and not bool(state.get("rate_results"))
+        and not bool(state.get("legal_results"))
+    )
+
+    return rate_missing or legal_missing or notif_missing
+
+
+def route_post_notification_support(state: GSTGraphState) -> str:
+    """Conditional edge evaluating next stage after notification support completes.
+
+    Triggers web_search only when local retrievals reported missing evidence.
+    Otherwise delegates to standard post-retrieval routing.
+    """
+    if should_fallback_to_web_search(state):
+        return "web_search"
+    return route_post_retrieval(state)
+
+
+def route_post_web_search(state: GSTGraphState) -> str:
+    """Conditional edge after web_search fallback node completes.
+
+    Directs to grounded_reasoning, calculation, or synthesis based on state requirements.
+    """
+    return route_post_retrieval(state)
 
 
 def route_post_grounded_reasoning(state: GSTGraphState) -> str:

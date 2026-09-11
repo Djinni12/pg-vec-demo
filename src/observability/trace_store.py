@@ -22,6 +22,12 @@ from datetime import datetime, timezone
 import threading
 from typing import Any, Optional
 
+from src.observability.llm_usage_tracker import (
+    get_request_usage,
+    llm_usage_tracker,
+    record_llm_call as record_global_llm_call,
+)
+
 
 @dataclass
 class ExecutionTrace:
@@ -42,6 +48,7 @@ class ExecutionTrace:
             "needs_calculation": False,
             "needs_grounded_reasoning": False,
             "needs_clarification": False,
+            "needs_query_decomposition": False,
         },
         "clean_subqueries": {
             "legal_query": None,
@@ -52,6 +59,10 @@ class ExecutionTrace:
         "clarification_decision": {
             "needs_clarification": False,
             "clarification_prompt": None,
+        },
+        "query_decomposition": {
+            "needs_query_decomposition": False,
+            "retrieval_subqueries": [],
         },
         "timing_ms": 0.0,
     })
@@ -100,6 +111,14 @@ class ExecutionTrace:
         "support_metadata": {},
     })
 
+    # 4c. Fallback Web Search Retrieval
+    web_search_retrieval: dict[str, Any] = field(default_factory=lambda: {
+        "query": "",
+        "discovered_hsn": None,
+        "returned_chunks": [],
+        "timing_ms": 0.0,
+    })
+
     # 5. Reasoning Stages
     reasoning: dict[str, Any] = field(default_factory=lambda: {
         "grounded_reasoning_output": None,
@@ -136,11 +155,26 @@ class ExecutionTrace:
         "reranker_ms": 0.0,
         "rate_lookup_ms": 0.0,
         "notification_support_ms": 0.0,
+        "web_search_ms": 0.0,
         "grounded_reasoning_ms": 0.0,
         "direct_reasoning_ms": 0.0,
         "calculation_ms": 0.0,
         "synthesis_ms": 0.0,
         "total_request_ms": 0.0,
+    })
+
+    # 9. LLM Token Usage & Cost Tracking
+    llm_usage: dict[str, Any] = field(default_factory=lambda: {
+        "request_id": "",
+        "total_calls": 0,
+        "total_input_tokens": 0,
+        "total_cached_input_tokens": 0,
+        "total_output_tokens": 0,
+        "total_tokens": 0,
+        "total_cost_usd": 0.0,
+        "total_latency_ms": 0.0,
+        "calls": [],
+        "formatted_debug": "",
     })
 
     def to_dict(self) -> dict[str, Any]:
@@ -174,7 +208,12 @@ class TraceStore:
         """Retrieve full trace dictionary by execution_id."""
         with self._lock:
             trace = self._traces.get(execution_id)
-            return trace.to_dict() if trace else None
+            if not trace:
+                return None
+            usage = get_request_usage(execution_id)
+            if usage.get("total_calls", 0) > 0 or not trace.llm_usage.get("total_calls"):
+                trace.llm_usage = usage
+            return trace.to_dict()
 
     def list_traces(self, limit: int = 50) -> list[dict[str, Any]]:
         """List recent execution summaries (newest first)."""
@@ -214,6 +253,13 @@ class TraceStore:
                     "has_legal": bool(t.legal_retrieval.get("final_chunks")),
                     "has_rate": bool(t.rate_retrieval.get("returned_candidates")),
                     "has_calculation": bool(t.calculation.get("deterministic_result")),
+                    "has_decomposition": bool(
+                        t.planner.get("query_decomposition", {}).get("needs_query_decomposition")
+                        or t.planner.get("capability_flags", {}).get("needs_query_decomposition")
+                    ),
+                    "total_tokens": t.llm_usage.get("total_tokens", 0),
+                    "estimated_cost_usd": t.llm_usage.get("total_cost_usd"),
+                    "llm_calls_count": t.llm_usage.get("total_calls", 0),
                 })
             return summaries
 
@@ -225,6 +271,7 @@ class TraceStore:
         clean_subqueries: dict[str, Any],
         extracted_user_premises: dict[str, Any],
         clarification_decision: dict[str, Any],
+        query_decomposition: Optional[dict[str, Any]] = None,
         timing_ms: float,
     ) -> None:
         """Record structured planner decisions."""
@@ -232,13 +279,21 @@ class TraceStore:
             trace = self._traces.get(execution_id)
             if not trace:
                 return
-            trace.planner = {
+            p_data: dict[str, Any] = {
                 "capability_flags": dict(capability_flags),
                 "clean_subqueries": dict(clean_subqueries),
                 "extracted_user_premises": dict(extracted_user_premises),
                 "clarification_decision": dict(clarification_decision),
                 "timing_ms": round(timing_ms, 3),
             }
+            if query_decomposition is not None:
+                p_data["query_decomposition"] = deepcopy(query_decomposition)
+            elif "needs_query_decomposition" in capability_flags:
+                p_data["query_decomposition"] = {
+                    "needs_query_decomposition": bool(capability_flags.get("needs_query_decomposition")),
+                    "retrieval_subqueries": [],
+                }
+            trace.planner = p_data
             trace.timings["planner_ms"] = round(timing_ms, 3)
 
     def record_selected_nodes(self, execution_id: str, selected_nodes: list[str]) -> None:
@@ -275,6 +330,7 @@ class TraceStore:
         retrieval_query: str,
         retrieval_data: dict[str, Any],
         timing_ms: float,
+        final_chunks: Optional[list[dict[str, Any]]] = None,
     ) -> None:
         """Record multi-stage hybrid legal retrieval results."""
         with self._lock:
@@ -295,7 +351,7 @@ class TraceStore:
                 "bm25_candidates": list(retrieval_data.get("bm25_results", [])),
                 "rrf_candidates": list(retrieval_data.get("hybrid_results", [])),
                 "reranker_results": list(retrieval_data.get("results", [])),
-                "final_chunks": list(retrieval_data.get("results", [])),
+                "final_chunks": list(final_chunks) if final_chunks is not None else list(retrieval_data.get("results", [])),
                 "document_metadata": dict(retrieval_data.get("metadata", {})),
                 "timing_ms": round(total_retrieval_ms, 3),
                 "stages_timings_ms": {
@@ -354,6 +410,28 @@ class TraceStore:
                 "support_metadata": dict(support_metadata) if support_metadata else {},
             }
             trace.timings["notification_support_ms"] = round(timing_ms, 3)
+
+    def record_web_search(
+        self,
+        execution_id: str,
+        *,
+        query: str,
+        discovered_hsn: Optional[str] = None,
+        web_results: list[dict[str, Any]],
+        timing_ms: float,
+    ) -> None:
+        """Record fallback web search execution in trace store."""
+        with self._lock:
+            trace = self._traces.get(execution_id)
+            if not trace:
+                return
+            trace.web_search_retrieval = {
+                "query": query,
+                "discovered_hsn": discovered_hsn,
+                "returned_chunks": list(web_results),
+                "timing_ms": round(timing_ms, 3),
+            }
+            trace.timings["web_search_ms"] = round(timing_ms, 3)
 
     def record_grounded_reasoning(
         self,
@@ -439,6 +517,38 @@ class TraceStore:
             }
             trace.timings["synthesis_ms"] = round(generation_timing_ms, 3)
 
+    def record_llm_call(
+        self,
+        execution_id: str,
+        *,
+        stage: str,
+        model: str,
+        response: Any = None,
+        input_tokens: Optional[int] = None,
+        cached_input_tokens: Optional[int] = None,
+        output_tokens: Optional[int] = None,
+        total_tokens: Optional[int] = None,
+        latency_ms: float = 0.0,
+    ) -> dict[str, Any]:
+        """Record an LLM call into the central usage tracker and update the trace."""
+        record = record_global_llm_call(
+            request_id=execution_id,
+            stage=stage,
+            model=model,
+            response=response,
+            input_tokens=input_tokens,
+            cached_input_tokens=cached_input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=total_tokens,
+            latency_ms=latency_ms,
+        )
+        usage = get_request_usage(execution_id)
+        with self._lock:
+            trace = self._traces.get(execution_id)
+            if trace:
+                trace.llm_usage = usage
+        return record.to_dict()
+
     def finalize(
         self,
         execution_id: str,
@@ -455,12 +565,14 @@ class TraceStore:
             trace.status = status
             trace.error = error
             trace.timings["total_request_ms"] = round(total_request_ms, 3)
+            trace.llm_usage = get_request_usage(execution_id)
 
     def clear(self) -> None:
         """Clear all stored traces (useful in testing)."""
         with self._lock:
             self._traces.clear()
             self._order.clear()
+        llm_usage_tracker.clear()
 
 
 # Global singleton instance for runtime observability

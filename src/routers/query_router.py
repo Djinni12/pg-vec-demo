@@ -176,6 +176,8 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
             "needs_exception_reasoning": False,
             "needs_clarification": False,
             "needs_grounded_synthesis": True,
+            "needs_query_decomposition": False,
+            "retrieval_subqueries": [],
             "user_premises": {
                 "assumed_rate": None,
                 "taxable_amount": None,
@@ -372,6 +374,11 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
             else:
                 legal_query = cleaned
 
+    # 10. Query Decomposition
+    # Query decomposition is generic and driven by the planner model, not by scenario-specific heuristics.
+    needs_query_decomposition = False
+    retrieval_subqueries: list[dict[str, str]] = []
+
     # For mixed queries, strip trailing legal phrasing from rate_query
     if needs_structured_rate and needs_legal and rate_query:
         cleaned_rq = re.sub(r"\b(?:and\s+)?what\s+(?:law|section|rule|provision|act)\s+applies.*$", "", rate_query, flags=re.IGNORECASE).strip()
@@ -393,6 +400,8 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
         "needs_exception_reasoning": needs_exception,
         "needs_clarification": needs_clarification,
         "needs_grounded_synthesis": needs_grounded_synthesis,
+        "needs_query_decomposition": needs_query_decomposition,
+        "retrieval_subqueries": retrieval_subqueries,
         "user_premises": {
             "assumed_rate": assumed_rate,
             "rate_is_user_assumed": bool(assumed_rate is not None and m_assume),
@@ -413,6 +422,7 @@ def plan_capabilities_heuristic(query: str) -> dict[str, Any]:
 # Expose multi-capability planner interface
 from src.routers.planner import (
     GSTPlan,
+    RetrievalSubquery,
     plan_capabilities,
     plan_capabilities_with_llm,
 )

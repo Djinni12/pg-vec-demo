@@ -13,11 +13,14 @@ import json
 import logging
 import os
 import re
-from typing import Any, Optional
+import time
+from typing import Any, Literal, Optional
 
 from openai import OpenAI
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from dotenv import load_dotenv
+
+from src.observability.llm_usage_tracker import record_llm_call
 
 load_dotenv()
 
@@ -40,6 +43,13 @@ Return ONLY a JSON object matching this schema:
   "needs_exception_reasoning": boolean,
   "needs_clarification": boolean,
   "needs_grounded_synthesis": boolean,
+  "needs_query_decomposition": boolean,
+  "retrieval_subqueries": [
+    {
+      "type": "legal" or "rate",
+      "query": string
+    }
+  ],
   "clean_subqueries": {
     "rate_query": string or null,
     "legal_query": string or null,
@@ -66,8 +76,7 @@ CAPABILITY RULES:
    - clean_subqueries.rate_query MUST be the clean commodity/product name in English (e.g. "butter", "fresh milk", "motorcycles", "chocolate").
 3. Legal Retrieval:
    - needs_legal_retrieval = true for statutory questions, procedural rules, registration, cancellation, revocation, appeals, legal definitions, tax collected on exempt supplies / without authority, credit notes, or ITC utilization principles.
-   - clean_subqueries.legal_query MUST be a focused search query describing the legal subject matter (e.g., "tax collected on exempt supply but not paid to Government Section 76 credit note Section 34", "ITC utilization order for interstate supply and discharge of IGST liability using IGST, CGST and SGST input tax credits", "cancellation of GST registration procedure").
-   - When the question concerns tax mistakenly collected on exempt supplies, tax collected without authority, or refund/adjustment thereof: formulate clean_subqueries.legal_query around "tax collected on exempt supply but not paid to Government Section 76 credit note Section 34".
+   - clean_subqueries.legal_query MUST be a focused search query describing the legal subject matter without injecting unmentioned sections/rules (e.g., "tax collected on exempt supply credit note procedure", "ITC utilization order for interstate supply and discharge of IGST liability using IGST, CGST and SGST input tax credits", "cancellation of GST registration procedure").
 4. Notification Retrieval:
    - needs_notification_retrieval = true when specific notifications (e.g. "09/2025", "01/2017"), amending notifications, or rate notifications are mentioned or inquired about.
    - clean_subqueries.notification_query should specify the notification number or context.
@@ -79,15 +88,69 @@ CAPABILITY RULES:
    - needs_comparison = true when comparing tax treatment across goods, engine capacities, or slabs (e.g. "motorcycles below and above 350cc").
    - needs_exception_reasoning = true for exceptions, special conditions, conditional rates, or ITC restrictions.
 7. Clarification:
+   - needs_clarification = true when the query is missing critical details needed to answer.
 8. Grounded Synthesis:
    - needs_grounded_synthesis = true for all standard queries requiring an answer synthesized from retrieved documents, rates, or facts (always true unless needs_clarification is true).
 9. Multilingual Understanding:
    - Understand queries in Gujarati (e.g. "માખણ" -> butter, "તાજા દૂધ" -> fresh milk, "નોંધણી રદ" -> cancellation of registration, "કેટલો છે" -> how much is, "ભૂલથી ટેક્સ લીધો" -> mistakenly collected tax), Hindi, and English.
-   - Translate clean_subqueries into standard English search terms for the downstream retrieval tools.
+   - Translate clean_subqueries and retrieval_subqueries into standard English search terms for the downstream retrieval tools.
 10. LEGAL APPLICABILITY & FACTUAL SCOPE RULE:
     - Distinguish between similar but legally different scenarios:
       * Tax collected on an exempt supply (governed by Section 76 / Section 34 / Section 54) vs IGST paid instead of CGST/SGST (governed by Section 77 CGST Act / Section 19 IGST Act).
       * Never confuse tax collected on an exempt supply with an inter-State vs intra-State supply classification mismatch.
+
+QUERY DECOMPOSITION RULES (needs_query_decomposition & retrieval_subqueries):
+1. When to decompose:
+   - Simple single-concept queries MUST NOT be decomposed:
+     * If a query asks for a single provision, rule, section, rate, or calculation:
+       set needs_query_decomposition = false, retrieval_subqueries = []
+     * Examples of NO decomposition:
+       - "What does Rule 88A say?" -> needs_query_decomposition = false, retrieval_subqueries = []
+       - "What is the GST rate on butter?" -> needs_query_decomposition = false, retrieval_subqueries = []
+       - "₹50,000 par 18% GST kitna hai?" -> needs_query_decomposition = false, retrieval_subqueries = []
+       - "What does Section 29 say about cancellation?" -> needs_query_decomposition = false, retrieval_subqueries = []
+   - Complex multi-concept queries MUST be decomposed:
+     * When a single user query contains 2 or more independent legal or rate evidence needs that a single retrieval query would fail to cover adequately:
+       set needs_query_decomposition = true
+       generate 2 to 4 distinct standalone objects in retrieval_subqueries: [{"type": "legal" | "rate", "query": string}]
+     * Example 1 (post-supply discount & liability adjustment):
+       Query: "I gave a discount after invoicing. Can I reduce GST liability and how do I adjust it?"
+       Decomposition: needs_query_decomposition = true
+       retrieval_subqueries:
+       [
+         {"type": "legal", "query": "conditions for a post-supply discount to reduce taxable value"},
+         {"type": "legal", "query": "procedure for adjusting tax liability after a post-supply discount"}
+       ]
+     * Example 2 (temporal / rate change across periods):
+       Query: "What GST applied to tobacco before September 2025 and what applies now?"
+       Decomposition: needs_query_decomposition = true
+       retrieval_subqueries:
+       [
+         {"type": "rate", "query": "GST rate on tobacco before September 2025"},
+         {"type": "rate", "query": "current GST rate on tobacco"}
+       ]
+
+2. Subquery Construction Constraints:
+   - Distinct Evidence Needs: Each subquery must represent a DIFFERENT evidence need, not merely a paraphrase of another subquery.
+   - Semantic Purpose Comparison: Before returning retrieval_subqueries, compare their semantic purpose.
+     * When a query asks whether an action is permitted and how to adjust or comply (e.g. 'Can I do X? If not, how should it be adjusted?'):
+       Subquery 1 should target the substantive statutory right, eligibility, restriction, or condition.
+       Subquery 2 should target the procedural mechanism, determination formula, or reporting adjustment.
+     * Bad (near paraphrases that retrieve the same chunks):
+       1. "reversal of ITC for exempt supplies"
+       2. "procedure for reversal of ITC for exempt supplies"
+     * Good (distinct substantive vs procedural evidence needs):
+       1. "eligibility or restriction of input tax credit when goods are used for taxable and exempt supplies"
+       2. "method or procedure for determining and reversing input tax credit attributable to exempt supplies"
+     * If two proposed subqueries would likely retrieve the same legal concept, combine or rewrite them so each targets a distinct question that must be established to answer the user.
+   - Neutral & Concept-Based: Write concise, neutral search queries focused on the underlying statutory or tax concept.
+   - Standalone: Each subquery must make complete sense independently.
+   - Preserve Meaning & Facts: Preserve the exact facts, commodities, and conditions from the user's question.
+   - DO NOT INVENT UNMENTIONED REFERENCES:
+     NEVER inject Section numbers (e.g. Section 15(3)(b), Section 34), Rule numbers (e.g. Rule 53, Rule 88A), Form names, Notification numbers, rates, thresholds, dates, HSN codes, or legal conclusions NOT explicitly present in the user query.
+     If the user did not say "Section 15(3)(b)", do NOT write "Section 15(3)(b)" in any retrieval subquery!
+   - DO NOT split arithmetic: Never create retrieval subqueries for arithmetic or calculation steps.
+   - NO Duplicates: Do not generate duplicate or overlapping subqueries.
 """
 
 
@@ -123,6 +186,88 @@ def extract_json_payload(content: str) -> dict[str, Any]:
     return {}
 
 
+class RetrievalSubquery(BaseModel):
+    """A standalone retrieval subquery targeting a single distinct evidence need."""
+    model_config = ConfigDict(extra="ignore")
+
+    type: Literal["legal", "rate"] = Field(
+        ...,
+        description="Type of retrieval: 'legal' for statutory/procedural queries, 'rate' for commodity/rate queries."
+    )
+    query: str = Field(
+        ...,
+        description="Standalone, neutral, concept-based retrieval query without injected unmentioned sections/rules."
+    )
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def _validate_type(cls, v: Any) -> str:
+        s = str(v).strip().lower()
+        if "rate" in s:
+            return "rate"
+        return "legal"
+
+    @field_validator("query", mode="before")
+    @classmethod
+    def _validate_query(cls, v: Any) -> str:
+        return str(v).strip() if v is not None else ""
+
+
+def normalize_query_decomposition(
+    needs_query_decomposition: bool,
+    subqueries: list[Any] | None,
+) -> tuple[bool, list[dict[str, str]]]:
+    """Perform generic validation and normalization on retrieval subqueries:
+    - allow 0-4 subqueries
+    - allowed types: legal | rate
+    - remove duplicates
+    - reject empty queries
+    - if fewer than 2 distinct retrieval evidence needs exist,
+      needs_query_decomposition remains False
+    - do not inject new legal concepts or references in Python
+    """
+    if not subqueries or not isinstance(subqueries, list):
+        return False, []
+
+    cleaned: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+
+    for item in subqueries:
+        if isinstance(item, dict):
+            q = str(item.get("query", "")).strip()
+            raw_t = str(item.get("type", "legal")).strip().lower()
+        elif hasattr(item, "query") and hasattr(item, "type"):
+            q = str(item.query).strip()
+            raw_t = str(item.type).strip().lower()
+        else:
+            continue
+
+        # Reject empty queries
+        if not q:
+            continue
+
+        # Allowed types: legal | rate
+        t = "rate" if "rate" in raw_t else "legal"
+
+        # Deduplication (case-insensitive query text + type)
+        dedup_key = (t, q.lower())
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
+
+        cleaned.append({"type": t, "query": q})
+
+        # Allow at most 4 subqueries
+        if len(cleaned) == 4:
+            break
+
+    # If fewer than 2 distinct retrieval evidence needs exist, decomposition remains False
+    if not needs_query_decomposition or len(cleaned) < 2:
+        return False, []
+
+    return True, cleaned
+
+
 class GSTPlan(BaseModel):
     """Structured plan containing required capabilities, extracted premises, and clean subqueries."""
     model_config = ConfigDict(extra="ignore")
@@ -138,6 +283,8 @@ class GSTPlan(BaseModel):
     needs_exception_reasoning: bool = False
     needs_clarification: bool = False
     needs_grounded_synthesis: bool = True
+    needs_query_decomposition: bool = False
+    retrieval_subqueries: list[RetrievalSubquery] = Field(default_factory=list)
     clean_subqueries: dict[str, Optional[str]] = Field(
         default_factory=lambda: {
             "rate_query": None,
@@ -165,6 +312,33 @@ class GSTPlan(BaseModel):
             return {}
         return v
 
+    @field_validator("retrieval_subqueries", mode="before")
+    @classmethod
+    def _ensure_subqueries(cls, v: Any) -> list[Any]:
+        if v is None or not isinstance(v, list):
+            return []
+        valid = []
+        for item in v:
+            if isinstance(item, dict):
+                q = str(item.get("query", "")).strip()
+                t = str(item.get("type", "legal")).strip().lower()
+                if q:
+                    valid.append({"type": "rate" if "rate" in t else "legal", "query": q})
+            elif isinstance(item, RetrievalSubquery):
+                if item.query.strip():
+                    valid.append(item)
+        return valid
+
+    @model_validator(mode="after")
+    def _validate_and_normalize_decomposition(self) -> GSTPlan:
+        decomp, subqs = normalize_query_decomposition(
+            self.needs_query_decomposition,
+            self.retrieval_subqueries,
+        )
+        self.needs_query_decomposition = decomp
+        self.retrieval_subqueries = [RetrievalSubquery(**sq) for sq in subqs]
+        return self
+
 
 def get_default_planner_client() -> OpenAI | None:
     """Instantiate OpenAI client if API key is present."""
@@ -190,6 +364,7 @@ def plan_capabilities_with_llm(
     client: OpenAI | None = None,
     model: str | None = None,
     history: list[Any] | None = None,
+    request_id: str | None = None,
 ) -> dict[str, Any]:
     """Generate structured multi-capability plan using LLM."""
     llm_client = client or get_default_planner_client()
@@ -229,12 +404,25 @@ def plan_capabilities_with_llm(
             {"role": "user", "content": user_query_content},
         ]
 
+    t_start = time.perf_counter()
     response = llm_client.chat.completions.create(
         model=model_name,
         messages=messages,
         response_format={"type": "json_object"},
         temperature=0.0,
     )
+    latency_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+
+    try:
+        record_llm_call(
+            request_id=request_id,
+            stage="planner",
+            model=model_name,
+            response=response,
+            latency_ms=latency_ms,
+        )
+    except Exception as track_err:
+        logger.debug(f"Failed to record planner LLM usage: {track_err}")
 
     content = response.choices[0].message.content or "{}"
     data = extract_json_payload(content)
@@ -248,6 +436,14 @@ def plan_capabilities_with_llm(
     # If needs_hsn_lookup is True, ensure needs_structured_rate_lookup is True
     if data.get("needs_hsn_lookup"):
         data["needs_structured_rate_lookup"] = True
+
+    # Generic validation and normalization of query decomposition
+    decomp, subqs = normalize_query_decomposition(
+        bool(data.get("needs_query_decomposition", False)),
+        data.get("retrieval_subqueries"),
+    )
+    data["needs_query_decomposition"] = decomp
+    data["retrieval_subqueries"] = subqs
 
     # Validate against schema
     validated = GSTPlan(**data)
@@ -266,6 +462,7 @@ def plan_capabilities(
     model: str | None = None,
     use_llm: bool | None = None,
     history: list[Any] | None = None,
+    request_id: str | None = None,
 ) -> dict[str, Any]:
     """Entrypoint: Generate capability plan with LLM if enabled/available, fallback to heuristics."""
     should_use_llm = use_llm if use_llm is not None else (
@@ -273,7 +470,13 @@ def plan_capabilities(
     )
     if should_use_llm:
         try:
-            return plan_capabilities_with_llm(query, client=client, model=model, history=history)
+            return plan_capabilities_with_llm(
+                query,
+                client=client,
+                model=model,
+                history=history,
+                request_id=request_id,
+            )
         except Exception as exc:
             logger.warning(f"LLM planner failed ({exc}), falling back to heuristic planner.")
             return plan_capabilities_heuristic(query)

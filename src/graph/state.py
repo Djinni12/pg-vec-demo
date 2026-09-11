@@ -48,6 +48,8 @@ class GSTGraphState(TypedDict, total=False):
     legal_results: list[dict[str, Any]]
     rate_results: list[dict[str, Any]]
     notification_results: list[dict[str, Any]]
+    web_results: Optional[list[dict[str, Any]]]
+    web_search_attempted: Optional[bool]
     reasoning_result: Optional[str]
     calculation_inputs: Optional[dict[str, Any]]
     calculation_result: Optional[dict[str, Any]]

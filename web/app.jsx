@@ -130,11 +130,21 @@ function SourceCard({ source }) {
           <div className="source-expanded-content">
             <div className="source-submeta">
               <span>Chunk ID: <code>{source.chunk_id}</code></span>
+              {source.url && (
+                <span> · <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8", textDecoration: "underline" }}>Open Link ↗</a></span>
+              )}
             </div>
             <pre>{source.content}</pre>
           </div>
         ) : (
-          <p className="source-snippet">{source.snippet || source.content}</p>
+          <div className="source-snippet">
+            <p style={{ margin: 0 }}>{source.snippet || source.content}</p>
+            {source.url && (
+              <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8", fontSize: "11.5px", marginTop: 4, display: "inline-block", textDecoration: "underline" }}>
+                🔗 {source.url}
+              </a>
+            )}
+          </div>
         )}
       </div>
     </div>

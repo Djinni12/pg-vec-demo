@@ -704,3 +704,43 @@ def test_direct_full_prompt_keeps_legal_grounding_boundary():
     assert "Answer directly using only the numbers" in prompt
     assert "Do not look up, invent, estimate, or assume any GST law" in prompt
     assert "RETRIEVED CONTEXT" not in prompt
+
+
+def test_system_prompt_tax_applicability_and_itc_utilization_rules():
+    """Verify SYSTEM_PROMPT contains strict tax applicability and ITC utilization requirements."""
+    from src.generators.answer_generator import SYSTEM_PROMPT
+
+    # Strict Grounding Rule
+    assert "STRICT GROUNDING RULE" in SYSTEM_PROMPT
+    assert "preserve the exact conditions, restrictions, and ordering supported by the retrieved evidence" in SYSTEM_PROMPT
+    assert "Do not simplify legal rules into broader claims" in SYSTEM_PROMPT
+    assert "Do not introduce additional calculations, conclusions, assumptions, limits, or recommendations unless explicitly requested" in SYSTEM_PROMPT
+    assert "If the evidence does not fully support a conclusion, state the limitation instead of inferring it" in SYSTEM_PROMPT
+    assert "Do not add unrelated legal rules, exceptions, or compliance notes that are not necessary to answer the user's specific question." in SYSTEM_PROMPT
+
+    # Tax Applicability
+    assert "STRICT TAX APPLICABILITY RULES" in SYSTEM_PROMPT
+    assert "Grounded Taxability Determination" in SYSTEM_PROMPT
+    assert "Mandatory Preconditions & Qualifications" in SYSTEM_PROMPT
+    assert "No Broad or Blanket Assertions" in SYSTEM_PROMPT
+    assert "Statutory Distinction Between Levy, Exemption, and Reverse Charge" in SYSTEM_PROMPT
+
+    # ITC Utilization & Terminology
+    assert "STRICT ITC UTILIZATION AND LEGAL TERMINOLOGY RULES" in SYSTEM_PROMPT
+    assert "Strict Statutory Order of Utilization" in SYSTEM_PROMPT
+    assert "Section 49, Section 49A, Section 49B, and Rule 88A" in SYSTEM_PROMPT
+    assert "Input tax credit of Integrated Tax (IGST) in the Electronic Credit Ledger MUST be completely exhausted first" in SYSTEM_PROMPT
+    assert "Absolute Prohibition on Cross-Utilization" in SYSTEM_PROMPT
+    assert "Section 49(5)(e) and (f)" in SYSTEM_PROMPT
+    assert "Distinguish Availment vs Utilization" in SYSTEM_PROMPT
+    assert "Blocked / Ineligible ITC" in SYSTEM_PROMPT
+    assert "Reverse Charge Mechanism (RCM) tax liability" in SYSTEM_PROMPT
+    assert "Electronic Credit Ledger" in SYSTEM_PROMPT
+    assert "Electronic Cash Ledger" in SYSTEM_PROMPT
+
+    # Broad Statement Avoidance
+    assert "AVOIDING BROAD OR UNSUPPORTED STATEMENTS" in SYSTEM_PROMPT
+    assert "Strict Boundary of Legal Authority" in SYSTEM_PROMPT
+    assert "No Extrapolation Beyond Retrieved Scope" in SYSTEM_PROMPT
+    assert "Precise Statutory Nomenclature" in SYSTEM_PROMPT
+

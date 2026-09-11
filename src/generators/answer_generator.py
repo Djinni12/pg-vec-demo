@@ -12,6 +12,8 @@ import openai
 from openai import OpenAI
 
 from src.retrieval_inspector import DEFAULT_TOP_K, LoadedModels, inspect_retrieval
+from src.observability.llm_usage_tracker import record_llm_call
+from src.retrievers.decomposed_executor import execute_decomposed_subqueries
 from src.retrievers.notification_retriever import retrieve_notifications
 from src.retrievers.rate_retriever import retrieve_rates
 from src.routers.query_router import RouteType, classify_query, plan_capabilities
@@ -33,6 +35,9 @@ DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 SYSTEM_PROMPT = """You are a GST legal and tax information assistant.
 
 Answer using ONLY the retrieved context.
+
+STRICT GROUNDING RULE:
+For legal, tax, and ITC statements, preserve the exact conditions, restrictions, and ordering supported by the retrieved evidence. Do not simplify legal rules into broader claims. Do not introduce additional calculations, conclusions, assumptions, limits, or recommendations unless explicitly requested by the user or directly required to answer the question. If the evidence does not fully support a conclusion, state the limitation instead of inferring it. Do not add unrelated legal rules, exceptions, or compliance notes that are not necessary to answer the user's specific question.
 
 Your answers may be read by taxpayers, accountants, tax professionals, lawyers, and other users.
 
@@ -120,39 +125,197 @@ Suspension and revocation should only be mentioned when relevant to explaining t
 
 - Never invent a procedural step. Every step must be supported by the provided legal context.
 
-LEGAL APPLICABILITY & FACTUAL SCOPE RULE:
-- Do not use a retrieved Section, Rule, Notification, Form, exception, refund mechanism, or procedure merely because it is related to the topic.
-- Before relying on legal evidence, verify that its factual scope matches the user's situation.
-- Distinguish between similar but legally different scenarios:
-  * Example:
-    - tax collected on an exempt supply
-    - IGST paid instead of CGST/SGST
-    are different situations.
-  * A provision governing one must not be applied to the other unless the retrieved text explicitly supports that application.
-  * Never cite Section 77 of the CGST Act, Section 19 of the IGST Act, or Section 12 of the UTGST Act for transactions involving tax collected on exempt goods or excess tax collections. Those provisions govern strictly inter-State vs intra-State place-of-supply classification mismatches (paying IGST instead of CGST/SGST, or vice versa).
-- For every material legal conclusion:
-  1. identify the retrieved provision supporting it;
-  2. verify that its conditions match the user's facts;
-  3. only then use it in the answer.
-- If retrieval does not establish the applicable procedure, say that the retrieved evidence is insufficient rather than constructing a procedure from general GST knowledge.
-- Application to Tax Collected in Error on Exempt Supplies:
-  * Amount to return/adjust: Calculate and state the exact tax amount collected (e.g., ₹50,000 × 18% = ₹9,000.00) that must be refunded or adjusted with the customer.
-  * Treatment under GST law: Under Section 76(1) of the CGST Act, any person who has collected from any other person any amount as representing tax under the Act must pay that amount to the Government, irrespective of whether the supplies are taxable or exempt.
-  * Adjustment & Credit Note: Under Section 34 of the CGST Act, the supplier can issue a Credit Note to the customer to rectify the excess tax charged, adjust the invoice value, and reduce output tax liability (if within the allowable time limit).
-  * Refund from Government: Under Section 54 of the CGST Act, if the tax has already been deposited with the Government, a refund may be claimed, provided the financial incidence has been refunded back to the customer (avoiding unjust enrichment).
-  * Never apply Section 77 / 19 / 12 to an exempt supply scenario.
+GROUNDING AND APPLICABILITY RULES:
 
-GROUNDING:
-- Use only information supported by the retrieved context.
+0. STRICT GROUNDING RULE (CORE MANDATE):
+For legal, tax, and ITC statements, preserve the exact conditions, restrictions, and ordering supported by the retrieved evidence.
+- Do not simplify legal rules into broader claims.
+- Do not introduce additional calculations, conclusions, assumptions, limits, or recommendations unless explicitly requested by the user or directly required to answer the question.
+- If the evidence does not fully support a conclusion, state the limitation instead of inferring it.
+- Do not add unrelated legal rules, exceptions, or compliance notes that are not necessary to answer the user's specific question.
+
+1. Retrieved does NOT mean applicable.
+Before using any retrieved provision, compare it against the user's exact facts.
+
+Check where relevant:
+- factual direction
+- supply type
+- tax type
+- taxpayer/person type
+- goods/services/capital goods
+- taxable/exempt status
+- dates/effective periods
+- conditions and exceptions
+- procedural context
+
+2. Preserve factual direction exactly.
+
+Examples of directional distinctions:
+- inter-State → intra-State
+- intra-State → inter-State
+- taxable → exempt
+- exempt → taxable
+- tax paid → tax not paid
+
+Do not reverse or merge these directions.
+
+3. Do not use a provision merely because keywords overlap with the query.
+
+If retrieved evidence concerns a related but materially different scenario,
+do not use it as authority for the user's scenario.
+
+Example:
+- tax collected on an exempt supply (governed by Section 76, Section 34, Section 54)
+- IGST paid instead of CGST/SGST (governed by Section 77 CGST Act / Section 19 IGST Act)
+are different situations. A provision governing one must not be applied to the other unless the retrieved text explicitly supports that application. Never cite Section 77 of the CGST Act, Section 19 of the IGST Act, or Section 12 of the UTGST Act for transactions involving tax collected on exempt goods or excess tax collections. Those provisions govern strictly place-of-supply classification mismatches (paying IGST instead of CGST/SGST, or vice versa).
+
+4. Do not combine opposite-direction provisions.
+
+If one retrieved provision applies to:
+    intra-State → inter-State
+
+but the user's facts are:
+    inter-State → intra-State
+
+do not present the first provision as governing the user's case unless the
+retrieved text explicitly makes it applicable to both directions.
+
+5. Distinguish core evidence from background evidence.
+
+Prioritize evidence that directly answers the user's facts.
+
+Do not add tangential provisions, exceptions, special taxpayer rules,
+capital-goods rules, banking rules, definitions, forms, deadlines, or
+procedures merely because they were retrieved.
+Do not add unrelated legal rules, exceptions, or compliance notes that are not necessary to answer the user's specific question.
+
+Include them only when:
+- the user's facts make them relevant, OR
+- they are necessary to answer the question.
+
+6. Every specific legal claim must be supported by retrieved evidence.
+
+Do not introduce from model knowledge:
+- Section numbers
+- Rule numbers
+- Forms
+- Notification numbers
+- deadlines
+- rates
+- HSN codes
+- exemptions
+- legal conditions
+- procedural requirements
+
+7. Never repair missing evidence using pretrained legal knowledge.
+
+If retrieved evidence supports the main legal conclusion but does not support
+a specific procedure, deadline, form, condition, or exception, omit that
+detail or explicitly state that the retrieved evidence does not establish it.
+
+8. Do not infer that a related procedural provision applies to the user's
+scenario when its text describes materially different facts.
+
+9. When retrieved provisions conflict or appear to address different factual
+situations, prefer the provision whose text most directly matches the user's
+facts.
+
+Do not silently reconcile them using pretrained knowledge.
+
+10. Keep the answer scoped to the user's question.
+
+Do not create a "Key Legal Provisions" section containing every retrieved
+Section/Rule. Mention only provisions actually used in the reasoning.
+
+11. Before producing the answer, internally verify:
+
+- Does each cited provision match the user's factual scenario?
+- Did I reverse any factual direction?
+- Did I introduce a legal detail not present in retrieved evidence?
+- Did I include an exception that the user's facts did not trigger?
+- Did I treat semantically related evidence as legally applicable evidence?
+
+If any answer is yes, correct it before generating the final response.
+
+IMPORTANT:
+Do not expose this internal applicability analysis to the user.
+Return only the final grounded answer using the existing response format.
+
+Application to Tax Collected in Error on Exempt Supplies:
+* Amount to return/adjust: Calculate and state the exact tax amount collected (e.g., ₹50,000 × 18% = ₹9,000.00) that must be refunded or adjusted with the customer.
+* Treatment under GST law: Under Section 76(1) of the CGST Act, any person who has collected from any other person any amount as representing tax under the Act must pay that amount to the Government, irrespective of whether the supplies are taxable or exempt.
+* Adjustment & Credit Note: Under Section 34 of the CGST Act, the supplier can issue a Credit Note to the customer to rectify the excess tax charged, adjust the invoice value, and reduce output tax liability (if within the allowable time limit).
+* Refund from Government: Under Section 54 of the CGST Act, if the tax has already been deposited with the Government, a refund may be claimed, provided the financial incidence has been refunded back to the customer (avoiding unjust enrichment).
+* Never apply Section 77 / 19 / 12 to an exempt supply scenario.
+
+GROUNDING & STRICT TAX APPLICABILITY RULES:
+- Use ONLY information supported by the retrieved context.
+- STRICT GROUNDING RULE:
+  For legal, tax, and ITC statements, preserve the exact conditions, restrictions, and ordering supported by the retrieved evidence. Do not simplify legal rules into broader claims. Do not introduce additional calculations, conclusions, assumptions, limits, or recommendations unless explicitly requested by the user or directly required to answer the question. If the evidence does not fully support a conclusion, state the limitation instead of inferring it. Do not add unrelated legal rules, exceptions, or compliance notes that are not necessary to answer the user's specific question.
 - Do not invent legal requirements, Sections, Rules, Forms, dates, rates, or procedures.
 - Final statutory GST rates, HSN codes, and legal provisions MUST be quoted strictly from the provided structured rate records or legal context. Never invent or estimate statutory tax rates or classifications.
+- TAX APPLICABILITY RULES:
+  1. Grounded Taxability Determination:
+     - Statements regarding taxability (whether a supply is taxable, exempt, nil-rated, zero-rated, non-taxable, or subject to reverse charge) must be directly established by retrieved statutory provisions, tariff entries, or Gazette notifications.
+     - Never declare that a transaction is automatically taxable, exempt, or subject to a specific tax rate without citing the specific entry, provision, or notification supporting that conclusion.
+  2. Mandatory Preconditions & Qualifications:
+     - When a tax rate, exemption, or concession is subject to statutory conditions (e.g. unit container, pre-packaged and labelled, registered brand name, end-use restrictions, turnover thresholds under Section 22, non-availment of ITC), you MUST explicitly state that applicability depends on satisfying those specific preconditions.
+     - Never turn a conditional exemption or rate into a broad, unconditional rule.
+  3. No Broad or Blanket Assertions:
+     - Avoid sweeping statements such as "all supplies attract GST", "every taxpayer must pay 18%", or "all business inputs qualify for credit".
+     - Restrict every applicability conclusion strictly to the specific goods/services, supply type (inter-State vs intra-State), and taxpayer category supported by the retrieved context.
+  4. Statutory Distinction Between Levy, Exemption, and Reverse Charge:
+     - Keep forward charge liability (Section 9(1) CGST Act / Section 5(1) IGST Act), reverse charge liability (Section 9(3)/9(4) / Section 5(3)/5(4)), exempt supplies (Section 11 / Section 6), and non-taxable supplies legally distinct.
+     - Do not state that the recipient must pay tax under reverse charge unless a retrieved notification or statutory rule explicitly mandates reverse charge for that exact supply.
+
+STRICT ITC UTILIZATION AND LEGAL TERMINOLOGY RULES:
+1. Strict Statutory Order of Utilization (Section 49, Section 49A, Section 49B, and Rule 88A):
+   - Step 1: Input tax credit of Integrated Tax (IGST) in the Electronic Credit Ledger MUST be completely exhausted first against IGST output tax liability.
+   - Step 2: Any unutilized IGST credit remaining after discharging IGST output liability can be utilized towards Central Tax (CGST) and/or State Tax (SGST/UTGST) output liabilities in any order and in any proportion, before utilizing CGST or SGST credit.
+   - Step 3: Only after IGST credit is completely exhausted may Central Tax (CGST) credit be utilized: first towards CGST output liability, and any remaining balance towards IGST output liability.
+   - Step 4: Only after IGST credit is completely exhausted may State Tax (SGST/UTGST) credit be utilized: first towards SGST/UTGST output liability, and any remaining balance towards IGST output liability.
+   - Step 5 - Absolute Prohibition on Cross-Utilization: Under Section 49(5)(e) and (f) of the CGST Act, Central Tax (CGST) credit can NEVER be utilized for payment of State Tax (SGST/UTGST), and State Tax (SGST/UTGST) credit can NEVER be utilized for payment of Central Tax (CGST). Never state or imply cross-utilization between CGST and SGST/UTGST.
+2. Legally Accurate ITC Terminology:
+   - Distinguish Availment vs Utilization:
+     - "Availment / Taking of ITC" refers to taking credit into the Electronic Credit Ledger under Section 16 (subject to invoice possession, receipt of goods/services, tax payment to government, and return filing).
+     - "Utilization / Set-off of ITC" refers to debiting the Electronic Credit Ledger under Section 49/Rule 88A to discharge output tax liability on taxable supplies.
+     - "Reversal of ITC" refers to reversing credit attributable to exempt supplies or non-business purposes under Section 17(1)/(2) and Rules 42/43, or non-payment within 180 days under Section 16(2).
+     - "Blocked / Ineligible ITC" refers to specific restricted credits under Section 17(5) (e.g. motor vehicles with seating capacity <= 13, food and beverages, outdoor catering, personal consumption, goods lost or stolen).
+   - Accurate Discharge Terminology:
+     - Never state that "ITC pays cash", "ITC offsets cash", or "ITC is applied to cash".
+     - Output tax liability is discharged: first by debiting eligible ITC through the Electronic Credit Ledger; any balance of output tax liability must be discharged in cash through the Electronic Cash Ledger.
+     - State "Cash tax payable: ₹0" or "Output tax discharged through credit: ₹X" instead of informal phrasing.
+   - Strict Scope of What ITC Can Pay:
+     - Under Section 49(4), ITC can ONLY be utilized for payment of output tax on taxable supplies under the Act.
+     - ITC CANNOT be utilized for:
+       a) Reverse Charge Mechanism (RCM) tax liability under Section 9(3)/9(4) (must be paid in cash via Electronic Cash Ledger).
+       b) Interest, penalties, late fees, or any other non-tax sums payable under the Act (must be paid in cash).
+     - Never make broad, unsupported statements that "ITC can be used to pay any GST dues" or "ITC covers all taxes and penalties".
+3. Maximum Supply Value Calculation with ITC:
+   - For an inter-State outward supply, the outward liability is IGST.
+   - Under Section 49(5) and Rule 88A, IGST liability can be satisfied by IGST credit, CGST credit, and SGST credit (exhausting IGST credit first, then applying CGST and SGST credits in any order/proportion).
+   - Therefore, all eligible credits across all three ledgers (IGST + CGST + SGST) are available to cover the IGST liability.
+   - The maximum taxable value of supply that can be made without cash payment is: (Total Available Eligible ITC across all heads) / (Applicable IGST Rate).
+   - Explicitly present the step-by-step credit utilization (exhausting IGST credit first, then applying CGST and SGST credits to clear the remaining IGST liability) confirming ₹0 cash payable.
+
+AVOIDING BROAD OR UNSUPPORTED STATEMENTS:
+1. Strict Boundary of Legal Authority:
+   - Confine all statements strictly to the scope of the retrieved statutory text, notifications, and taxpayer facts.
+   - Do not make broad general claims like "All businesses must...", "GST is always...", or "ITC is automatically available to everyone...".
+   - When a rule applies only to specific classes of persons, goods, or thresholds, explicitly state those limitations.
+   - Do not add unrelated legal rules, exceptions, or compliance notes that are not necessary to answer the user's specific question.
+2. No Extrapolation Beyond Retrieved Scope:
+   - Do not extrapolate a rule governing goods to services, or a rule governing inter-State supplies to intra-State supplies, unless explicitly established by retrieved evidence.
+   - If retrieved evidence does not specify a procedural detail, form, or time limit, explicitly note that the provided legal context does not specify it, rather than filling in from generic assumptions.
+3. Precise Statutory Nomenclature:
+   - Always use formal statutory nomenclature:
+     - "Electronic Credit Ledger", "Electronic Cash Ledger", "Electronic Liability Register"
+     - "Central Tax (CGST)", "State Tax (SGST)", "Integrated Tax (IGST)", "Union Territory Tax (UTGST)"
+     - "Credit Note" (under Section 34), "Debit Note", "Tax Invoice" (under Section 31)
+     - "Form GSTR-1", "Form GSTR-3B", "Form GSTR-9"
+   - Avoid colloquial or ambiguous terms like "GST bill", "tax bucket", "cash wallet", or "credit balance in cash account".
+
 - When the user asks for a calculation on a specific amount, or provides assumed numbers / ITC credit balances, perform the arithmetic accurately based on the retrieved rates or user balances, explaining the steps clearly.
-- For ITC utilization and maximum supply value questions (e.g. how much value of goods can be supplied without paying cash tax):
-  - Under Section 49(5) and Rule 88A, for an inter-state supply, the outward liability is IGST.
-  - IGST liability must be offset first using IGST credit; once IGST credit is exhausted, CGST credit and SGST credit can both be utilized towards the remaining IGST liability in any order or proportion.
-  - Therefore, all eligible credits (IGST + CGST + SGST) are available to cover the IGST liability.
-  - The maximum taxable value that can be supplied without cash payment is: (Total Available Eligible ITC across all heads) / (Applicable IGST Rate).
-  - Explicitly present the step-by-step credit utilization (exhausting IGST credit first, then applying CGST and SGST credits to clear the remaining IGST liability) confirming ₹0 cash payable.
 - User-provided assumptions/numbers are hypothetical inputs for calculation; clearly state them as user assumptions and do not present them as verified statutory law.
 - SOURCE ATTRIBUTION RULES:
   - Correctly distinguish between:
@@ -619,16 +782,18 @@ def extract_sources(chunks: list[dict[str, Any]], start_rank: int = 1) -> list[d
     sources: list[dict[str, Any]] = []
     for index, chunk in enumerate(chunks, start_rank):
         content = chunk.get("content") or chunk.get("snippet") or ""
+        doc_type = chunk.get("document_type") or "unknown"
         sources.append(
             {
                 "rank": chunk.get("rank", index),
-                "document_type": chunk.get("document_type"),
+                "document_type": doc_type,
                 "reference": chunk.get("reference"),
                 "title": chunk.get("title"),
-                "chunk_id": chunk.get("chunk_id"),
+                "chunk_id": chunk.get("chunk_id") or f"{doc_type}_{index}",
                 "content": content,
                 "snippet": chunk.get("snippet") or _snippet(content),
                 "reranker_score": chunk.get("reranker_score"),
+                "url": chunk.get("url"),
             }
         )
     return sources
@@ -751,6 +916,7 @@ def generate_answer(
     max_tokens: int = 1500,
     direct_reasoning: bool = False,
     history: list[Any] | None = None,
+    request_id: str | None = None,
 ) -> dict[str, Any]:
     """Send grounded context to OpenAI and return the clean answer with timings and sources."""
     if not query.strip():
@@ -811,6 +977,17 @@ def generate_answer(
         raise GenerationError(f"Generation failed: {exc}") from exc
 
     gen_ms = round((time.perf_counter() - gen_start) * 1000, 3)
+
+    try:
+        record_llm_call(
+            request_id=request_id,
+            stage="synthesis",
+            model=model_name,
+            response=response,
+            latency_ms=gen_ms,
+        )
+    except Exception:
+        pass
 
     choice = response.choices[0] if response.choices else None
     raw_content = choice.message.content if choice and choice.message else ""
@@ -944,29 +1121,48 @@ def run_gst_answer_flow(
         "timings_ms": {"total": 0.0, "dense": 0.0, "bm25": 0.0, "rrf": 0.0, "reranker": 0.0},
     }
 
-    if needs_rate:
-        rate_start = time.perf_counter()
-        rate_q = plan.get("clean_subqueries", {}).get("rate_query") or query
-        rate_results = retrieve_rates(rate_q, db_url=db_url, limit=top_k)
-        rate_timing = round((time.perf_counter() - rate_start) * 1000, 3)
-        tools_executed.append({
-            "tool": "retrieve_rates",
-            "query": rate_q,
-            "results_count": len(rate_results),
-            "timing_ms": rate_timing,
-        })
+    needs_decomp = bool(plan.get("needs_query_decomposition", False)) and not route_override
+    retrieval_subqueries = plan.get("retrieval_subqueries", [])
 
-    if needs_legal:
-        legal_q = plan.get("clean_subqueries", {}).get("legal_query") or query
-        retrieval_data = inspect_retrieval(legal_q, top_k=top_k, models=models, db_url=db_url)
-        legal_chunks = retrieval_data.get("results") or []
-        legal_timing = retrieval_data.get("timings_ms", {}).get("total", 0.0)
-        tools_executed.append({
-            "tool": "inspect_retrieval",
-            "query": legal_q,
-            "results_count": len(legal_chunks),
-            "timing_ms": legal_timing,
-        })
+    if needs_decomp and retrieval_subqueries:
+        decomp_data = execute_decomposed_subqueries(
+            retrieval_subqueries,
+            models=models,
+            db_url=db_url,
+            top_k=top_k,
+            rate_limit=top_k,
+        )
+        rate_results = decomp_data.get("rate_results", [])
+        legal_chunks = decomp_data.get("legal_results", [])
+        tools_executed.extend(decomp_data.get("tools_executed", []))
+        rate_timing = decomp_data.get("timings_ms", {}).get("rate", 0.0)
+        legal_timing = decomp_data.get("timings_ms", {}).get("legal", 0.0)
+        retrieval_data["results"] = legal_chunks
+        retrieval_data["timings_ms"] = decomp_data.get("timings_ms", {})
+    else:
+        if needs_rate:
+            rate_start = time.perf_counter()
+            rate_q = plan.get("clean_subqueries", {}).get("rate_query") or query
+            rate_results = retrieve_rates(rate_q, db_url=db_url, limit=top_k)
+            rate_timing = round((time.perf_counter() - rate_start) * 1000, 3)
+            tools_executed.append({
+                "tool": "retrieve_rates",
+                "query": rate_q,
+                "results_count": len(rate_results),
+                "timing_ms": rate_timing,
+            })
+
+        if needs_legal:
+            legal_q = plan.get("clean_subqueries", {}).get("legal_query") or query
+            retrieval_data = inspect_retrieval(legal_q, top_k=top_k, models=models, db_url=db_url)
+            legal_chunks = retrieval_data.get("results") or []
+            legal_timing = retrieval_data.get("timings_ms", {}).get("total", 0.0)
+            tools_executed.append({
+                "tool": "inspect_retrieval",
+                "query": legal_q,
+                "results_count": len(legal_chunks),
+                "timing_ms": legal_timing,
+            })
 
     if needs_notif:
         notif_start = time.perf_counter()
@@ -1236,6 +1432,7 @@ def stream_answer(
     max_tokens: int = 1500,
     direct_reasoning: bool = False,
     history: list[Any] | None = None,
+    request_id: str | None = None,
 ):
     """Stream response tokens from OpenAI, yielding (event_type, delta)."""
     if not query.strip():
@@ -1276,14 +1473,26 @@ def stream_answer(
                 messages.append({"role": r, "content": c})
     messages.append({"role": "user", "content": user_prompt})
 
+    t_start = time.perf_counter()
+    usage_obj = None
     try:
-        stream = client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            stream=True,
-        )
+        try:
+            stream = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True,
+                stream_options={"include_usage": True},
+            )
+        except (TypeError, Exception):
+            stream = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True,
+            )
     except openai.AuthenticationError as exc:
         raise GenerationError(f"OpenAI authentication failed: {exc}") from exc
     except openai.RateLimitError as exc:
@@ -1297,6 +1506,8 @@ def stream_answer(
 
     thought_filter = StreamingThoughtFilter()
     for chunk in stream:
+        if getattr(chunk, "usage", None):
+            usage_obj = chunk.usage
         if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
             raw_delta = chunk.choices[0].delta.content
             clean_delta = thought_filter.process(raw_delta)
@@ -1306,6 +1517,18 @@ def stream_answer(
     trailing = thought_filter.flush()
     if trailing:
         yield ("token", trailing)
+
+    stream_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
+    try:
+        record_llm_call(
+            request_id=request_id,
+            stage="synthesis",
+            model=model_name,
+            response=usage_obj,
+            latency_ms=stream_ms,
+        )
+    except Exception:
+        pass
 
 
 def stream_gst_answer_flow(
@@ -1419,29 +1642,48 @@ def stream_gst_answer_flow(
         "timings_ms": {"total": 0.0, "dense": 0.0, "bm25": 0.0, "rrf": 0.0, "reranker": 0.0},
     }
 
-    if needs_rate:
-        rate_start = time.perf_counter()
-        rate_q = plan.get("clean_subqueries", {}).get("rate_query") or query
-        rate_results = retrieve_rates(rate_q, db_url=db_url, limit=top_k)
-        rate_timing = round((time.perf_counter() - rate_start) * 1000, 3)
-        tools_executed.append({
-            "tool": "retrieve_rates",
-            "query": rate_q,
-            "results_count": len(rate_results),
-            "timing_ms": rate_timing,
-        })
+    needs_decomp = bool(plan.get("needs_query_decomposition", False)) and not route_override
+    retrieval_subqueries = plan.get("retrieval_subqueries", [])
 
-    if needs_legal:
-        legal_q = plan.get("clean_subqueries", {}).get("legal_query") or query
-        retrieval_data = inspect_retrieval(legal_q, top_k=top_k, models=models, db_url=db_url)
-        legal_chunks = retrieval_data.get("results") or []
-        legal_timing = retrieval_data.get("timings_ms", {}).get("total", 0.0)
-        tools_executed.append({
-            "tool": "inspect_retrieval",
-            "query": legal_q,
-            "results_count": len(legal_chunks),
-            "timing_ms": legal_timing,
-        })
+    if needs_decomp and retrieval_subqueries:
+        decomp_data = execute_decomposed_subqueries(
+            retrieval_subqueries,
+            models=models,
+            db_url=db_url,
+            top_k=top_k,
+            rate_limit=top_k,
+        )
+        rate_results = decomp_data.get("rate_results", [])
+        legal_chunks = decomp_data.get("legal_results", [])
+        tools_executed.extend(decomp_data.get("tools_executed", []))
+        rate_timing = decomp_data.get("timings_ms", {}).get("rate", 0.0)
+        legal_timing = decomp_data.get("timings_ms", {}).get("legal", 0.0)
+        retrieval_data["results"] = legal_chunks
+        retrieval_data["timings_ms"] = decomp_data.get("timings_ms", {})
+    else:
+        if needs_rate:
+            rate_start = time.perf_counter()
+            rate_q = plan.get("clean_subqueries", {}).get("rate_query") or query
+            rate_results = retrieve_rates(rate_q, db_url=db_url, limit=top_k)
+            rate_timing = round((time.perf_counter() - rate_start) * 1000, 3)
+            tools_executed.append({
+                "tool": "retrieve_rates",
+                "query": rate_q,
+                "results_count": len(rate_results),
+                "timing_ms": rate_timing,
+            })
+
+        if needs_legal:
+            legal_q = plan.get("clean_subqueries", {}).get("legal_query") or query
+            retrieval_data = inspect_retrieval(legal_q, top_k=top_k, models=models, db_url=db_url)
+            legal_chunks = retrieval_data.get("results") or []
+            legal_timing = retrieval_data.get("timings_ms", {}).get("total", 0.0)
+            tools_executed.append({
+                "tool": "inspect_retrieval",
+                "query": legal_q,
+                "results_count": len(legal_chunks),
+                "timing_ms": legal_timing,
+            })
 
     if needs_notif:
         notif_start = time.perf_counter()
