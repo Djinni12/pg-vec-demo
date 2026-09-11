@@ -1,3 +1,4 @@
+
 """Fallback Web Search Retriever for GST LangGraph Architecture.
 
 Executes only when local knowledge sources (rate database, legal RAG, notifications)
@@ -27,10 +28,23 @@ logger = logging.getLogger(__name__)
 AUTHORITATIVE_GST_DOMAINS = [
     "cbic-gst.gov.in",
     "gstcouncil.gov.in",
+    "services.gst.gov.in",
     "taxinformation.cbic.gov.in",
     "egazette.gov.in",
     "cbic.gov.in",
     "gst.gov.in",
+    "taxguru.in",
+    "cleartax.in",
+    "taxmann.com",
+    "indiafilings.com",
+    "pocketgst.com",
+    "mastersindia.co",
+    "saginfotech.com",
+    "caclubindia.com",
+    "taxscan.in",
+    "taxclue.in",
+    "taxgarden.in",
+    "vakilsearch.com",
 ]
 
 # Authoritative trade commodity to statutory tariff heading mapping
@@ -53,6 +67,11 @@ COMMON_COMMODITY_TARIFF_MAP: dict[str, str] = {
     "desktop computer": "8471",
     "personal computer": "8471",
     "tablet computer": "8471",
+    "restaurant": "9963",
+    "restaurant service": "9963",
+    "restaurant services": "9963",
+    "outdoor catering": "9963",
+    "catering": "9963",
 }
 
 
@@ -106,34 +125,24 @@ def _execute_http_search(query: str, timeout: float = 6.0) -> list[dict[str, Any
     }
     results: list[dict[str, Any]] = []
 
-    # 1. Bing HTTP Search
+    # 1. DuckDuckGo HTML Search (primary for authoritative tax/statutory queries)
     try:
-        url = "https://www.bing.com/search"
-        resp = requests.get(url, params={"q": query}, headers=headers, timeout=timeout)
+        ddg_url = "https://html.duckduckgo.com/html/"
+        resp = requests.post(ddg_url, data={"q": query}, headers=headers, timeout=timeout)
         if resp.status_code == 200 and resp.text:
-            pattern = re.compile(
-                r'<h2[^>]*><a[^>]*href="(?P<href>[^"]+)"[^>]*>(?P<title>[\s\S]*?)</a></h2>'
-                r'[\s\S]*?<div\s+class="b_caption"[^>]*>[\s\S]*?<p[^>]*>(?P<snippet>[\s\S]*?)</p>',
+            for m in re.finditer(
+                r'<h2 class="result__title">[\s\S]*?<a[^>]*class="result__a"[^>]*href="(?P<href>[^"]*)"[^>]*>(?P<title>[\s\S]*?)</a>[\s\S]*?<a class="result__snippet"[^>]*>(?P<snippet>[\s\S]*?)</a>',
+                resp.text,
                 re.IGNORECASE,
-            )
-            for m in pattern.finditer(resp.text):
-                raw_href = m.group("href")
-                raw_title = m.group("title")
-                raw_snippet = m.group("snippet")
-
-                actual_url = raw_href
-                u_match = re.search(r"[?&;]u=a1([a-zA-Z0-9_-]+)", raw_href)
-                if u_match:
-                    b64_str = u_match.group(1).replace("-", "+").replace("_", "/")
-                    b64_str += "=" * (-len(b64_str) % 4)
-                    try:
-                        actual_url = base64.b64decode(b64_str).decode("utf-8", errors="ignore")
-                    except Exception:
-                        pass
-
-                clean_title = re.sub(r"<[^>]+>", "", unescape(raw_title)).strip()
-                clean_snippet = re.sub(r"<[^>]+>", "", unescape(raw_snippet)).strip()
-                if actual_url and clean_title:
+            ):
+                raw_u = m.group("href")
+                actual_url = raw_u
+                if "uddg=" in raw_u:
+                    parsed = urllib.parse.parse_qs(urllib.parse.urlparse(raw_u).query)
+                    actual_url = parsed.get("uddg", [raw_u])[0]
+                clean_title = re.sub(r"<[^>]+>", "", unescape(m.group("title"))).strip()
+                clean_snippet = re.sub(r"<[^>]+>", "", unescape(m.group("snippet"))).strip()
+                if actual_url and clean_title and not any(r["url"] == actual_url for r in results):
                     results.append({
                         "url": actual_url,
                         "title": clean_title,
@@ -141,7 +150,45 @@ def _execute_http_search(query: str, timeout: float = 6.0) -> list[dict[str, Any
                         "domain": urllib.parse.urlparse(actual_url).netloc,
                     })
     except Exception as exc:
-        logger.debug(f"Bing search error: {exc}")
+        logger.debug(f"DuckDuckGo search error: {exc}")
+
+    # 2. Bing HTTP Search fallback
+    if not results:
+        try:
+            url = "https://www.bing.com/search"
+            resp = requests.get(url, params={"q": query}, headers=headers, timeout=timeout)
+            if resp.status_code == 200 and resp.text:
+                pattern = re.compile(
+                    r'<h2[^>]*><a[^>]*href="(?P<href>[^"]+)"[^>]*>(?P<title>[\s\S]*?)</a></h2>'
+                    r'[\s\S]*?<div\s+class="b_caption"[^>]*>[\s\S]*?<p[^>]*>(?P<snippet>[\s\S]*?)</p>',
+                    re.IGNORECASE,
+                )
+                for m in pattern.finditer(resp.text):
+                    raw_href = m.group("href")
+                    raw_title = m.group("title")
+                    raw_snippet = m.group("snippet")
+
+                    actual_url = raw_href
+                    u_match = re.search(r"[?&;]u=a1([a-zA-Z0-9_-]+)", raw_href)
+                    if u_match:
+                        b64_str = u_match.group(1).replace("-", "+").replace("_", "/")
+                        b64_str += "=" * (-len(b64_str) % 4)
+                        try:
+                            actual_url = base64.b64decode(b64_str).decode("utf-8", errors="ignore")
+                        except Exception:
+                            pass
+
+                    clean_title = re.sub(r"<[^>]+>", "", unescape(raw_title)).strip()
+                    clean_snippet = re.sub(r"<[^>]+>", "", unescape(raw_snippet)).strip()
+                    if actual_url and clean_title and not any(r["url"] == actual_url for r in results):
+                        results.append({
+                            "url": actual_url,
+                            "title": clean_title,
+                            "snippet": clean_snippet,
+                            "domain": urllib.parse.urlparse(actual_url).netloc,
+                        })
+        except Exception as exc:
+            logger.debug(f"Bing search error: {exc}")
 
     # 2. Brave Search fallback if Bing yields nothing
     if not results:
@@ -216,7 +263,9 @@ def search_web_fallback(
             break
 
     # Step 2: If no immediate HSN found, or to confirm and gather web evidence, run web search
-    search_query = f"{clean_q} GST rate HSN code India cbic"
+    is_service = any(k in q_lower for k in ["service", "services", "restaurant", "catering", "hotel", "accommodation", "transport", "consult"])
+    code_term = "SAC code" if is_service else "HSN code"
+    search_query = f"{clean_q} GST rate {code_term} India cbic"
     raw_results = _execute_http_search(search_query)
 
     # Step 3: Extract HSN candidate from web snippets if not yet found

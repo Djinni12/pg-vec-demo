@@ -573,6 +573,21 @@ def web_search_node(
             timing_ms=elapsed_ms,
         )
 
+    # Trigger background knowledge ingestion without waiting or blocking
+    if web_chunks:
+        try:
+            from src.ingestors.background_web_ingestor import schedule_background_web_ingestion
+            schedule_background_web_ingestion(
+                execution_id=execution_id or "",
+                user_query=user_q or search_q,
+                web_results=web_chunks,
+                discovered_hsn=search_data.get("discovered_hsn"),
+                missing_info_context=search_q,
+                db_url=db_url,
+            )
+        except Exception as bg_err:
+            logger.warning(f"Failed to schedule background web ingestion: {bg_err}")
+
     return {
         "web_results": web_chunks,
         "rate_results": new_rate_results,

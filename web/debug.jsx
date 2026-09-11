@@ -37,6 +37,36 @@ function DecompBadge({ active }) {
   return <span className="badge badge-decomp" title="Query Decomposition Active">🔀 Decomposed</span>;
 }
 
+function WebBadge({ active }) {
+  if (!active) return null;
+  return <span className="badge badge-web" title="Triggered fallback web search">🌐 Web Search</span>;
+}
+
+function IngestionBadge({ status, table }) {
+  if (!status || status === "idle") return null;
+  const s = status.toLowerCase();
+  let badgeClass = "badge-skipped";
+  let label = "📥 Skipped";
+  if (s === "stored") {
+    badgeClass = "badge-ingested";
+    label = table ? `📥 Ingested (${table})` : "📥 Ingested";
+  } else if (s === "queued" || s === "running") {
+    badgeClass = "badge-ingesting";
+    label = "📥 Ingesting…";
+  } else if (s === "failed") {
+    badgeClass = "badge-failed";
+    label = "📥 Failed";
+  }
+  return (
+    <span
+      className={`badge ${badgeClass}`}
+      title={`Background Knowledge Ingestion: ${status}${table ? ` (target: ${table})` : ""}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 // -----------------------------------------------------------------------------
 // Main Application Component
 // -----------------------------------------------------------------------------
@@ -131,9 +161,17 @@ function DebugApp() {
         !searchQuery ||
         (t.query && t.query.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (t.execution_id && t.execution_id.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesRoute =
-        routeFilter === "all" ||
-        (t.route && t.route.toLowerCase() === routeFilter.toLowerCase());
+
+      let matchesRoute = true;
+      if (routeFilter === "all") {
+        matchesRoute = true;
+      } else if (routeFilter === "web") {
+        matchesRoute = Boolean(t.has_web_search);
+      } else if (routeFilter === "ingestion") {
+        matchesRoute = Boolean(t.has_ingestion || t.ingestion_status === "stored");
+      } else {
+        matchesRoute = t.route && t.route.toLowerCase() === routeFilter.toLowerCase();
+      }
       return matchesSearch && matchesRoute;
     });
   }, [traces, searchQuery, routeFilter]);
@@ -203,6 +241,8 @@ function DebugApp() {
               <option value="rate">Rate Lookup</option>
               <option value="mixed">Mixed</option>
               <option value="direct">Direct / Calc</option>
+              <option value="web">🌐 Fallback Web Search</option>
+              <option value="ingestion">📥 Web Ingested</option>
             </select>
 
             <label style={{ fontSize: 11, color: "#8e9fa5", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
@@ -232,9 +272,13 @@ function DebugApp() {
                   className={`trace-item ${isSelected ? "selected" : ""}`}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       <RouteBadge route={t.route} />
                       {t.has_decomposition && <DecompBadge active={true} />}
+                      {t.has_web_search && <WebBadge active={true} />}
+                      {t.ingestion_status && t.ingestion_status !== "idle" && (
+                        <IngestionBadge status={t.ingestion_status} table={t.ingestion_table} />
+                      )}
                     </div>
                     <span style={{ fontSize: 11, color: "#8e9fa5", fontFamily: "var(--mono-font)" }}>
                       {formatTimestamp(t.timestamp)}
@@ -298,10 +342,19 @@ function DebugApp() {
                     </a>
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                   <RouteBadge route={selectedTrace.planner?.clean_subqueries?.route || "direct"} />
                   {Boolean(selectedTrace.planner?.query_decomposition?.needs_query_decomposition || selectedTrace.planner?.capability_flags?.needs_query_decomposition) && (
                     <DecompBadge active={true} />
+                  )}
+                  {Boolean(selectedTrace.web_search_retrieval?.returned_chunks?.length > 0 || selectedTrace.graph_execution?.actual_executed_nodes?.includes("web_search")) && (
+                    <WebBadge active={true} />
+                  )}
+                  {selectedTrace.background_ingestion && selectedTrace.background_ingestion.status !== "idle" && (
+                    <IngestionBadge
+                      status={selectedTrace.background_ingestion.status}
+                      table={selectedTrace.background_ingestion.target_table}
+                    />
                   )}
                   <StatusBadge status={selectedTrace.status} />
                   {selectedTrace.llm_usage?.total_cost_usd !== null && selectedTrace.llm_usage?.total_cost_usd !== undefined && (
@@ -363,8 +416,20 @@ function DebugApp() {
               <button
                 className={`debug-tab-btn ${activeTab === "web" ? "active" : ""}`}
                 onClick={() => setActiveTab("web")}
+                style={
+                  (selectedTrace.web_search_retrieval?.returned_chunks?.length > 0 ||
+                   (selectedTrace.background_ingestion && selectedTrace.background_ingestion.status !== "idle"))
+                    ? { color: "#38bdf8", borderBottomColor: activeTab === "web" ? "#38bdf8" : "rgba(56, 189, 248, 0.4)" }
+                    : {}
+                }
               >
-                🌐 Web Search ({selectedTrace.web_search_retrieval?.returned_chunks?.length || 0})
+                🌐 Web Search & Ingestion ({selectedTrace.web_search_retrieval?.returned_chunks?.length || 0})
+                {selectedTrace.background_ingestion?.status === "stored" && (
+                  <span style={{ marginLeft: 6, fontSize: 10, color: "#34d399", fontWeight: 700 }}>✓ Ingested</span>
+                )}
+                {(selectedTrace.background_ingestion?.status === "queued" || selectedTrace.background_ingestion?.status === "running") && (
+                  <span style={{ marginLeft: 6, fontSize: 10, color: "#fbbf24", fontWeight: 700 }}>● Ingesting…</span>
+                )}
               </button>
               <button
                 className={`debug-tab-btn ${activeTab === "reasoning" ? "active" : ""}`}
@@ -567,6 +632,42 @@ function WaterfallView({ trace }) {
             ms={0}
           />
         </div>
+        {trace.background_ingestion && trace.background_ingestion.status !== "idle" && (
+          <div style={{ marginTop: 14, padding: "12px 16px", background: "rgba(56, 189, 248, 0.05)", border: "1px solid rgba(56, 189, 248, 0.25)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 20 }}>📥</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>Background Knowledge Ingestion Pipeline</span>
+                  <IngestionBadge status={trace.background_ingestion.status} table={trace.background_ingestion.target_table} />
+                </div>
+                <div style={{ fontSize: 11, color: "#8e9fa5", marginTop: 4, lineHeight: 1.4 }}>
+                  {trace.background_ingestion.status === "stored" ? (
+                    <span>
+                      Asynchronously classified and persisted <strong>{trace.background_ingestion.records_ingested}</strong> record(s) into <code style={{ color: "#38bdf8", fontFamily: "var(--mono-font)" }}>{trace.background_ingestion.target_table}</code> and synchronized local caches in background (0 ms added to user response).
+                    </span>
+                  ) : trace.background_ingestion.status === "queued" || trace.background_ingestion.status === "running" ? (
+                    <span style={{ color: "#fbbf24" }}>
+                      Worker thread pool is executing classification, normalization, embeddings, and persistence in background (0 ms added to user response).
+                    </span>
+                  ) : (
+                    <span>
+                      Pipeline executed ({trace.background_ingestion.records_skipped || 0} skipped: {trace.background_ingestion.details?.[0]?.reason || "No persistable items"}).
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            {trace.background_ingestion.timing_ms > 0 && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 10, color: "#8e9fa5", textTransform: "uppercase" }}>Async Worker Latency</div>
+                <div style={{ fontSize: 13, color: "#34d399", fontFamily: "var(--mono-font)", fontWeight: 600 }}>
+                  {formatMs(trace.background_ingestion.timing_ms)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Waterfall Timings Breakdown */}
@@ -598,6 +699,28 @@ function WaterfallView({ trace }) {
               </div>
             );
           })}
+          {trace.background_ingestion && trace.background_ingestion.timing_ms > 0 && (
+            <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px dashed #1e2830" }}>
+              <div style={{ fontSize: 11, color: "#8e9fa5", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+                <span>⚡ Asynchronous Background Ingestion (Non-blocking, decoupled from user response)</span>
+                <span style={{ fontFamily: "var(--mono-font)", color: "#34d399" }}>{formatMs(trace.background_ingestion.timing_ms)}</span>
+              </div>
+              <div className="waterfall-bar-container">
+                <div className="waterfall-bar-label" style={{ color: "#34d399" }}>Background Ingestor</div>
+                <div className="waterfall-bar-track">
+                  <div
+                    className="waterfall-bar-fill"
+                    style={{
+                      width: "100%",
+                      background: "linear-gradient(90deg, #059669, #34d399)",
+                      opacity: 0.85,
+                    }}
+                  />
+                </div>
+                <div className="waterfall-bar-value" style={{ color: "#34d399" }}>{formatMs(trace.background_ingestion.timing_ms)}</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -840,22 +963,50 @@ function GraphExecutionView({ trace }) {
             </tr>
           </thead>
           <tbody>
-            {["planner", "rate_lookup", "legal_retrieval", "notification_support", "grounded_reasoning", "direct_reasoning", "calculation", "synthesis"].map((node) => {
-              const isSelected = selectedNodes.includes(node) || node === "planner";
-              const isExecuted = actualNodes.includes(node);
-              const status = statusMap[node] || (isExecuted ? "success" : "skipped");
-              const ms = timingMap[node];
+            {(() => {
+              const nodes = ["planner", "rate_lookup", "legal_retrieval", "notification_support"];
+              if (actualNodes.includes("web_search") || selectedNodes.includes("web_search")) {
+                nodes.push("web_search");
+              }
+              nodes.push("grounded_reasoning", "direct_reasoning", "calculation", "synthesis");
+              return nodes.map((node) => {
+                const isSelected = selectedNodes.includes(node) || node === "planner";
+                const isExecuted = actualNodes.includes(node);
+                const status = statusMap[node] || (isExecuted ? "success" : "skipped");
+                const ms = timingMap[node];
 
-              return (
-                <tr key={node} className={isExecuted ? "highlight-row" : ""}>
-                  <td><strong>{node}</strong></td>
-                  <td>{isSelected ? <span style={{ color: "#34d399" }}>✓ Yes</span> : <span style={{ color: "#64748b" }}>– No</span>}</td>
-                  <td>{isExecuted ? <span style={{ color: "#38bdf8" }}>✓ Yes</span> : <span style={{ color: "#64748b" }}>– Skipped</span>}</td>
-                  <td><StatusBadge status={status} /></td>
-                  <td style={{ fontFamily: "var(--mono-font)" }}>{isExecuted && ms !== undefined ? formatMs(ms) : "—"}</td>
-                </tr>
-              );
-            })}
+                return (
+                  <tr key={node} className={isExecuted ? "highlight-row" : ""}>
+                    <td>
+                      <strong>{node}</strong>
+                      {node === "web_search" && (
+                        <span style={{ marginLeft: 8, fontSize: 10, color: "#38bdf8" }}>(Fallback)</span>
+                      )}
+                    </td>
+                    <td>{isSelected ? <span style={{ color: "#34d399" }}>✓ Yes</span> : <span style={{ color: "#64748b" }}>– No</span>}</td>
+                    <td>{isExecuted ? <span style={{ color: "#38bdf8" }}>✓ Yes</span> : <span style={{ color: "#64748b" }}>– Skipped</span>}</td>
+                    <td><StatusBadge status={status} /></td>
+                    <td style={{ fontFamily: "var(--mono-font)" }}>{isExecuted && ms !== undefined ? formatMs(ms) : "—"}</td>
+                  </tr>
+                );
+              });
+            })()}
+            {trace.background_ingestion && trace.background_ingestion.status !== "idle" && (
+              <tr style={{ background: "rgba(56, 189, 248, 0.04)" }}>
+                <td>
+                  <strong>background_web_ingestion</strong>
+                  <span style={{ marginLeft: 8, fontSize: 10, color: "#a855f7" }}>(Async Daemon Worker)</span>
+                </td>
+                <td><span style={{ color: "#38bdf8" }}>⚡ Auto</span></td>
+                <td><span style={{ color: "#38bdf8" }}>✓ Dispatched</span></td>
+                <td>
+                  <IngestionBadge status={trace.background_ingestion.status} table={trace.background_ingestion.target_table} />
+                </td>
+                <td style={{ fontFamily: "var(--mono-font)", color: "#34d399" }}>
+                  {trace.background_ingestion.timing_ms ? formatMs(trace.background_ingestion.timing_ms) : "running…"}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1331,9 +1482,12 @@ function WebSearchView({ trace }) {
   const discoveredHsn = webData.discovered_hsn;
   const q = webData.query;
   const timing = webData.timing_ms;
+  const ingestion = trace.background_ingestion || { status: "idle", records_ingested: 0, records_skipped: 0, details: [] };
+  const hasWebSearch = chunks.length > 0 || (trace.graph_execution?.actual_executed_nodes || []).includes("web_search");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* 1. Web Search Retrieval Card */}
       <div className="card">
         <div className="card-header">
           <div className="card-title">🌐 Fallback Web Search Retrieval</div>
@@ -1342,12 +1496,12 @@ function WebSearchView({ trace }) {
           </span>
         </div>
         <div style={{ fontSize: 12, color: "#8e9fa5", marginBottom: 14 }}>
-          Triggered strictly as a fallback when local structured rate/HSN or legal knowledge sources reported missing evidence. Official and authoritative GST sources are prioritized.
+          Triggered strictly as a fallback when local structured rate/HSN or legal knowledge sources reported missing evidence. Authoritative GST sources (CBIC, GST Council, services.gst.gov.in, TaxGuru, etc.) are prioritized.
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           <div className="metric-box">
             <div className="metric-label">Search Query</div>
-            <div className="metric-value" style={{ fontSize: 13, wordBreak: "break-all" }}>{q || "None"}</div>
+            <div className="metric-value" style={{ fontSize: 13, wordBreak: "break-all" }}>{q || "(No web query)"}</div>
           </div>
           <div className="metric-box">
             <div className="metric-label">Discovered Identifier (HSN)</div>
@@ -1358,12 +1512,19 @@ function WebSearchView({ trace }) {
           <div className="metric-box">
             <div className="metric-label">Identifier Feedback Loop</div>
             <div className="metric-value" style={{ fontSize: 12, color: discoveredHsn ? "#38bdf8" : "#94a3b8" }}>
-              {discoveredHsn ? `Fed ${discoveredHsn} back into local rate lookup` : "Direct web evidence"}
+              {discoveredHsn ? `Fed ${discoveredHsn} back into local rate lookup` : "Direct web evidence synthesis"}
+            </div>
+          </div>
+          <div className="metric-box">
+            <div className="metric-label">Retrieved Evidence</div>
+            <div className="metric-value" style={{ color: chunks.length > 0 ? "#38bdf8" : "#94a3b8" }}>
+              {chunks.length} web sources
             </div>
           </div>
         </div>
       </div>
 
+      {/* 2. Web Chunks & Provenance Card */}
       <div className="card">
         <div className="card-header">
           <div className="card-title">Web Chunks & Provenance ({chunks.length})</div>
@@ -1373,21 +1534,24 @@ function WebSearchView({ trace }) {
             No web search results were retrieved for this execution.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 6 }}>
             {chunks.map((c, i) => (
-              <div key={i} style={{ background: "#0e1418", border: "1px solid #1f2b33", borderRadius: 6, padding: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                  <span style={{ fontWeight: 600, color: "#e2e8f0", fontSize: 13 }}>#{c.rank || i + 1} {c.title || "Web Source"}</span>
-                  <span className="badge badge-rate">{c.domain || "web"}</span>
+              <div key={i} style={{ background: "#0e1418", border: "1px solid #1f2b33", borderRadius: 6, padding: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="badge badge-rate">#{c.rank || i + 1}</span>
+                    <span style={{ fontWeight: 600, color: "#e2e8f0", fontSize: 13 }}>{c.title || "Web Source"}</span>
+                  </div>
+                  <span className="badge badge-legal" style={{ fontFamily: "var(--mono-font)" }}>{c.domain || "web"}</span>
                 </div>
                 {c.url && (
-                  <div style={{ marginBottom: 8 }}>
-                    <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8", fontSize: 12, textDecoration: "underline" }}>
+                  <div style={{ marginBottom: 10 }}>
+                    <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8", fontSize: 12, textDecoration: "underline", wordBreak: "break-all" }}>
                       🔗 {c.url}
                     </a>
                   </div>
                 )}
-                <div style={{ fontSize: 12, lineHeight: 1.6, color: "#cbd5e1", whiteSpace: "pre-wrap", background: "#080b0e", padding: 10, borderRadius: 4, border: "1px solid #141c22" }}>
+                <div style={{ fontSize: 12, lineHeight: 1.6, color: "#cbd5e1", whiteSpace: "pre-wrap", background: "#080b0e", padding: 12, borderRadius: 4, border: "1px solid #141c22" }}>
                   {c.snippet || c.content}
                 </div>
               </div>
@@ -1395,6 +1559,146 @@ function WebSearchView({ trace }) {
           </div>
         )}
       </div>
+
+      {/* 3. Background Knowledge Ingestion Pipeline Card */}
+      {(hasWebSearch || ingestion.status !== "idle") && (
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">
+              📥 Background Knowledge Ingestion Pipeline
+            </div>
+            <IngestionBadge status={ingestion.status} table={ingestion.target_table} />
+          </div>
+
+          <div style={{ fontSize: 12, color: "#8e9fa5", marginBottom: 14, lineHeight: 1.5 }}>
+            Asynchronously normalizes, validates, and persists missing statutory/tariff facts into the local knowledge stores (PostgreSQL + appended CSV) via a background worker thread. The current user response completes immediately without waiting for ingestion.
+          </div>
+
+          {/* Architecture Banner */}
+          {ingestion.status === "stored" && (
+            <div style={{ padding: "10px 14px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)", borderRadius: 6, marginBottom: 14, fontSize: 12, color: "#a7f3d0", lineHeight: 1.5 }}>
+              <strong>✓ Local Knowledge Store Synchronized:</strong>{" "}
+              {ingestion.target_table === "gst_rates_2025" ? (
+                <span>Rate record persisted to PostgreSQL <code style={{ color: "#34d399", fontFamily: "var(--mono-font)" }}>gst_rates_2025</code> table, appended to <code style={{ color: "#34d399", fontFamily: "var(--mono-font)" }}>data/gst/gst_rates_appended.csv</code>, and synced with the in-memory lookup cache. Future queries for this item will resolve locally!</span>
+              ) : ingestion.target_table === "notification_chunks" ? (
+                <span>Gazette notification evidence embedded with 1024-dim BGE-M3 model and persisted to PostgreSQL <code style={{ color: "#34d399", fontFamily: "var(--mono-font)" }}>notification_chunks</code> table for future hybrid searches.</span>
+              ) : (
+                <span>Statutory evidence embedded and persisted to PostgreSQL <code style={{ color: "#34d399", fontFamily: "var(--mono-font)" }}>{ingestion.target_table}</code>.</span>
+              )}
+            </div>
+          )}
+
+          {(ingestion.status === "queued" || ingestion.status === "running") && (
+            <div style={{ padding: "10px 14px", background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.25)", borderRadius: 6, marginBottom: 14, fontSize: 12, color: "#fde68a", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 16 }}>⚙️</span>
+              <div>
+                <strong>Async Worker Running:</strong> Background thread pool is currently classifying web evidence, verifying official domain whitelist, calculating 1024-dim BGE-M3 embeddings, and updating knowledge stores. Auto-refresh is polling every 3 seconds...
+              </div>
+            </div>
+          )}
+
+          {/* Metrics Box */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 14 }}>
+            <div className="metric-box">
+              <div className="metric-label">Pipeline Status</div>
+              <div className="metric-value" style={{ fontSize: 13, textTransform: "uppercase", color: ingestion.status === "stored" ? "#34d399" : ingestion.status === "queued" || ingestion.status === "running" ? "#fbbf24" : "#94a3b8" }}>
+                {ingestion.status || "idle"}
+              </div>
+            </div>
+            <div className="metric-box">
+              <div className="metric-label">Target Table</div>
+              <div className="metric-value" style={{ fontSize: 13, color: "#38bdf8", fontFamily: "var(--mono-font)" }}>
+                {ingestion.target_table || "None"}
+              </div>
+            </div>
+            <div className="metric-box">
+              <div className="metric-label">Target Category</div>
+              <div className="metric-value" style={{ fontSize: 13, color: "#c084fc" }}>
+                {ingestion.target_category || "None"}
+              </div>
+            </div>
+            <div className="metric-box">
+              <div className="metric-label">Records Ingested</div>
+              <div className="metric-value" style={{ color: "#34d399" }}>
+                {ingestion.records_ingested || 0}
+              </div>
+            </div>
+            <div className="metric-box">
+              <div className="metric-label">Records Skipped</div>
+              <div className="metric-value" style={{ color: "#fbbf24" }}>
+                {ingestion.records_skipped || 0}
+              </div>
+            </div>
+            <div className="metric-box">
+              <div className="metric-label">Async Latency (Non-blocking)</div>
+              <div className="metric-value" style={{ fontSize: 12 }}>
+                {formatMs(ingestion.timing_ms)}
+              </div>
+            </div>
+          </div>
+
+          {/* Ingested Items / Details Breakdown */}
+          {ingestion.details && ingestion.details.length > 0 && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0", marginBottom: 8 }}>
+                Ingestion Details & Audit Trail ({ingestion.details.length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {ingestion.details.map((d, di) => {
+                  const isStored = d.status === "stored";
+                  return (
+                    <div
+                      key={di}
+                      style={{
+                        padding: 12,
+                        background: isStored ? "rgba(16, 185, 129, 0.04)" : "#0e1418",
+                        border: `1px solid ${isStored ? "rgba(16, 185, 129, 0.25)" : "#1f2b33"}`,
+                        borderRadius: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flexWrap: "wrap", gap: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span className={`badge ${isStored ? "badge-success" : "badge-skipped"}`}>
+                            {d.status?.toUpperCase()}
+                          </span>
+                          {d.table && <code style={{ color: "#38bdf8", fontSize: 12 }}>{d.table}</code>}
+                          {d.hsn_code && <span className="badge badge-rate">HSN {d.hsn_code}</span>}
+                          {d.rate && <span className="badge badge-calc">{d.rate}</span>}
+                        </div>
+                        <span style={{ fontSize: 11, color: "#8e9fa5" }}>Item #{di + 1}</span>
+                      </div>
+
+                      {d.description && (
+                        <div style={{ fontSize: 12, color: "#cbd5e1", marginBottom: 6 }}>
+                          <strong>Description:</strong> {d.description}
+                        </div>
+                      )}
+
+                      {d.title && !d.description && (
+                        <div style={{ fontSize: 12, color: "#cbd5e1", marginBottom: 6 }}>
+                          <strong>Title:</strong> {d.title}
+                        </div>
+                      )}
+
+                      {d.reason && (
+                        <div style={{ fontSize: 11, color: isStored ? "#34d399" : "#f59e0b", marginBottom: 4 }}>
+                          ℹ️ {d.reason}
+                        </div>
+                      )}
+
+                      {d.source_url && (
+                        <div style={{ fontSize: 11, color: "#8e9fa5", wordBreak: "break-all" }}>
+                          Source: <a href={d.source_url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8" }}>{d.source_url}</a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

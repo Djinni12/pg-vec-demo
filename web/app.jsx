@@ -1,12 +1,5 @@
 const { useMemo, useState, useRef, useEffect } = React;
 
-const debugTabs = [
-  ["results", "Hybrid + Reranker"],
-  ["hybrid_results", "Hybrid"],
-  ["dense_results", "Dense"],
-  ["bm25_results", "BM25"],
-];
-
 const SUGGESTIONS = [
   "What is the GST rate on computer monitors (HSN 8471)?",
   "How can GST registration be cancelled under Section 29?",
@@ -14,16 +7,6 @@ const SUGGESTIONS = [
   "What is the tax rate on milk and how to claim input tax credit under Section 16?",
   "What are the grounds for cancellation under Rule 21?",
 ];
-
-function fmtMs(value) {
-  if (value === undefined || value === null) return "-";
-  return `${Math.round(value)} ms`;
-}
-
-function fmtScore(value) {
-  if (value === undefined || value === null) return "-";
-  return Number(value).toFixed(4);
-}
 
 function MarkdownRenderer({ content, isStreaming }) {
   if (!content) return isStreaming ? <span className="streaming-cursor">▊</span> : null;
@@ -107,104 +90,7 @@ function MarkdownRenderer({ content, isStreaming }) {
   );
 }
 
-function SourceCard({ source }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className={`chat-source-card ${expanded ? "expanded" : ""}`}>
-      <div className="chat-source-header" onClick={() => setExpanded(!expanded)}>
-        <span className="source-rank">#{source.rank}</span>
-        <span className={`doc-badge ${source.document_type || "act"}`}>
-          {source.document_type ? source.document_type.toUpperCase() : "DOC"}
-        </span>
-        <span className="source-ref">{source.reference || "No Ref"}</span>
-        <span className="source-title">{source.title || "Untitled"}</span>
-        {source.reranker_score !== undefined && source.reranker_score !== null && (
-          <span className="source-score">Rerank: {fmtScore(source.reranker_score)}</span>
-        )}
-        <button type="button" className="source-chevron">
-          {expanded ? "Hide ▲" : "View ▼"}
-        </button>
-      </div>
-      <div className="chat-source-body">
-        {expanded ? (
-          <div className="source-expanded-content">
-            <div className="source-submeta">
-              <span>Chunk ID: <code>{source.chunk_id}</code></span>
-              {source.url && (
-                <span> · <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8", textDecoration: "underline" }}>Open Link ↗</a></span>
-              )}
-            </div>
-            <pre>{source.content}</pre>
-          </div>
-        ) : (
-          <div className="source-snippet">
-            <p style={{ margin: 0 }}>{source.snippet || source.content}</p>
-            {source.url && (
-              <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ color: "#38bdf8", fontSize: "11.5px", marginTop: 4, display: "inline-block", textDecoration: "underline" }}>
-                🔗 {source.url}
-              </a>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DebugInspectorView({ debugData }) {
-  const [activeTab, setActiveTab] = useState("results");
-  const results = debugData?.[activeTab] || [];
-  const timings = debugData.timings_ms || {};
-
-  return (
-    <div className="chat-debug-box">
-      <div className="metrics">
-        <div className="metric"><span>Dense</span><strong>{fmtMs(timings.dense)}</strong></div>
-        <div className="metric"><span>BM25</span><strong>{fmtMs(timings.bm25)}</strong></div>
-        <div className="metric"><span>RRF</span><strong>{fmtMs(timings.rrf)}</strong></div>
-        <div className="metric"><span>Reranker</span><strong>{fmtMs(timings.reranker)}</strong></div>
-      </div>
-      <div className="tabs">
-        {debugTabs.map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            className={activeTab === key ? "active" : ""}
-            onClick={() => setActiveTab(key)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <div className="results">
-        {results.map((result) => (
-          <article key={`${activeTab}-${result.chunk_id}-${result.rank}`} className="card">
-            <div className="card-head">
-              <div className="rank">#{result.rank}</div>
-              <div>
-                <h2>{result.title || "Untitled"}</h2>
-                <p>{result.document_type} · {result.reference || "No reference"} · {result.chunk_id}</p>
-              </div>
-            </div>
-            <p className="snippet">{result.snippet || result.content}</p>
-            <div className="scores">
-              <div><span>Dense score</span><strong>{fmtScore(result.dense_score)}</strong></div>
-              <div><span>BM25 score</span><strong>{fmtScore(result.bm25_score)}</strong></div>
-              <div><span>RRF</span><strong>{fmtScore(result.rrf_score)}</strong></div>
-              <div><span>Reranker</span><strong>{fmtScore(result.reranker_score)}</strong></div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-
 function ChatMessage({ message }) {
-  const [showSources, setShowSources] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
-
   if (message.sender === "user") {
     return (
       <div className="message-row user-row">
@@ -217,24 +103,6 @@ function ChatMessage({ message }) {
   }
 
   const { data, text, isStreaming } = message;
-  const legalSources = (data?.sources || []).filter(
-    (s) => !s.chunk_id?.startsWith("rate_") && s.document_type !== "goods" && s.document_type !== "services" && s.document_type !== "rate"
-  );
-  const hasLegalDebug = Boolean(
-    data?.retrieval_debug &&
-    ((data.retrieval_debug.results && data.retrieval_debug.results.length > 0) ||
-     (data.retrieval_debug.dense_results && data.retrieval_debug.dense_results.length > 0) ||
-     (data.retrieval_debug.hybrid_results && data.retrieval_debug.hybrid_results.length > 0))
-  );
-  const debugData = hasLegalDebug ? {
-    query: data.query,
-    results: data.retrieval_debug.results || [],
-    dense_results: data.retrieval_debug.dense_results || [],
-    bm25_results: data.retrieval_debug.bm25_results || [],
-    hybrid_results: data.retrieval_debug.hybrid_results || [],
-    timings_ms: data.timings_ms || {},
-    metadata: data.retrieval_debug.metadata || {},
-  } : null;
 
   return (
     <div className="message-row bot-row">
@@ -245,59 +113,10 @@ function ChatMessage({ message }) {
           <span className="msg-time">{message.time}</span>
         </div>
 
-        {/* 1. Final Answer First (Streaming live) */}
+        {/* Clean, user-facing grounded legal answer */}
         <div className="bot-content">
           <MarkdownRenderer content={text || data?.answer || ""} isStreaming={isStreaming} />
         </div>
-
-        {/* Latency Footer */}
-        {data && (
-          <div className="latency-footer">
-            <span>⚡ Retrieval: <strong>{fmtMs(data.retrieval_timing ?? data.timings_ms?.retrieval)}</strong></span>
-            {data.generation_timing !== undefined ? (
-              <span>⚡ Generation: <strong>{fmtMs(data.generation_timing)}</strong></span>
-            ) : isStreaming ? (
-              <span>⚡ Generating...</span>
-            ) : null}
-            {data.total_timing !== undefined && (
-              <span>⏱️ Total: <strong>{fmtMs(data.total_timing)}</strong></span>
-            )}
-          </div>
-        )}
-
-        {/* 2. Expandable Sources Section Below Answer */}
-        {legalSources.length > 0 && (
-          <div className="bot-sources-accordion">
-            <button
-              type="button"
-              className="sources-toggle-btn"
-              onClick={() => setShowSources(!showSources)}
-            >
-              📚 Sources Used ({legalSources.length}) {showSources ? "▲" : "▼"}
-            </button>
-            {showSources && (
-              <div className="sources-list">
-                {legalSources.map((source) => (
-                  <SourceCard key={source.chunk_id} source={source} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 3. Collapsible Retrieval Debug Inspector */}
-        {debugData && (
-          <div className="bot-debug-accordion">
-            <button
-              type="button"
-              className="debug-toggle-btn"
-              onClick={() => setShowDebug(!showDebug)}
-            >
-              🔍 Retrieval Pipeline Debug {showDebug ? "▲" : "▼"}
-            </button>
-            {showDebug && <DebugInspectorView debugData={debugData} />}
-          </div>
-        )}
       </div>
     </div>
   );

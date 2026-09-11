@@ -119,6 +119,18 @@ class ExecutionTrace:
         "timing_ms": 0.0,
     })
 
+    # 4d. Background Web Ingestion
+    background_ingestion: dict[str, Any] = field(default_factory=lambda: {
+        "status": "idle",
+        "target_category": None,
+        "target_table": None,
+        "records_ingested": 0,
+        "records_skipped": 0,
+        "details": [],
+        "error": None,
+        "timing_ms": 0.0,
+    })
+
     # 5. Reasoning Stages
     reasoning: dict[str, Any] = field(default_factory=lambda: {
         "grounded_reasoning_output": None,
@@ -257,6 +269,14 @@ class TraceStore:
                         t.planner.get("query_decomposition", {}).get("needs_query_decomposition")
                         or t.planner.get("capability_flags", {}).get("needs_query_decomposition")
                     ),
+                    "has_web_search": bool(
+                        t.web_search_retrieval.get("returned_chunks")
+                        or "web_search" in t.graph_execution.get("actual_executed_nodes", [])
+                    ),
+                    "web_chunks_count": len(t.web_search_retrieval.get("returned_chunks", [])),
+                    "ingestion_status": t.background_ingestion.get("status", "idle"),
+                    "has_ingestion": t.background_ingestion.get("status") in ("queued", "stored", "skipped", "failed"),
+                    "ingestion_table": t.background_ingestion.get("target_table"),
                     "total_tokens": t.llm_usage.get("total_tokens", 0),
                     "estimated_cost_usd": t.llm_usage.get("total_cost_usd"),
                     "llm_calls_count": t.llm_usage.get("total_calls", 0),
@@ -432,6 +452,35 @@ class TraceStore:
                 "timing_ms": round(timing_ms, 3),
             }
             trace.timings["web_search_ms"] = round(timing_ms, 3)
+
+    def record_background_ingestion(
+        self,
+        execution_id: str,
+        *,
+        status: str,
+        target_category: Optional[str] = None,
+        target_table: Optional[str] = None,
+        records_ingested: int = 0,
+        records_skipped: int = 0,
+        details: Optional[list[dict[str, Any]]] = None,
+        error: Optional[str] = None,
+        timing_ms: float = 0.0,
+    ) -> None:
+        """Record background web ingestion lifecycle in trace store."""
+        with self._lock:
+            trace = self._traces.get(execution_id)
+            if not trace:
+                return
+            trace.background_ingestion = {
+                "status": status,
+                "target_category": target_category or trace.background_ingestion.get("target_category"),
+                "target_table": target_table or trace.background_ingestion.get("target_table"),
+                "records_ingested": records_ingested if records_ingested else trace.background_ingestion.get("records_ingested", 0),
+                "records_skipped": records_skipped if records_skipped else trace.background_ingestion.get("records_skipped", 0),
+                "details": list(details) if details is not None else list(trace.background_ingestion.get("details", [])),
+                "error": error or trace.background_ingestion.get("error"),
+                "timing_ms": round(timing_ms, 3) if timing_ms else trace.background_ingestion.get("timing_ms", 0.0),
+            }
 
     def record_grounded_reasoning(
         self,

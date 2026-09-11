@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_CSV_PATH = Path("data/gst/gst_rates.csv")
+DEFAULT_APPENDED_CSV_PATH = Path("data/gst/gst_rates_appended.csv")
 DEFAULT_DATABASE_URL = "dbname=hybrid_rag user=postgres password=postgres host=localhost port=5432"
 EXPECTED_ROW_COUNT = 1663
 
@@ -114,11 +115,12 @@ def load_rates_csv(
     csv_path: str | Path | None = None,
     *,
     force_reload: bool = False,
+    include_appended: bool = False,
 ) -> list[dict[str, Any]]:
     """Load and parse gst_rates.csv strictly, validating exact row count and schema.
 
     Uses escapechar='\\' to correctly parse escaped quotes (e.g. \\\"smart cards\\\").
-    Never skips bad lines. Halts with ValueError if the row count is not exactly 1,663.
+    Never skips bad lines. Halts with ValueError if the row count is not at least 1,663.
     """
     global _CACHED_PATH, _CACHED_RECORDS, _CACHED_HSN_INDEX
 
@@ -139,11 +141,23 @@ def load_rates_csv(
             clean_row["_id"] = idx
             records.append(clean_row)
 
-    if len(records) != EXPECTED_ROW_COUNT:
+    if len(records) < EXPECTED_ROW_COUNT:
         raise ValueError(
-            f"Expected exactly {EXPECTED_ROW_COUNT} rows in {resolved}, "
+            f"Expected at least {EXPECTED_ROW_COUNT} rows in {resolved}, "
             f"but found {len(records)} rows. Halting to avoid incomplete rate retrieval."
         )
+
+    # Optionally load appended web records if present
+    if include_appended and csv_path is None and DEFAULT_APPENDED_CSV_PATH.exists():
+        try:
+            with open(DEFAULT_APPENDED_CSV_PATH, "r", encoding="utf-8") as af:
+                areader = csv.DictReader(af, escapechar="\\")
+                for arow in areader:
+                    clean_arow = {k: (v or "").strip() for k, v in arow.items()}
+                    clean_arow["_id"] = len(records) + 1
+                    records.append(clean_arow)
+        except Exception:
+            pass
 
     # Build HSN index mapping normalized digit codes to list of row indices
     hsn_index: dict[str, list[int]] = {}
@@ -327,11 +341,226 @@ def _format_record(
         "sgst_utgst_rate_pct": sgst_pct,
         "igst_rate_pct": igst_pct,
         "compensation_cess": cess_rate if is_cess else None,
-        "condition_number": None,
+        "condition_number": row.get("condition_number") or (
+            re.search(r"\bCondition\s+(?:No\.?\s*)?(\d+)\b", f"{row.get('amendment_note', '')} {row.get('raw_text', '')}", re.I).group(1)
+            if re.search(r"\bCondition\s+(?:No\.?\s*)?(\d+)\b", f"{row.get('amendment_note', '')} {row.get('raw_text', '')}", re.I)
+            else None
+        ),
         "condition_text": row.get("condition", ""),
         "match_type": match_type,
         "score": score,
     }
+
+
+def _format_db_record(r: tuple, match_type: str = "database", score: float = 1.0) -> dict[str, Any]:
+    """Format a row from gst_rates_2025 table into standard rate dict."""
+    rid = r[0]
+    category = r[1] or "goods"
+    notif = r[2] or ""
+    notif_date = r[3] or ""
+    eff_date = r[4] or None
+    sched = r[5] or ""
+    serial_no = r[6] or ""
+    hsn_code = r[7] or ""
+    desc = r[9] or ""
+    rate_str = r[10] or ""
+    cgst_pct = float(r[11]) if r[11] is not None else None
+    sgst_pct = float(r[12]) if r[12] is not None else None
+    igst_pct = float(r[13]) if r[13] is not None else None
+    formatted_rate = r[14] or rate_str
+    comp_cess = r[15]
+    cond_num = r[16]
+    cond_text = r[17] or ""
+    page = r[18]
+    source_file = r[19] or "gst_rates_2025"
+
+    is_cess = "cess" in category.lower() or bool(comp_cess)
+    is_exempt = "nil" in rate_str.lower() or "exempt" in rate_str.lower()
+
+    cgst_rate = f"{cgst_pct}%" if cgst_pct is not None else ""
+    sgst_rate = f"{sgst_pct}%" if sgst_pct is not None else ""
+    total_rate = f"{igst_pct}%" if igst_pct is not None else rate_str
+
+    return {
+        "id": rid,
+        "item_type": "cess" if is_cess else category.lower(),
+        "category": "cess" if is_cess else category.lower(),
+        "code": hsn_code,
+        "hsn_code": hsn_code,
+        "description": desc,
+        "section_heading": f"GST rates - {category}",
+        "rate_category": category,
+        "source_rate": rate_str,
+        "cgst_rate": cgst_rate,
+        "sgst_rate": sgst_rate,
+        "total_gst_rate": total_rate,
+        "compensation_cess_rate": comp_cess or "",
+        "is_exempt": str(is_exempt).lower(),
+        "gst_rate": rate_str,
+        "rate": rate_str,
+        "formatted_rate": formatted_rate,
+        "rate_type": "Compensation Cess" if is_cess else "GST",
+        "schedule": sched,
+        "serial_no": serial_no,
+        "serial_number": serial_no,
+        "notification_no": notif,
+        "notification_number": notif,
+        "notification_date": notif_date,
+        "rate_as_on_date": "22.09.2025",
+        "effective_date": eff_date,
+        "condition": cond_text,
+        "footnote": "",
+        "amendment_note": "",
+        "raw_text": f"{serial_no} | {hsn_code} | {desc} | {rate_str}",
+        "source_page": page,
+        "source_file": source_file,
+        "source_reference": f"{source_file} ({notif})" if notif else source_file,
+        "cgst_rate_pct": cgst_pct,
+        "sgst_utgst_rate_pct": sgst_pct,
+        "igst_rate_pct": igst_pct,
+        "compensation_cess": comp_cess,
+        "condition_number": cond_num,
+        "condition_text": cond_text,
+        "match_type": match_type,
+        "score": score,
+    }
+
+
+def search_rates_database(
+    query: str,
+    db_url: str | None = None,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """Search gst_rates_2025 in PostgreSQL directly."""
+    try:
+        import psycopg
+    except ImportError:
+        return []
+
+    url = db_url or database_url()
+    codes = extract_query_codes(query)
+    phrase = extract_search_phrase(query)
+
+    results: list[dict[str, Any]] = []
+    seen_ids: set[int] = set()
+
+    try:
+        with psycopg.connect(url, connect_timeout=3) as conn:
+            with conn.cursor() as cur:
+                # 1. Exact / normalized HSN code matches
+                for code in codes:
+                    cur.execute(
+                        """
+                        SELECT id, category, notification_number, notification_date, effective_date,
+                               schedule, serial_number, hsn_code, normalized_hsn_codes, description,
+                               rate, cgst_rate_pct, sgst_utgst_rate_pct, igst_rate_pct, formatted_rate,
+                               compensation_cess, condition_number, condition_text, source_page, source_file
+                        FROM gst_rates_2025
+                        WHERE %s = ANY(normalized_hsn_codes) OR hsn_code ILIKE %s
+                        LIMIT %s;
+                        """,
+                        (code, f"%{code}%", limit),
+                    )
+                    for row in cur.fetchall():
+                        rid = row[0]
+                        if rid not in seen_ids:
+                            seen_ids.add(rid)
+                            results.append(_format_db_record(row, match_type="exact_code", score=1.0))
+
+                # 2. Text / description matches
+                if len(results) < limit and phrase:
+                    cur.execute(
+                        """
+                        SELECT id, category, notification_number, notification_date, effective_date,
+                               schedule, serial_number, hsn_code, normalized_hsn_codes, description,
+                               rate, cgst_rate_pct, sgst_utgst_rate_pct, igst_rate_pct, formatted_rate,
+                               compensation_cess, condition_number, condition_text, source_page, source_file
+                        FROM gst_rates_2025
+                        WHERE description ILIKE %s
+                        LIMIT %s;
+                        """,
+                        (f"%{phrase}%", limit - len(results)),
+                    )
+                    for row in cur.fetchall():
+                        rid = row[0]
+                        if rid not in seen_ids:
+                            seen_ids.add(rid)
+                            results.append(_format_db_record(row, match_type="description_search", score=0.85))
+    except Exception:
+        pass
+
+    return results
+
+
+def append_rate_record_to_csv_and_cache(
+    record: dict[str, Any],
+    csv_path: str | Path | None = None,
+) -> bool:
+    """Appends a new structured rate record to the in-memory cache and CSV on disk.
+
+    Deduplicates against existing cache by matching (hsn_code, rate, description).
+    Returns True if appended, False if duplicate.
+    """
+    global _CACHED_RECORDS, _CACHED_HSN_INDEX, _CACHED_PATH
+
+    # Ensure cache is loaded
+    rows = load_rates_csv(csv_path, include_appended=True)
+
+    hsn = str(record.get("hsn_code") or record.get("code") or "").strip()
+    rate = str(record.get("gst_rate") or record.get("rate") or record.get("source_rate") or "").strip()
+    desc = str(record.get("description") or "").strip()
+
+    # Deduplication check: same HSN and rate means record is already stored
+    for r in rows:
+        r_hsn = (r.get("hsn_code") or "").strip()
+        r_rate = (r.get("gst_rate") or r.get("source_rate") or "").strip()
+        r_desc = (r.get("description") or "").strip().lower()
+        if r_hsn == hsn and r_rate == rate:
+            return False
+        if r_desc and desc and r_desc == desc.lower() and r_rate == rate:
+            return False
+
+    # Format row conforming to REQUIRED_FIELDS
+    new_idx = len(rows) + 1
+    clean_row = {field: str(record.get(field, "") or "").strip() for field in REQUIRED_FIELDS}
+    clean_row["_id"] = new_idx
+    if not clean_row["hsn_code"]:
+        clean_row["hsn_code"] = hsn
+    if not clean_row["gst_rate"]:
+        clean_row["gst_rate"] = rate
+    if not clean_row["source_rate"]:
+        clean_row["source_rate"] = rate
+    if not clean_row["description"]:
+        clean_row["description"] = desc
+    if not clean_row["source_file"]:
+        clean_row["source_file"] = str(record.get("source_file", "Web Ingestion"))
+    if not clean_row["source_page"]:
+        clean_row["source_page"] = "1"
+    if not clean_row["rate_as_on_date"]:
+        clean_row["rate_as_on_date"] = "22.09.2025"
+
+    # 1. Update in-memory cache immediately
+    rows.append(clean_row)
+    if _CACHED_HSN_INDEX is not None:
+        for c in normalize_hsn_codes(clean_row["hsn_code"]):
+            _CACHED_HSN_INDEX.setdefault(c, []).append(len(rows) - 1)
+
+    # 2. Append to CSV on disk safely (uses separate appended file to preserve baseline CSV)
+    try:
+        target_path = Path(csv_path) if csv_path else DEFAULT_APPENDED_CSV_PATH
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        file_exists = target_path.exists() and target_path.stat().st_size > 0
+
+        with open(target_path, "a", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_ALL, escapechar="\\")
+            if not file_exists:
+                writer.writerow(REQUIRED_FIELDS)
+            row_vals = [clean_row.get(col, "") for col in REQUIRED_FIELDS]
+            writer.writerow(row_vals)
+    except Exception:
+        pass
+
+    return True
 
 
 def exact_code_lookup(
@@ -462,37 +691,62 @@ def retrieve_rates(
     db_url: str | None = None,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
-    """Retrieve structured GST rate records strictly from gst_rates.csv.
+    """Retrieve structured GST rate records from PostgreSQL gst_rates_2025 and gst_rates.csv.
 
-    First extracts HSN/tariff codes and runs exact code lookup.
+    First extracts HSN/tariff codes and checks database + exact CSV code lookup.
     If limit is not reached, runs natural-language text search on description.
     """
     if not query or not query.strip():
         return []
 
-    rows = load_rates_csv(csv_path)
+    results: list[dict[str, Any]] = []
+    seen_keys: set[tuple[str, str, str]] = set()
+
+    # 1. Local CSV & in-memory cache (primary search with tuned keyword/phrase scoring)
+    rows = load_rates_csv(csv_path, include_appended=True)
     codes = extract_query_codes(query)
     phrase = extract_search_phrase(query)
 
-    results: list[dict[str, Any]] = []
-    seen_ids: set[int] = set()
-
-    # 1. Exact code lookup for all extracted codes
+    # 1a. Exact code lookup for all extracted codes
     for code in codes:
         code_hits = exact_code_lookup(code, limit=limit, rows=rows)
         for hit in code_hits:
-            hit_id = hit.get("id")
-            if hit_id not in seen_ids:
-                seen_ids.add(hit_id)
+            key = (
+                str(hit.get("hsn_code") or "").strip(),
+                str(hit.get("rate") or "").strip(),
+                str(hit.get("description") or "")[:30].strip().lower(),
+            )
+            if key not in seen_keys:
+                seen_keys.add(key)
                 results.append(hit)
 
-    # 2. Text description matching
+    # 1b. Text description matching
     if len(results) < limit and phrase:
         text_hits = text_rate_search(phrase, limit=limit - len(results) + 5, rows=rows)
         for hit in text_hits:
-            hit_id = hit.get("id")
-            if hit_id not in seen_ids:
-                seen_ids.add(hit_id)
+            key = (
+                str(hit.get("hsn_code") or "").strip(),
+                str(hit.get("rate") or "").strip(),
+                str(hit.get("description") or "")[:30].strip().lower(),
+            )
+            if key not in seen_keys:
+                seen_keys.add(key)
+                results.append(hit)
+            if len(results) >= limit:
+                break
+
+    # 2. Query PostgreSQL gst_rates_2025 to supplement if limit not reached
+    target_db_url = db_url or (database_url() if len(results) < limit else None)
+    if len(results) < limit and target_db_url:
+        db_hits = search_rates_database(query, db_url=target_db_url, limit=limit - len(results))
+        for hit in db_hits:
+            key = (
+                str(hit.get("hsn_code") or "").strip(),
+                str(hit.get("rate") or "").strip(),
+                str(hit.get("description") or "")[:30].strip().lower(),
+            )
+            if key not in seen_keys:
+                seen_keys.add(key)
                 results.append(hit)
             if len(results) >= limit:
                 break
